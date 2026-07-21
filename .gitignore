@@ -1,0 +1,12 @@
+backend/credentials.json
+backend/credentials.json
+*.pack
+
+# --- BACKEND IGNORES ---
+backend/credentials.json
+backend/__pycache__/
+backend/debug_images/
+
+# --- FRONTEND IGNORES ---
+frontend/node_modules/
+frontend/.env
