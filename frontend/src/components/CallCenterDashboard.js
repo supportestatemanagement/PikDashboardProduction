@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react"; 
+import React, { useMemo, useState, useEffect } from "react"; 
 
 const navButtonStyle = {
   padding: "6px 12px",
@@ -12,12 +12,32 @@ const navButtonStyle = {
   cursor: "pointer",
 };
 
-export default function CallCenterDashboard({ data, isLoading }) {
-  // State untuk melacak titik yang sedang disentuh kursor
-  const [hoveredPoint, setHoveredPoint] = useState(null);
+// Menghapus parameter props (data, isLoading) karena sekarang diurus sendiri
+export default function CallCenterDashboard() {
+  // STATE BARU UNTUK FETCH DATA
+  const [data, setData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  const [hoveredPoint, setHoveredPoint] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  // PROSES FETCH DATA (DIPINDAHKAN KEMARI)
+  useEffect(() => {
+    setIsLoading(true);
+    fetch(`${process.env.REACT_APP_API_URL}/api/call-center-data`)
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.status === "success") {
+          setData(result.data);
+        }
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Gagal mengambil data CC:", err);
+        setIsLoading(false);
+      });
+  }, []);
 
   // Fungsi untuk mengubah tanggal menjadi angka (YYYYMMDD) agar bisa diurutkan
   const getSortValue = (dateStr) => {
@@ -149,19 +169,16 @@ export default function CallCenterDashboard({ data, isLoading }) {
     if (!data) return [];
     
     return [...data].sort((a, b) => {
-      // Menangkap berbagai kemungkinan nama kolom dari Google Sheets
       const dateA = String(a.Tanggal || a.TANGGAL || a.Date || a.DATE || "");
       const dateB = String(b.Tanggal || b.TANGGAL || b.Date || b.DATE || "");
       
       const sortValA = getSortValue(dateA);
       const sortValB = getSortValue(dateB);
 
-      // 1. Urutkan berdasarkan Tanggal kronologis (Misal: 20260629 vs 20260701)
       if (sortValA !== sortValB) {
         return sortValA - sortValB; 
       }
 
-      // 2. Jika berada di tanggal yang persis sama, urutkan berdasarkan Jam/Waktu
       const timeA = String(a.Waktu || a.WAKTU || a.Time || a.TIME || "");
       const timeB = String(b.Waktu || b.WAKTU || b.Time || b.TIME || "");
       return timeA.localeCompare(timeB);
@@ -179,7 +196,7 @@ export default function CallCenterDashboard({ data, isLoading }) {
     return (
       <div style={{ padding: "50px", textAlign: "center", color: "#1E3A8A", fontWeight: "bold" }}>
         <div className="spinner" style={{ marginBottom: "10px", fontSize: "24px" }}>⌛</div>
-        Menghubungkan ...
+        Menghubungkan ke Server ...
       </div>
     );
   }
@@ -188,7 +205,7 @@ export default function CallCenterDashboard({ data, isLoading }) {
     return (
       <div style={{ padding: "50px", textAlign: "center", color: "#64748B" }}>
         <p style={{ fontSize: "18px", fontWeight: "bold" }}>⚠️ Tidak ada data ditemukan.</p>
-        <p>Rentang tanggal yang dipilih tidak memiliki rekaman tiket.</p>
+        <p>Gagal mengambil rekaman tiket atau data kosong.</p>
       </div>
     );
   }
@@ -208,31 +225,27 @@ export default function CallCenterDashboard({ data, isLoading }) {
   const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
   const areaPath = `${linePath} L ${points[points.length - 1]?.x} ${chartHeight - padding.bottom} L ${points[0]?.x} ${chartHeight - padding.bottom} Z`;
 
-  // Helper untuk merubah format 17-Jan-2026 -> 17 Jan (dan tetap mendukung format lama)
   const formatDate = (dateStr) => {
     if (!dateStr || dateStr === "N/A") return dateStr;
     const parts = dateStr.split("-"); 
     
     if (parts.length < 3) return dateStr;
 
-    // Cek apakah formatnya YYYY-MM-DD (Misal: 2026-01-17)
     if (parts[0].length === 4) {
       const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
       const day = parseInt(parts[2], 10); 
       const month = months[parseInt(parts[1], 10) - 1]; 
       return `${day} ${month}`;
     } 
-    // Jika formatnya DD-MMM-YYYY dari Google Sheets (Misal: 17-Jan-2026)
     else {
-      const day = parseInt(parts[0], 10); // Mengambil angka 17 (parseInt menghilangkan angka 0 di depan jika ada)
-      const month = parts[1]; // Langsung mengambil teks "Jan"
+      const day = parseInt(parts[0], 10); 
+      const month = parts[1]; 
       return `${day} ${month}`;
     }
   };
 
   return (
     <>
-      {/* MENAMBAHKAN STYLE GLOBAL UNTUK ANIMASI */}
       <style>{`
         @keyframes slideFadeIn {
           0% { opacity: 0; transform: translateY(30px); }
@@ -258,7 +271,7 @@ export default function CallCenterDashboard({ data, isLoading }) {
             { label: "", val: processedData.metrics.other, bg: "white", color: "black", logo: "/logoother2.png" },
           ].map((item, i) => (
             <div key={i} className="animate-card" style={{ 
-              animationDelay: `${i * 0.1}s`, // Memberikan jeda tiap card
+              animationDelay: `${i * 0.1}s`,
               background: item.bg, 
               color: item.color, 
               padding: "12px 18px", 
@@ -272,7 +285,6 @@ export default function CallCenterDashboard({ data, isLoading }) {
               minWidth: 0,
               border: item.bg === "white" ? "1px solid #E2E8F0" : "none" 
             }}>
-              {/* KIRI: Logo Section */}
               {item.logo && (
                 <div style={{
                   width: "60px",             
@@ -294,7 +306,6 @@ export default function CallCenterDashboard({ data, isLoading }) {
                 </div>
               )}
 
-              {/* KANAN: Text Section */}
               <div style={{ textAlign: item.label === "TOTAL TICKETS" ? "center" : "left", minWidth: 0 }}>
                 <div style={{ 
                   fontSize: "12px", 
@@ -330,7 +341,6 @@ export default function CallCenterDashboard({ data, isLoading }) {
           alignItems: "stretch" 
         }}>
           
-          {/* Daily Ticket Volume */}
           <div className="chart-card animate-card" style={{ animationDelay: "0.4s", background: "white", padding: "24px", borderRadius: "12px", border: "2px solid #E2E8F0", position: "relative", minWidth: 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <div style={{ fontWeight: "800", fontSize: "16px", color: "#1E3A8A" }}>Daily Ticket Volume</div>
@@ -417,7 +427,6 @@ export default function CallCenterDashboard({ data, isLoading }) {
             </div>
           </div>
 
-          {/* Top Issues */}
           <div className="chart-card animate-card" style={{ 
             animationDelay: "0.5s",
             background: "white", 
@@ -447,7 +456,6 @@ export default function CallCenterDashboard({ data, isLoading }) {
           marginBottom: "20px"
         }}>
           
-          {/* 1. TABLE LOG CALL CENTER */}
           <div className="chart-card animate-card" style={{ 
             animationDelay: "0.6s",
             background: "white", 
@@ -504,7 +512,6 @@ export default function CallCenterDashboard({ data, isLoading }) {
               </table>
             </div>
 
-            {/* UI PAGINATION */}
             <div style={{ 
               display: "flex", 
               justifyContent: "space-between", 
@@ -558,7 +565,6 @@ export default function CallCenterDashboard({ data, isLoading }) {
             </div>
           </div>
 
-          {/* 2. BEBAN KERJA PER DEPARTEMEN */}
           <div className="chart-card animate-card" style={{ 
             animationDelay: "0.7s",
             background: "white", 
@@ -583,7 +589,6 @@ export default function CallCenterDashboard({ data, isLoading }) {
 }
 
 // --- KOMPONEN PEMBANTU ---
-
 function VerticalBar({ val, label, color, max }) {
   const height = max > 0 ? (val / max) * 120 : 0;
   return (
