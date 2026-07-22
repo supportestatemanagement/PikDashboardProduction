@@ -162,7 +162,7 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      const res = await fetch("const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/login`", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -211,7 +211,7 @@ export default function Login({ onLogin }) {
             }} 
           />
         </div>
-
+x
         <div style={styles.title}>911 COMMAND CENTER</div>
         <div style={styles.subtitle}>Dashboard - Agung Sedayu Group</div>
 
