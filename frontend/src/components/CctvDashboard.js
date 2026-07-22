@@ -17,7 +17,7 @@ export default function CctvDashboard() {
 
   useEffect(() => {
     // Sesuaikan URL dengan port backend Flask Anda
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cctv-growth-data`)
+    fetch(`${process.env.REACT_APP_API_URL}/api/cctv-growth-data`)
       .then((res) => res.json())
       .then((res) => {
         if (res.status === "success") {

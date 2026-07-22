@@ -59,7 +59,7 @@ function CctvCard({ gate, stats, time }) {
       ctx.drawImage(video, 0, 0);
       const base64 = canvas.toDataURL("image/png");
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload-image`, {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/upload-image`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
