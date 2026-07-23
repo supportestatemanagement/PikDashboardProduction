@@ -330,7 +330,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
                   textTransform: "uppercase",
                   opacity: 0.7, 
                   marginTop: "2px",
-                  marginBottom: "0px",
+                  marginBottom: "0.5px",
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis",
                   overflow: "hidden",
