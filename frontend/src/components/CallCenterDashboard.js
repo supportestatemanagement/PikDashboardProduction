@@ -12,7 +12,8 @@ const navButtonStyle = {
   cursor: "pointer",
 };
 
-export default function CallCenterDashboard({ dateRange }) {
+// MENERIMA PROPS dateRange DAN isSidebarOpen DARI APP.JS
+export default function CallCenterDashboard({ dateRange, isSidebarOpen = true }) {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -254,6 +255,11 @@ export default function CallCenterDashboard({ dateRange }) {
     }
   };
 
+  // LOGIKA DINAMIS UKURAN BERDASARKAN STATUS SIDEBAR
+  const logoSize = isSidebarOpen ? "45px" : "65px";
+  const valFontSize = isSidebarOpen ? "20px" : "28px";
+  const labelFontSize = isSidebarOpen ? "10px" : "12px";
+
   return (
     <>
       <style>{`
@@ -297,12 +303,13 @@ export default function CallCenterDashboard({ dateRange }) {
             }}>
               {item.logo && (
                 <div style={{
-                  width: "65px",             
-                  height: "65px",            
+                  width: logoSize,             
+                  height: logoSize,            
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  flexShrink: 0
+                  flexShrink: 0,
+                  transition: "all 0.3s ease" // Animasi transisi ukuran logo
                 }}>
                   <img 
                     src={item.logo} 
@@ -318,7 +325,7 @@ export default function CallCenterDashboard({ dateRange }) {
 
               <div style={{ textAlign: item.label === "TOTAL TICKETS" ? "center" : "left", minWidth: 0, overflow: "hidden" }}>
                 <div style={{ 
-                  fontSize: "11px", 
+                  fontSize: labelFontSize, 
                   fontWeight: "800", 
                   lineHeight: "1.2",
                   textTransform: "uppercase",
@@ -326,19 +333,21 @@ export default function CallCenterDashboard({ dateRange }) {
                   marginBottom: "2px",
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis",
-                  overflow: "hidden"
+                  overflow: "hidden",
+                  transition: "all 0.3s ease" // Animasi transisi font label
                 }}>
                   {item.label}
                 </div>
                 <div style={{ 
-                  fontSize: "20px", 
+                  fontSize: valFontSize, 
                   fontWeight: "900",
                   letterSpacing: "-0.5px",
                   marginBottom: "3px",
                   color: item.color,
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis",
-                  overflow: "hidden"
+                  overflow: "hidden",
+                  transition: "all 0.3s ease" // Animasi transisi font value
                 }}>
                   {item.val}
                 </div>
