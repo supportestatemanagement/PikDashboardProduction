@@ -254,7 +254,6 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
     }
   };
 
-  // LOGIKA DINAMIS: Terbuka = Ukuran lebih kecil (45px), Tertutup = Normal (65px)
   const logoSize = isSidebarOpen ? "45px" : "65px";
   const valFontSize = isSidebarOpen ? "20px" : "24px";
   const labelFontSize = isSidebarOpen ? "10px" : "10px";
@@ -293,6 +292,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
               borderRadius: "12px", 
               display: "flex",
               alignItems: "center",
+              // Mengatur perataan vertikal agar isi kartu turun ke bawah/tengah secara konsisten
               justifyContent: item.label === "TOTAL TICKETS" ? "center" : "flex-start", 
               gap: "10px", 
               boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
@@ -322,14 +322,24 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
                 </div>
               )}
 
-              <div style={{ textAlign: item.label === "TOTAL TICKETS" ? "center" : "left", minWidth: 0, overflow: "hidden" }}>
+              {/* Tambahan display flex dan justify-content center agar teks turun ke bawah */}
+              <div style={{ 
+                textAlign: item.label === "TOTAL TICKETS" ? "center" : "left", 
+                minWidth: 0, 
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                height: "100%",
+                marginTop: "4px" // Menurunkan posisi teks sedikit ke bawah
+              }}>
                 <div style={{ 
                   fontSize: labelFontSize, 
                   fontWeight: "800", 
                   lineHeight: "1.2",
                   textTransform: "uppercase",
                   opacity: 0.7, 
-                  marginBottom: "0.5px",
+                  marginBottom: "2px",
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis",
                   overflow: "hidden",
@@ -341,7 +351,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
                   fontSize: valFontSize, 
                   fontWeight: "900",
                   letterSpacing: "-0.5px",
-                  marginBottom: "3px",
+                  marginBottom: "0px",
                   color: item.color,
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis",
