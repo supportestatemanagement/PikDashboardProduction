@@ -213,8 +213,8 @@ export default function CctvDashboard() {
         fontFamily: "Inter, sans-serif"
       }}>
         
-        {/* BARIS 1: TREND & TOTAL */}
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "20px" }}>
+        {/* BARIS 1: TREND & TOTAL - Diubah ke auto-fit untuk responsivitas */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
           
           {/* Card 1: Animasi dengan delay 0s */}
           <div className="animate-card" style={{ 
@@ -345,8 +345,8 @@ export default function CctvDashboard() {
           </div>
         </div>
 
-        {/* BARIS 2: ISSUES, AREA, & STATUS */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px" }}>
+        {/* BARIS 2: ISSUES, AREA, & STATUS - Diubah ke auto-fit untuk responsivitas */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "20px" }}>
           
           {/* Card 3: Animasi dengan delay 0.2s */}
           <div className="animate-card" style={{ animationDelay: "0.2s" }}>
@@ -386,8 +386,8 @@ export default function CctvDashboard() {
 
         </div>
 
-        {/* BARIS 3: LOCATIONS & DISTRIBUTION */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "20px" }}>
+        {/* BARIS 3: LOCATIONS & DISTRIBUTION - Diubah ke auto-fit untuk responsivitas */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
           
           {/* Card 6: Animasi dengan delay 0.5s */}
           <div className="animate-card" style={{ animationDelay: "0.5s" }}>

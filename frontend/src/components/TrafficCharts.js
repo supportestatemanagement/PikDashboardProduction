@@ -51,7 +51,7 @@ function LineChart({ hourly }) {
   const gridVals = [-200, -100, 0, 100, 200, 300, 400, 500, 600];
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" style={{ height: 240 }}>
+    <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" style={{ width: "100%", height: "240px" }}>
       <defs>
         <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.3" />
@@ -64,8 +64,8 @@ function LineChart({ hourly }) {
         if (y < PT || y > PT + cH) return null;
         return (
           <g key={v}>
-            <line x1={PL} y1={y} x2={W - PR} y2={y} className="grid-line" />
-            <text x={PL - 6} y={y + 4} textAnchor="end" className="axis-text">{v}</text>
+            <line x1={PL} y1={y} x2={W - PR} y2={y} stroke="#E2E8F0" strokeWidth="1" />
+            <text x={PL - 6} y={y + 4} textAnchor="end" fontSize="10" fill="#94A3B8">{v}</text>
           </g>
         );
       })}
@@ -88,7 +88,7 @@ function LineChart({ hourly }) {
               stroke="#fff" strokeWidth="1.5" />
             {showLabel && (
               <text x={toX(i)} y={toY(v) + (v < 0 ? 14 : -8)}
-                textAnchor="middle" className="axis-text"
+                textAnchor="middle" 
                 style={{ fill: v < 0 ? "#EF4444" : "#1E3A8A", fontSize: 9, fontWeight: 600 }}>
                 {v}
               </text>
@@ -99,7 +99,7 @@ function LineChart({ hourly }) {
 
       {/* X Axis */}
       {HOURS.map((h, i) => (
-        <text key={h} x={toX(i)} y={H - 4} textAnchor="middle" className="axis-text">{h}</text>
+        <text key={h} x={toX(i)} y={H - 4} textAnchor="middle" fontSize="10" fill="#94A3B8">{h}</text>
       ))}
     </svg>
   );
@@ -134,16 +134,16 @@ function DonutChart({ inPct, outPct }) {
         <text x={cx + 50} y={cy - 18} textAnchor="middle" style={{ fill: "#94A3B8", fontSize: 9, fontFamily: "Inter" }}>{outPct}%</text>
       </svg>
 
-      <div className="pie-legend">
-        <div className="pie-legend-item">
-          <div className="pie-legend-dot" style={{ background: "#06B6D4" }} />
-          <span className="pie-legend-label">IN</span>
-          <span className="pie-legend-val" style={{ color: "#06B6D4" }}>{inPct}%</span>
+      <div style={{ display: "flex", gap: "16px", marginTop: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#06B6D4" }} />
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#64748B" }}>IN</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#06B6D4" }}>{inPct}%</span>
         </div>
-        <div className="pie-legend-item">
-          <div className="pie-legend-dot" style={{ background: "#EC4899" }} />
-          <span className="pie-legend-label">OUT</span>
-          <span className="pie-legend-val" style={{ color: "#EC4899" }}>{outPct}%</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#EC4899" }} />
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#64748B" }}>OUT</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#EC4899" }}>{outPct}%</span>
         </div>
       </div>
     </div>
@@ -153,9 +153,9 @@ function DonutChart({ inPct, outPct }) {
 function BarSection({ title, total, gates, totalColor }) {
   const max = Math.max(...gates.map(g => g.value));
   return (
-    <div className="chart-card">
+    <div style={{ background: "white", padding: "16px", borderRadius: "12px", border: "1px solid #E2E8F0", display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <div className="chart-title">{title}</div>
+        <div style={{ fontSize: "12px", fontWeight: "800", color: "#1E3A8A", letterSpacing: "0.5px" }}>{title}</div>
         <div style={{
           background: totalColor, color: "#fff",
           borderRadius: 8, padding: "4px 14px",
@@ -168,7 +168,7 @@ function BarSection({ title, total, gates, totalColor }) {
         return (
           <div key={g.name} style={{ marginBottom: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-              <span style={{ fontSize: 10, color: "#64748B", fontWeight: 500 }}>{g.name}</span>
+              <span style={{ fontSize: 10, color: "#64748B", fontWeight: 600 }}>{g.name}</span>
               <span style={{ fontFamily: "'Rajdhani',sans-serif", fontSize: 14, fontWeight: 700, color: g.color }}>{label}</span>
             </div>
             <div style={{ height: 6, background: "#EEF2F7", borderRadius: 3 }}>
@@ -196,9 +196,9 @@ function GatePieChart() {
   });
 
   return (
-    <div className="chart-card">
-      <div className="chart-title" style={{ marginBottom: 12 }}>KONTRIBUSI GATE MASUK & KELUAR</div>
-      <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+    <div style={{ background: "white", padding: "16px", borderRadius: "12px", border: "1px solid #E2E8F0", minWidth: 0 }}>
+      <div style={{ fontSize: "12px", fontWeight: "800", color: "#1E3A8A", letterSpacing: "0.5px", marginBottom: 12 }}>KONTRIBUSI GATE MASUK & KELUAR</div>
+      <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap", justifyContent: "center" }}>
         <svg viewBox="0 0 140 140" style={{ width: 140, height: 140, flexShrink: 0 }}>
           <circle cx={cx} cy={cy} r={r} fill="none" stroke="#EEF2F7" strokeWidth={strokeW} />
           {slices.map(s => (
@@ -207,14 +207,14 @@ function GatePieChart() {
               strokeDashoffset={-s.offset}
               transform={`rotate(-90 ${cx} ${cy})`} />
           ))}
-          <text x={cx} y={cy - 5} textAnchor="middle" style={{ fill: "#94A3B8", fontSize: 8 }}>Total</text>
-          <text x={cx} y={cy + 8} textAnchor="middle" style={{ fill: "#1E3A8A", fontSize: 8, fontWeight: 700 }}>Gate</text>
+          <text x={cx} y={cy - 5} textAnchor="middle" style={{ fill: "#94A3B8", fontSize: 10 }}>Total</text>
+          <text x={cx} y={cy + 10} textAnchor="middle" style={{ fill: "#1E3A8A", fontSize: 12, fontWeight: 700 }}>Gate</text>
         </svg>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: "140px" }}>
           {GATE_PIE.map(g => (
             <div key={g.name} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: g.color, flexShrink: 0 }} />
-              <span style={{ fontSize: 9, color: "#4B5563", flex: 1, lineHeight: 1.2 }}>{g.pct}% {g.name}</span>
+              <span style={{ fontSize: 9, color: "#4B5563", flex: 1, lineHeight: 1.2, fontWeight: 600 }}>{g.pct}% {g.name}</span>
             </div>
           ))}
         </div>
@@ -235,30 +235,35 @@ export default function TrafficCharts({ data }) {
   const outPct = parseFloat((100 - inPct).toFixed(1));
 
   return (
-    <div>
-      {/* Line + Donut row */}
-      <div className="charts-row">
-        <div className="chart-card">
-          <div className="chart-title">KEPADATAN LALU LINTAS PER JAM</div>
-          <div className="chart-sub">
-            <span style={{ display: "inline-block", width: 24, height: 2, background: "#3B82F6", borderRadius: 1 }} />
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      {/* Line + Donut row (Grid Responsif Auto-Fit) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px" }}>
+        
+        {/* Line Chart Card */}
+        <div style={{ background: "white", padding: "20px", borderRadius: "12px", border: "1px solid #E2E8F0", minWidth: 0 }}>
+          <div style={{ fontSize: "14px", fontWeight: "800", color: "#1E3A8A", letterSpacing: "0.5px" }}>KEPADATAN LALU LINTAS PER JAM</div>
+          <div style={{ fontSize: "11px", color: "#64748B", display: "flex", alignItems: "center", gap: "6px", marginBottom: "16px", marginTop: "6px" }}>
+            <span style={{ display: "inline-block", width: 24, height: 3, background: "#3B82F6", borderRadius: 2 }} />
             Total Kendaraan
           </div>
-          <div style={{ marginTop: 12 }}>
-            <LineChart hourly={hourly} />
+          <div style={{ width: "100%", overflowX: "auto" }}>
+            <div style={{ minWidth: "500px" }}> 
+              <LineChart hourly={hourly} />
+            </div>
           </div>
         </div>
 
-        <div className="chart-card" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <div className="chart-title" style={{ width: "100%", textAlign: "left" }}>PRESENTASE KETIMPANGAN ARUS</div>
-          <div style={{ marginTop: 16 }}>
+        {/* Donut Chart Card */}
+        <div style={{ background: "white", padding: "20px", borderRadius: "12px", border: "1px solid #E2E8F0", display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0 }}>
+          <div style={{ fontSize: "14px", fontWeight: "800", color: "#1E3A8A", width: "100%", textAlign: "left", letterSpacing: "0.5px" }}>PRESENTASE KETIMPANGAN ARUS</div>
+          <div style={{ marginTop: "24px", width: "100%", display: "flex", justifyContent: "center", flex: 1, alignItems: "center" }}>
             <DonutChart inPct={inPct} outPct={outPct} />
           </div>
         </div>
       </div>
 
-      {/* Bar + Pie row */}
-      <div className="bottom-row">
+      {/* Bar + Pie row (Grid Responsif Auto-Fit) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
         <BarSection title="TOTAL KENDARAAN MASUK" total={totalIn} gates={GATES_IN} totalColor="#06B6D4" />
         <BarSection title="TOTAL KENDARAAN KELUAR" total={totalOut} gates={GATES_OUT} totalColor="#EC4899" />
         <GatePieChart />

@@ -1,8 +1,16 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
-export default function Navbar({ activeTab, setActiveTab, onLogout, dateRange, onDateChange }) {
-  
+export default function Navbar({ 
+  activeTab, 
+  setActiveTab, 
+  onLogout, 
+  dateRange, 
+  onDateChange,
+  isSidebarOpen,
+  setIsSidebarOpen,
+  isMobile 
+}) {
   const formatDate = (date) => {
     return date.toLocaleDateString("id-ID", {
       day: "numeric", month: "short", year: "numeric",
@@ -11,14 +19,10 @@ export default function Navbar({ activeTab, setActiveTab, onLogout, dateRange, o
   
   const [time, setTime] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const [startDate, setStartDate] = useState(formatDate(new Date()));
-  const [endDate, setEndDate] = useState(formatDate(new Date()));
   const [tempStart, setTempStart] = useState(dateRange?.start || new Date());
   const [tempEnd, setTempEnd] = useState(dateRange?.end || new Date());
   const [preset, setPreset] = useState("Bulan ini");
-  const dropdownRef = useRef(null);
 
-  // MAPPING JUDUL DASHBOARD YANG SUDAH DIPERBAIKI SECARA TERPISAH
   const tabTitles = {
     dashboard: "TRAFFIC DASHBOARD",
     traffic: "DATA TRAFFIC MONITORING",
@@ -61,174 +65,267 @@ export default function Navbar({ activeTab, setActiveTab, onLogout, dateRange, o
       case "7 hari terakhir":
         s.setDate(today.getDate() - 6);
         break;
+      case "Hari ini":
       default: break; 
     }
     setTempStart(s);
     setTempEnd(e);
   };
 
-  const handleManualDateChange = (date, isStart) => {
-    if (isStart) setTempStart(date);
-    else setTempEnd(date);
-    setPreset("Tetap");
-  };
-
   return (
     <>
-      <div style={{ 
-        position: "sticky", 
-        top: 0, 
-        zIndex: 1100, 
-        width: "100%", 
-        background: "#EEF2F7" 
+      {/* 1. TOP HEADER (FIXED NAVBAR DI ATAS) */}
+      <div style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        height: "60px",
+        background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: isMobile ? "0 10px" : "0 20px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        zIndex: 1100
       }}>
-        <nav className="navbar">
-          <div className="navbar-left">
-            <div className="navbar-logo">
-              <img 
-                src="/911cclogo.png" 
-                alt="911 Logo" 
-                style={{ 
-                  width: "36px",
-                  height: "36px", 
-                  objectFit: "contain" 
-                }} 
-              />
-            </div>
+        {/* HAMBURGER BUTTON & LOGO */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "white",
+              cursor: "pointer",
+              padding: "6px",
+              display: "flex",
+              alignItems: "center",
+              borderRadius: "4px"
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <img 
+              src="/911cclogo.png" 
+              alt="911 Logo" 
+              style={{ width: "34px", height: "34px", objectFit: "contain" }} 
+            />
             <div>
-              <div className="navbar-title">911 COMMAND CENTER</div>
-              <div className="navbar-subtitle">Dashboard - Agung Sedayu Group</div>
+              <div style={{ color: "white", fontSize: isMobile ? "12px" : "15px", fontWeight: "700", lineHeight: "1.2" }}>
+                911 COMMAND CENTER
+              </div>
+              {!isMobile && (
+                <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "10px" }}>
+                  Agung Sedayu Group
+                </div>
+              )}
             </div>
           </div>
+        </div>
 
-          {/* Navigasi Utama */}
-          <div className="navbar-tabs" style={{ gap: "8px" }}>
-            <button className={`tab-btn ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => setActiveTab("dashboard")}>Traffic</button>
-            <button className={`tab-btn ${activeTab === "traffic" ? "active" : ""}`} onClick={() => setActiveTab("traffic")}>Data Traffic</button>
-            <button className={`tab-btn ${activeTab === "callcenter" ? "active" : ""}`} onClick={() => setActiveTab("callcenter")}>Call Center</button>
-            <button className={`tab-btn ${activeTab === "cctv" ? "active" : ""}`} onClick={() => setActiveTab("cctv")}>CCTV</button>
-          </div>
+        {/* HEADER RIGHT (LIVE TIME, DATE FILTER, LOGOUT) */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* JUDUL AKTIF BILA MOBILE */}
+          {isMobile && (
+            <span style={{ color: "white", fontSize: "11px", fontWeight: "700" }}>
+              {tabTitles[activeTab]}
+            </span>
+          )}
 
-          <div className="navbar-right">
-            <div className="live-badge">
-              <div className="live-dot" />
-              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>{time}</span>
-              <span style={{ opacity: 0.6, fontSize: 10 }}>WIB</span>
-            </div>
-            <button className="btn-logout" onClick={onLogout}>
-              <span>⏻</span> Logout
-            </button>
-          </div>
-        </nav>
-
-        {/* Baris Judul dan Rentang Tanggal */}
-        <div className="date-bar" style={{ 
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center",
-          padding: "16px 24px", 
-          background: "white", 
-          borderBottom: "1px solid #E2E8F0"
-        }}>
-          {/* JUDUL DINAMIS BERDASARKAN activeTab */}
-          <div style={{ fontSize: "22px", fontWeight: "800", color: "#1E3A8A", textTransform: "uppercase" }}>
-            {tabTitles[activeTab] || "DASHBOARD"}
-          </div>
-
-          <div style={{ position: "relative" }}>
-            {activeTab === "callcenter" && dateRange && (
+          {/* RENTANG TANGGAL DATERANGE UNTUK CALL CENTER */}
+          {activeTab === "callcenter" && dateRange && (
+            <div style={{ position: "relative" }}>
               <div 
-                onClick={() => setIsOpen(!isOpen)} 
+                onClick={() => {
+                  if (!isOpen) {
+                    setTempStart(dateRange.start);
+                    setTempEnd(dateRange.end);
+                  }
+                  setIsOpen(!isOpen);
+                }} 
                 style={{ 
-                  padding: "8px 18px", 
-                  background: "#F8FAFC", 
-                  borderRadius: "10px", 
-                  border: "1px solid #E2E8F0", 
+                  padding: "6px 12px", 
+                  background: "rgba(255,255,255,0.2)", 
+                  borderRadius: "6px", 
                   cursor: "pointer", 
-                  fontWeight: 700, 
-                  color: "#1E3A8A",
+                  fontWeight: 600, 
+                  color: "white",
+                  fontSize: "11px",
                   display: "flex",
                   alignItems: "center",
-                  gap: "10px"
+                  gap: "6px"
                 }}
               >
                 <span>📅 {formatDate(dateRange.start)} - {formatDate(dateRange.end)}</span>
-                <span style={{ fontSize: "10px", opacity: 0.5 }}>▼</span>
+                <span style={{ fontSize: "8px" }}>▼</span>
               </div>
-            )}
-            
-            {isOpen && (
-              <div className="date-picker-dropdown" style={{ 
-                position: "absolute", 
-                top: "50px", 
-                right: "0", 
-                background: "white", 
-                padding: "24px", 
-                zIndex: 1200, 
-                borderRadius: "12px", 
-                boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", 
-                width: "550px",
-                border: "1px solid #E2E8F0"
-              }}>
-                <div style={{ marginBottom: "15px" }}>
-                  <label style={{ fontSize: "12px", fontWeight: 700, color: "#64748B", display: "block", marginBottom: "5px" }}>Pilih Preset:</label>
-                  <select 
-                    value={preset} 
-                    onChange={(e) => handlePresetChange(e.target.value)} 
-                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #E2E8F0", outline: "none" }}
-                  >
-                    <option value="Hari ini">Hari ini</option>
-                    <option value="Kemarin">Kemarin</option>
-                    <option value="Bulan ini">Bulan ini</option>
-                    <option value="7 hari terakhir">7 hari terakhir</option>
-                  </select>
-                </div>
 
-                <div style={{ display: "flex", gap: "20px" }}>
-                  <CalendarPart title="Mulai" selectedDate={tempStart} setSelectedDate={setTempStart} />
-                  <CalendarPart title="Akhir" selectedDate={tempEnd} setSelectedDate={setTempEnd} />
-                </div>
+              {isOpen && (
+                <div className="date-picker-dropdown" style={{ 
+                  position: "absolute", 
+                  top: "45px", 
+                  right: "0", 
+                  background: "white", 
+                  padding: "20px", 
+                  zIndex: 1200, 
+                  borderRadius: "12px", 
+                  boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)", 
+                  width: isMobile ? "290px" : "500px",
+                  border: "1px solid #E2E8F0",
+                  color: "#1E293B"
+                }}>
+                  <div style={{ marginBottom: "15px" }}>
+                    <label style={{ fontSize: "11px", fontWeight: 700, color: "#64748B", display: "block", marginBottom: "5px" }}>Pilih Preset:</label>
+                    <select 
+                      value={preset} 
+                      onChange={(e) => handlePresetChange(e.target.value)} 
+                      style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #E2E8F0", outline: "none", fontSize: "12px" }}
+                    >
+                      <option value="Hari ini">Hari ini</option>
+                      <option value="Kemarin">Kemarin</option>
+                      <option value="Bulan ini">Bulan ini</option>
+                      <option value="7 hari terakhir">7 hari terakhir</option>
+                    </select>
+                  </div>
 
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "24px" }}>
-                  <button 
-                    onClick={() => setIsOpen(false)}
-                    style={{ 
-                      padding: "10px 24px",
-                      borderRadius: "8px", 
-                      border: "none", 
-                      background: "#94A3B8",
-                      color: "white",
-                      fontWeight: 700, 
-                      cursor: "pointer",
-                      transition: "background 0.2s"
-                    }}
-                    onMouseEnter={(e) => e.target.style.background = "#64748B"}
-                    onMouseLeave={(e) => e.target.style.background = "#94A3B8"}
-                  >
-                    Batal
-                  </button>
+                  <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "15px" }}>
+                    <CalendarPart title="Mulai" selectedDate={tempStart} setSelectedDate={setTempStart} />
+                    <CalendarPart title="Akhir" selectedDate={tempEnd} setSelectedDate={setTempEnd} />
+                  </div>
 
-                  <button 
-                    onClick={handleApply}
-                    style={{ 
-                      padding: "10px 24px", 
-                      borderRadius: "8px", 
-                      border: "none", 
-                      background: "#3B82F6",
-                      color: "white", 
-                      fontWeight: 700, 
-                      cursor: "pointer",
-                      transition: "background 0.2s"
-                    }}
-                    onMouseEnter={(e) => e.target.style.background = "#2563EB"}
-                    onMouseLeave={(e) => e.target.style.background = "#3B82F6"}
-                  >
-                    Terapkan
-                  </button>
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
+                    <button onClick={() => setIsOpen(false)} style={{ padding: "8px 16px", borderRadius: "6px", border: "none", background: "#94A3B8", color: "white", fontWeight: 700, fontSize: "12px", cursor: "pointer" }}>Batal</button>
+                    <button onClick={handleApply} style={{ padding: "8px 16px", borderRadius: "6px", border: "none", background: "#3B82F6", color: "white", fontWeight: 700, fontSize: "12px", cursor: "pointer" }}>Terapkan</button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+          )}
+
+          {!isMobile && (
+            <div style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              gap: "6px", 
+              background: "rgba(255,255,255,0.15)", 
+              padding: "6px 12px", 
+              borderRadius: "6px", 
+              color: "white", 
+              fontSize: "12px" 
+            }}>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>{time}</span>
+              <span style={{ opacity: 0.6, fontSize: "10px" }}>WIB</span>
+            </div>
+          )}
+
+          <button 
+            onClick={onLogout}
+            style={{
+              background: "rgba(255,255,255,0.2)",
+              border: "none",
+              color: "white",
+              padding: "6px 12px",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "12px",
+              fontWeight: "600",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px"
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            {!isMobile && "Logout"}
+          </button>
+        </div>
+      </div>
+
+      {/* 2. SIDEBAR MENU (BISA DIBUKA / DITUTUP) */}
+      <div style={{
+        position: "fixed",
+        top: "60px",
+        left: 0,
+        bottom: 0,
+        width: isSidebarOpen ? "260px" : "0px",
+        background: "linear-gradient(180deg, #1e3c72 0%, #2a5298 100%)",
+        overflow: "hidden",
+        transition: "width 0.3s ease",
+        boxShadow: isSidebarOpen ? "4px 0 10px rgba(0,0,0,0.1)" : "none",
+        zIndex: 1000
+      }}>
+        <div style={{ width: "260px", padding: "20px 15px" }}>
+          <div style={{ 
+            fontSize: "11px", 
+            fontWeight: "700", 
+            color: "rgba(255,255,255,0.5)", 
+            textTransform: "uppercase", 
+            marginBottom: "15px",
+            letterSpacing: "1px"
+          }}>
+            Navigation Menu
           </div>
+
+          <nav style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {[
+              { id: "dashboard", label: "Traffic Dashboard", icon: "📊" },
+              { id: "traffic", label: "Data Traffic", icon: "🚦" },
+              { id: "callcenter", label: "Call Center", icon: "📞" },
+              { id: "cctv", label: "CCTV Dashboard", icon: "📹" },
+            ].map(tab => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if (isMobile) setIsSidebarOpen(false);
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    background: isActive ? "rgba(255,255,255,0.2)" : "transparent",
+                    border: "none",
+                    borderRadius: "8px",
+                    color: isActive ? "white" : "rgba(255,255,255,0.75)",
+                    fontSize: "13px",
+                    fontWeight: isActive ? "700" : "500",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    textAlign: "left",
+                    transition: "all 0.2s"
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+                      e.currentTarget.style.color = "white";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "rgba(255,255,255,0.75)";
+                    }
+                  }}
+                >
+                  <span style={{ fontSize: "16px" }}>{tab.icon}</span>
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
         </div>
       </div>
     </>
@@ -259,13 +356,12 @@ function CalendarPart({ title, selectedDate, setSelectedDate }) {
 
   return (
     <div style={{ flex: 1 }}>
-      <div style={{ textAlign: "center", fontSize: "11px", color: "#64748B", fontWeight: 600, marginBottom: "12px" }}>{title}</div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", padding: "0 5px" }}>
-        <div onClick={() => setView(view === "days" ? "years" : "days")} style={{ fontSize: "11px", fontWeight: 700, color: "#1E3A8A", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
+      <div style={{ textAlign: "center", fontSize: "11px", color: "#64748B", fontWeight: 600, marginBottom: "10px" }}>{title}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+        <div onClick={() => setView(view === "days" ? "years" : "days")} style={{ fontSize: "11px", fontWeight: 700, color: "#1E3A8A", cursor: "pointer" }}>
           {view === "days" ? `${currentMonthName} ${currentYear}` : "2016 – 2039"}
-          <span style={{ fontSize: "8px" }}>{view === "days" ? "▼" : "▲"}</span>
         </div>
-        <div style={{ display: "flex", gap: "10px", fontSize: "16px", cursor: "pointer", color: "#64748B", fontWeight: "bold" }}>
+        <div style={{ display: "flex", gap: "10px", fontSize: "14px", cursor: "pointer", color: "#64748B", fontWeight: "bold" }}>
           <span onClick={(e) => { e.stopPropagation(); changeMonth(-1); }}>‹</span>
           <span onClick={(e) => { e.stopPropagation(); changeMonth(1); }}>›</span>
         </div>
@@ -273,7 +369,7 @@ function CalendarPart({ title, selectedDate, setSelectedDate }) {
 
       {view === "days" ? (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "5px", textAlign: "center", marginBottom: "8px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "2px", textAlign: "center", marginBottom: "6px" }}>
             {["M", "S", "S", "R", "K", "J", "S"].map((d, i) => <span key={i} style={{ fontSize: "10px", color: "#94A3B8", fontWeight: 700 }}>{d}</span>)}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "2px" }}>
@@ -282,23 +378,16 @@ function CalendarPart({ title, selectedDate, setSelectedDate }) {
               const isSelected = selectedDate.getDate() === d && selectedDate.getMonth() === navDate.getMonth() && selectedDate.getFullYear() === navDate.getFullYear();
               return (
                 <div key={d} onClick={() => setSelectedDate(new Date(navDate.getFullYear(), navDate.getMonth(), d))}
-                  style={{ fontSize: "12px", padding: "6px 0", cursor: "pointer", borderRadius: "50%", textAlign: "center",
-                    background: isSelected ? "#3B82F6" : "transparent",
-                    color: isSelected ? "white" : "#1E293B", fontWeight: isSelected ? 700 : 400
-                  }}>{d}</div>
+                  style={{ fontSize: "11px", padding: "4px 0", cursor: "pointer", borderRadius: "50%", textAlign: "center", background: isSelected ? "#3B82F6" : "transparent", color: isSelected ? "white" : "#1E293B", fontWeight: isSelected ? 700 : 400 }}>{d}</div>
               );
             })}
           </div>
         </>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginTop: "10px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px" }}>
           {years.map(y => (
             <div key={y} onClick={() => selectYear(y)}
-              style={{ fontSize: "11px", padding: "4px 0", cursor: "pointer", textAlign: "center", borderRadius: "12px",
-                border: currentYear === y ? "2px solid #3B82F6" : "none",
-                background: currentYear === y ? "#3B82F6" : "transparent",
-                color: currentYear === y ? "white" : "#1E293B", fontWeight: currentYear === y ? 700 : 400
-              }}>{y}</div>
+              style={{ fontSize: "10px", padding: "4px 0", cursor: "pointer", textAlign: "center", borderRadius: "8px", background: currentYear === y ? "#3B82F6" : "transparent", color: currentYear === y ? "white" : "#1E293B", fontWeight: currentYear === y ? 700 : 400 }}>{y}</div>
           ))}
         </div>
       )}

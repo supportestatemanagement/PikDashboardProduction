@@ -42,7 +42,28 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [data, setData] = useState(INITIAL);
 
-  // PERBAIKAN: Set default rentang tanggal ke "Bulan ini"
+  // STATE UNTUK BUKA/TUTUP SIDEBAR (SEPERTI CONTOH)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth <= 768 : false);
+
+  // DETEKSI UKURAN LAYAR DEVISE
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const [dateRange, setDateRange] = useState(() => {
     const today = new Date();
     return {
@@ -59,7 +80,6 @@ export default function App() {
   useEffect(() => {
     if (!isLoggedIn) return;
 
-    // Simulasi traffic data
     const id = setInterval(() => {
       setData(prev => {
         const delta = Math.floor((Math.random() - 0.45) * 8);
@@ -91,16 +111,33 @@ export default function App() {
   }
 
   return (
-    <div className="app-wrapper">
+    <div className="app-wrapper" style={{ minHeight: "100vh", background: "#F1F5F9" }}>
+      {/* HEADER & SIDEBAR TERINTEGRASI DI NAVBAR */}
       <Navbar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         onLogout={handleLogout}
         dateRange={dateRange}
         onDateChange={setDateRange}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+        isMobile={isMobile}
       />
 
-      <div className="page-content">
+      {/* KONTEN UTAMA DENGAN MARGIN DINAMIS SESUAI STATUS SIDEBAR */}
+      <div 
+        className="page-content"
+        style={{
+          marginLeft: isMobile ? "0px" : (isSidebarOpen ? "260px" : "0px"),
+          paddingTop: "70px",
+          paddingLeft: "20px",
+          paddingRight: "20px",
+          paddingBottom: "20px",
+          transition: "margin-left 0.3s ease",
+          boxSizing: "border-box",
+          minHeight: "100vh"
+        }}
+      >
         <div style={{ display: activeTab === "dashboard" ? "block" : "none" }}>
           <AlertBanner stage={data.stage} />
           <SummaryCards data={data} />
@@ -113,7 +150,6 @@ export default function App() {
         </div>
 
         <div style={{ display: activeTab === "callcenter" ? "block" : "none" }}>
-          {/* MENGIRIM DATERANGE KE CALL CENTER DASHBOARD */}
           <CallCenterDashboard dateRange={dateRange} />
         </div>
 

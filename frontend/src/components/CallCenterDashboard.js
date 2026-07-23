@@ -277,8 +277,8 @@ export default function CallCenterDashboard({ dateRange }) {
       
       <div className="callcenter-container" style={{ padding: "2px", color: "#1E3A8A" }}>
         
-        {/* ROW 1: SUMMARY CARDS */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "10px", marginBottom: "20px" }}>
+        {/* ROW 1: SUMMARY CARDS - Diubah menjadi auto-fit untuk responsivitas */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "10px", marginBottom: "20px" }}>
           {[
             { label: "TOTAL TICKETS", val: processedData.totalTickets, bg: "#1E3A8A", color: "white", logo: null },
             { label: "", val: processedData.metrics.bgm, bg: "white", color: "black", logo: "/logobgm.png" },
@@ -350,10 +350,10 @@ export default function CallCenterDashboard({ dateRange }) {
           ))}
         </div>
 
-        {/* ROW 2: CHART & TOP ISSUES */}
+        {/* ROW 2: CHART & TOP ISSUES - Diubah menjadi auto-fit minmax */}
         <div style={{ 
           display: "grid", 
-          gridTemplateColumns: "1.8fr 1.2fr", 
+          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", 
           gap: "20px", 
           marginBottom: "20px",
           alignItems: "stretch" 
@@ -465,10 +465,10 @@ export default function CallCenterDashboard({ dateRange }) {
           </div>
         </div>
 
-        {/* ROW 3: LOG TABLE & DEPARTMENT WORKLOAD */}
+        {/* ROW 3: LOG TABLE & DEPARTMENT WORKLOAD - Diubah menjadi auto-fit minmax */}
         <div style={{ 
           display: "grid", 
-          gridTemplateColumns: "1.8fr 1.2fr", 
+          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", 
           gap: "20px",
           alignItems: "stretch",
           marginBottom: "20px"
