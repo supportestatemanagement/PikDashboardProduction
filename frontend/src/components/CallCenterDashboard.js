@@ -12,7 +12,6 @@ const navButtonStyle = {
   cursor: "pointer",
 };
 
-// MENERIMA PROPS dateRange DARI APP.JS
 export default function CallCenterDashboard({ dateRange }) {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,13 +57,11 @@ export default function CallCenterDashboard({ dateRange }) {
     return parseInt(`${year}${month}${day}`, 10);
   };
 
-  // FUNGSI BANTUAN UNTUK MEMBACA TANGGAL
   const parseSheetDate = (dateStr) => {
     if (!dateStr || dateStr === "N/A") return null;
     const parts = String(dateStr).trim().split(/[- /]/);
     if (parts.length < 3) return null;
 
-    // Jika format YYYY-MM-DD
     if (parts[0].length === 4) {
       return new Date(parts[0], parseInt(parts[1], 10) - 1, parts[2]);
     }
@@ -77,14 +74,12 @@ export default function CallCenterDashboard({ dateRange }) {
     const day = parseInt(parts[0], 10);
     const year = parseInt(parts[2], 10);
     
-    // Deteksi jika bulan ditulis angka ("07") atau huruf ("Jul")
     let monthStr = parts[1].toLowerCase();
     let month = mMap[monthStr] !== undefined ? mMap[monthStr] : (parseInt(parts[1], 10) - 1);
     
     return new Date(year, month, day);
   };
 
-  // LOGIKA FILTER BERDASARKAN RENTANG TANGGAL NAVBAR
   const filteredData = useMemo(() => {
     if (!data || data.length === 0 || !dateRange) return data;
     
@@ -94,7 +89,6 @@ export default function CallCenterDashboard({ dateRange }) {
       
       if (!rowDate) return false;
 
-      // Samakan waktu ke 00:00 agar perbandingan tanggal presisi
       const d = new Date(rowDate.getFullYear(), rowDate.getMonth(), rowDate.getDate()).getTime();
       const s = new Date(dateRange.start.getFullYear(), dateRange.start.getMonth(), dateRange.start.getDate()).getTime();
       const e = new Date(dateRange.end.getFullYear(), dateRange.end.getMonth(), dateRange.end.getDate()).getTime();
@@ -103,7 +97,6 @@ export default function CallCenterDashboard({ dateRange }) {
     });
   }, [data, dateRange]);
 
-  // SEMUA PROSES DATA SEKARANG MENGGUNAKAN filteredData BUKAN data MENTAH
   const processedData = useMemo(() => {
     if (!filteredData || filteredData.length === 0) {
       return { 
@@ -218,7 +211,6 @@ export default function CallCenterDashboard({ dateRange }) {
     );
   }
 
-  // UBAH VALIDASI KOSONG MENGGUNAKAN filteredData
   if (!filteredData || filteredData.length === 0) {
     return (
       <div style={{ padding: "50px", textAlign: "center", color: "#64748B" }}>
@@ -277,7 +269,7 @@ export default function CallCenterDashboard({ dateRange }) {
       
       <div className="callcenter-container" style={{ padding: "2px", color: "#1E3A8A" }}>
         
-        {/* ROW 1: SUMMARY CARDS - Diubah menjadi auto-fit untuk responsivitas */}
+        {/* ROW 1: SUMMARY CARDS - Ukuran Gap, Padding, dan Font disesuaikan */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "10px", marginBottom: "20px" }}>
           {[
             { label: "TOTAL TICKETS", val: processedData.totalTickets, bg: "#1E3A8A", color: "white", logo: null },
@@ -292,21 +284,21 @@ export default function CallCenterDashboard({ dateRange }) {
               animationDelay: `${i * 0.1}s`,
               background: item.bg, 
               color: item.color, 
-              padding: "12px 18px", 
+              padding: "12px 14px", 
               borderRadius: "12px", 
               display: "flex",
               alignItems: "center",
               justifyContent: item.label === "TOTAL TICKETS" ? "center" : "flex-start", 
-              gap: "25px", 
+              gap: "10px", 
               boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-              minHeight: "100px",
+              minHeight: "90px",
               minWidth: 0,
               border: item.bg === "white" ? "1px solid #E2E8F0" : "none" 
             }}>
               {item.logo && (
                 <div style={{
-                  width: "60px",             
-                  height: "60px",            
+                  width: "45px",             
+                  height: "45px",            
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -316,32 +308,37 @@ export default function CallCenterDashboard({ dateRange }) {
                     src={item.logo} 
                     alt={item.label} 
                     style={{ 
-                      width: "80px",
-                      height: "80px", 
+                      width: "100%",
+                      height: "100%", 
                       objectFit: "contain" 
                     }} 
                   />
                 </div>
               )}
 
-              <div style={{ textAlign: item.label === "TOTAL TICKETS" ? "center" : "left", minWidth: 0 }}>
+              <div style={{ textAlign: item.label === "TOTAL TICKETS" ? "center" : "left", minWidth: 0, overflow: "hidden" }}>
                 <div style={{ 
-                  fontSize: "12px", 
+                  fontSize: "11px", 
                   fontWeight: "800", 
                   lineHeight: "1.2",
                   textTransform: "uppercase",
                   opacity: 0.7, 
                   marginBottom: "2px",
-                  wordBreak: "break-word"
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis",
+                  overflow: "hidden"
                 }}>
                   {item.label}
                 </div>
                 <div style={{ 
-                  fontSize: "24px", 
+                  fontSize: "20px", 
                   fontWeight: "900",
                   letterSpacing: "-0.5px",
                   marginBottom: "3px",
-                  color: item.color 
+                  color: item.color,
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis",
+                  overflow: "hidden"
                 }}>
                   {item.val}
                 </div>
@@ -350,7 +347,7 @@ export default function CallCenterDashboard({ dateRange }) {
           ))}
         </div>
 
-        {/* ROW 2: CHART & TOP ISSUES - Diubah menjadi auto-fit minmax */}
+        {/* ROW 2: CHART & TOP ISSUES */}
         <div style={{ 
           display: "grid", 
           gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", 
@@ -465,7 +462,7 @@ export default function CallCenterDashboard({ dateRange }) {
           </div>
         </div>
 
-        {/* ROW 3: LOG TABLE & DEPARTMENT WORKLOAD - Diubah menjadi auto-fit minmax */}
+        {/* ROW 3: LOG TABLE & DEPARTMENT WORKLOAD */}
         <div style={{ 
           display: "grid", 
           gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", 

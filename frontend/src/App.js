@@ -38,15 +38,39 @@ function computeStage(vehicles) {
 }
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState("dashboard");
+  // BACA DARI LOCAL STORAGE AGAR TIDAK LOGOUT SAAT REFRESH
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("cc_isLoggedIn") === "true";
+    }
+    return false;
+  });
+
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("cc_activeTab") || "dashboard";
+    }
+    return "dashboard";
+  });
+
   const [data, setData] = useState(INITIAL);
 
-  // STATE UNTUK BUKA/TUTUP SIDEBAR (SEPERTI CONTOH)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth <= 768 : false);
 
-  // DETEKSI UKURAN LAYAR DEVISE
+  // SIMPAN STATE KE LOCAL STORAGE SAAT ADA PERUBAHAN
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cc_isLoggedIn", isLoggedIn);
+    }
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cc_activeTab", activeTab);
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth <= 768;
@@ -75,6 +99,10 @@ export default function App() {
   const handleLogout = () => {
     setIsLoggedIn(false);
     setActiveTab("dashboard");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("cc_isLoggedIn");
+      localStorage.removeItem("cc_activeTab");
+    }
   };
 
   useEffect(() => {
@@ -112,7 +140,6 @@ export default function App() {
 
   return (
     <div className="app-wrapper" style={{ minHeight: "100vh", background: "#F1F5F9" }}>
-      {/* HEADER & SIDEBAR TERINTEGRASI DI NAVBAR */}
       <Navbar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
@@ -124,7 +151,6 @@ export default function App() {
         isMobile={isMobile}
       />
 
-      {/* KONTEN UTAMA DENGAN MARGIN DINAMIS SESUAI STATUS SIDEBAR */}
       <div 
         className="page-content"
         style={{
