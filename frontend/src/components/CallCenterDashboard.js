@@ -256,8 +256,8 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
 
   // LOGIKA DINAMIS: Terbuka = Ukuran lebih kecil (45px), Tertutup = Normal (65px)
   const logoSize = isSidebarOpen ? "45px" : "65px";
-  const valFontSize = isSidebarOpen ? "20px" : "28px";
-  const labelFontSize = isSidebarOpen ? "10px" : "12px";
+  const valFontSize = isSidebarOpen ? "20px" : "24px";
+  const labelFontSize = isSidebarOpen ? "10px" : "10px";
 
   return (
     <>
