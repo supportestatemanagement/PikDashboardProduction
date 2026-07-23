@@ -297,8 +297,8 @@ export default function CallCenterDashboard({ dateRange }) {
             }}>
               {item.logo && (
                 <div style={{
-                  width: "45px",             
-                  height: "45px",            
+                  width: "65px",             
+                  height: "65px",            
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
