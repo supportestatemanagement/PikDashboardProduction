@@ -176,7 +176,10 @@ export default function App() {
         </div>
 
         <div style={{ display: activeTab === "callcenter" ? "block" : "none" }}>
-          <CallCenterDashboard dateRange={dateRange} />
+          <CallCenterDashboard
+            dateRange={dateRange} 
+            isSidebarOpen={isSidebarOpen}
+          />
         </div>
 
         <div style={{ display: activeTab === "cctv" ? "block" : "none" }}>

@@ -12,7 +12,6 @@ const navButtonStyle = {
   cursor: "pointer",
 };
 
-// MENERIMA PROPS dateRange DAN isSidebarOpen DARI APP.JS
 export default function CallCenterDashboard({ dateRange, isSidebarOpen = true }) {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -255,7 +254,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
     }
   };
 
-  // LOGIKA DINAMIS UKURAN BERDASARKAN STATUS SIDEBAR
+  // LOGIKA DINAMIS: Terbuka = Ukuran lebih kecil (45px), Tertutup = Normal (65px)
   const logoSize = isSidebarOpen ? "45px" : "65px";
   const valFontSize = isSidebarOpen ? "20px" : "28px";
   const labelFontSize = isSidebarOpen ? "10px" : "12px";
@@ -275,7 +274,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
       
       <div className="callcenter-container" style={{ padding: "2px", color: "#1E3A8A" }}>
         
-        {/* ROW 1: SUMMARY CARDS - Ukuran Gap, Padding, dan Font disesuaikan */}
+        {/* ROW 1: SUMMARY CARDS */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "10px", marginBottom: "20px" }}>
           {[
             { label: "TOTAL TICKETS", val: processedData.totalTickets, bg: "#1E3A8A", color: "white", logo: null },
@@ -309,7 +308,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
-                  transition: "all 0.3s ease" // Animasi transisi ukuran logo
+                  transition: "all 0.3s ease" 
                 }}>
                   <img 
                     src={item.logo} 
@@ -334,7 +333,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis",
                   overflow: "hidden",
-                  transition: "all 0.3s ease" // Animasi transisi font label
+                  transition: "all 0.3s ease"
                 }}>
                   {item.label}
                 </div>
@@ -347,7 +346,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis",
                   overflow: "hidden",
-                  transition: "all 0.3s ease" // Animasi transisi font value
+                  transition: "all 0.3s ease" 
                 }}>
                   {item.val}
                 </div>
