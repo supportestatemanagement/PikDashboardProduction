@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import "./global.css";
 import Login from "./components/Login";
 import Navbar from "./components/Navbar";
@@ -41,9 +41,8 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [data, setData] = useState(INITIAL);
-  const [callCenterData, setCallCenterData] = useState([]); // Inisialisasi array kosong
-  const [isLoading, setIsLoading] = useState(true); // State loading untuk memantau koneksi API
 
+  // State untuk menyimpan rentang tanggal dari Navbar
   const [dateRange, setDateRange] = useState({
     start: new Date(),
     end: new Date()
@@ -54,43 +53,8 @@ export default function App() {
     setActiveTab("dashboard");
   };
 
-  /**
-   * PERBAIKAN 1: Fungsi pembantu untuk membaca tanggal format DD/MM/YYYY dari sheet.
-   * Ini memastikan tanggal 01/01/2026 terbaca benar di semua browser.
-   */
-  const parseSheetDate = (dateStr) => {
-    if (!dateStr) return null;
-    const parts = String(dateStr).split('/');
-    if (parts.length === 3) {
-      // Format: Day, Month (0-indexed), Year
-      return new Date(parts[2], parts[1] - 1, parts[0]);
-    }
-    const d = new Date(dateStr);
-    return isNaN(d.getTime()) ? null : d;
-  };
-
-  /**
-   * PERBAIKAN 2: Fetch data dengan penanganan status Loading.
-   */
-  const fetchCCData = async () => {
-    try {
-      const response = await fetch("http://localhost:5000/api/call-center-data");
-      const result = await response.json();
-      if (result.status === "success") {
-        setCallCenterData(result.data);
-      }
-    } catch (error) {
-      console.error("Gagal mengambil data CC:", error);
-    } finally {
-      setIsLoading(false); // Selesai proses ambil data[cite: 28]
-    }
-  };
-
   useEffect(() => {
     if (!isLoggedIn) return;
-
-    fetchCCData();
-    const ccInterval = setInterval(fetchCCData, 15000); // Polling setiap 15 detik agar lebih ringan[cite: 23]
 
     // Simulasi traffic data
     const id = setInterval(() => {
@@ -116,32 +80,8 @@ export default function App() {
 
     return () => {
       clearInterval(id);
-      clearInterval(ccInterval);
     };
   }, [isLoggedIn]);
-
-
-  /**
-   * PERBAIKAN 3: Logika filter menggunakan parser khusus untuk akurasi tanggal.
-   */
-  const filteredCCData = useMemo(() => {
-    if (!callCenterData || callCenterData.length === 0) return [];
-    
-    return callCenterData.filter(row => {
-      const rowDateRaw = row.Tanggal || row.Date;
-      const rowDate = parseSheetDate(rowDateRaw); // Gunakan parser khusus[cite: 29]
-      
-      if (!rowDate) return false;
-
-      // Reset waktu ke 00:00:00 untuk perbandingan presisi tanggal[cite: 21]
-      const d = new Date(rowDate.getFullYear(), rowDate.getMonth(), rowDate.getDate()).getTime();
-      const s = new Date(dateRange.start.getFullYear(), dateRange.start.getMonth(), dateRange.start.getDate()).getTime();
-      const e = new Date(dateRange.end.getFullYear(), dateRange.end.getMonth(), dateRange.end.getDate()).getTime();
-
-      return d >= s && d <= e;
-    });
-  }, [callCenterData, dateRange]);
-
 
   if (!isLoggedIn) {
     return <Login onLogin={() => setIsLoggedIn(true)} />;
@@ -170,8 +110,8 @@ export default function App() {
         </div>
 
         <div style={{ display: activeTab === "callcenter" ? "block" : "none" }}>
-          {/* PERBAIKAN 4: Kirim filteredCCData dan status isLoading ke dashboard */}
-          <CallCenterDashboard data={filteredCCData} isLoading={isLoading} />
+          {/* MENGIRIM DATERANGE KE CALL CENTER DASHBOARD */}
+          <CallCenterDashboard dateRange={dateRange} />
         </div>
 
         <div style={{ display: activeTab === "cctv" ? "block" : "none" }}>

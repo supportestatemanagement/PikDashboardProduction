@@ -12,9 +12,8 @@ const navButtonStyle = {
   cursor: "pointer",
 };
 
-// Menghapus parameter props (data, isLoading) karena sekarang diurus sendiri
-export default function CallCenterDashboard() {
-  // STATE BARU UNTUK FETCH DATA
+// MENERIMA PROPS dateRange DARI APP.JS
+export default function CallCenterDashboard({ dateRange }) {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -22,7 +21,6 @@ export default function CallCenterDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // PROSES FETCH DATA (DIPINDAHKAN KEMARI)
   useEffect(() => {
     setIsLoading(true);
     fetch(`${process.env.REACT_APP_API_URL}/api/call-center-data`)
@@ -39,20 +37,15 @@ export default function CallCenterDashboard() {
       });
   }, []);
 
-  // Fungsi untuk mengubah tanggal menjadi angka (YYYYMMDD) agar bisa diurutkan
   const getSortValue = (dateStr) => {
     if (!dateStr || dateStr === "N/A") return 0;
-    
-    // Memecah berdasarkan strip (-), spasi ( ), atau garis miring (/)
     const parts = String(dateStr).trim().split(/[- /]/);
     if (parts.length < 3) return 0;
 
-    // Jika formatnya YYYY-MM-DD (Misal: 2026-07-01)
     if (parts[0].length === 4) {
       return parseInt(parts[0] + parts[1].padStart(2, '0') + parts[2].padStart(2, '0'), 10);
     }
     
-    // Jika formatnya DD-MMM-YYYY dari GSheets (Misal: 1-Jul-2026 atau 01 Jul 2026)
     const mMap = { 
       jan:"01", feb:"02", mar:"03", apr:"04", mei:"05", may:"05", jun:"06", jul:"07", 
       agu:"08", aug:"08", sep:"09", okt:"10", oct:"10", nov:"11", des:"12", dec:"12" 
@@ -65,8 +58,50 @@ export default function CallCenterDashboard() {
     return parseInt(`${year}${month}${day}`, 10);
   };
 
+  // FUNGSI BANTUAN UNTUK MEMBACA TANGGAL
+  const parseSheetDate = (dateStr) => {
+    if (!dateStr || dateStr === "N/A") return null;
+    const parts = String(dateStr).trim().split(/[- /]/);
+    if (parts.length < 3) return null;
+
+    if (parts[0].length === 4) {
+      return new Date(parts[0], parseInt(parts[1], 10) - 1, parts[2]);
+    }
+    
+    const mMap = { 
+      jan:0, feb:1, mar:2, apr:3, mei:4, may:4, jun:5, jul:6, 
+      agu:7, aug:7, sep:8, okt:9, oct:9, nov:10, des:11, dec:11 
+    };
+    
+    const day = parseInt(parts[0], 10);
+    const year = parseInt(parts[2], 10);
+    let month = isNaN(parts[1]) ? (mMap[parts[1].toLowerCase()] || 0) : (parseInt(parts[1], 10) - 1);
+    
+    return new Date(year, month, day);
+  };
+
+  // LOGIKA FILTER BERDASARKAN RENTANG TANGGAL NAVBAR
+  const filteredData = useMemo(() => {
+    if (!data || data.length === 0 || !dateRange) return data;
+    
+    return data.filter(row => {
+      const rowDateRaw = row.Tanggal || row.TANGGAL || row.Date || row.DATE;
+      const rowDate = parseSheetDate(rowDateRaw);
+      
+      if (!rowDate) return false;
+
+      // Samakan waktu ke 00:00 agar perbandingan tanggal presisi
+      const d = new Date(rowDate.getFullYear(), rowDate.getMonth(), rowDate.getDate()).getTime();
+      const s = new Date(dateRange.start.getFullYear(), dateRange.start.getMonth(), dateRange.start.getDate()).getTime();
+      const e = new Date(dateRange.end.getFullYear(), dateRange.end.getMonth(), dateRange.end.getDate()).getTime();
+
+      return d >= s && d <= e;
+    });
+  }, [data, dateRange]);
+
+  // SEMUA PROSES DATA SEKARANG MENGGUNAKAN filteredData BUKAN data MENTAH
   const processedData = useMemo(() => {
-    if (!data || data.length === 0) {
+    if (!filteredData || filteredData.length === 0) {
       return { 
         totalTickets: 0, 
         dailyData: [], 
@@ -77,35 +112,31 @@ export default function CallCenterDashboard() {
     }
 
     const getAreaTicketCount = (areaName) => {
-      return data.filter(row => 
+      return filteredData.filter(row => 
         row.Area && String(row.Area).toUpperCase().includes(areaName.toUpperCase())
       ).length;
     };
 
     const knownAreas = ["BGM", "GI", "RWI", "PIK 2", "PIK 2 MIL"];
-    const otherCount = data.filter(row => {
+    const otherCount = filteredData.filter(row => {
       if (!row.Area) return true;
       const areaStr = String(row.Area).toUpperCase();
       return !knownAreas.some(known => areaStr.includes(known));
     }).length;
 
-
     const detailedCounts = {};
-    data.forEach(row => {
-      // Ambil dari kolom Detailed, jika kosong beri label "N/A"
+    filteredData.forEach(row => {
       const detail = row.Detailed ? String(row.Detailed).toLowerCase() : "n/a";
       detailedCounts[detail] = (detailedCounts[detail] || 0) + 1;
     });
 
-    // Urutkan dan ambil 5 teratas
     const topIssues = Object.entries(detailedCounts)
       .map(([label, val]) => ({ label, val }))
       .sort((a, b) => b.val - a.val) 
       .slice(0, 5);
 
-    // Beban Kerja Departemen
     const deptCounts = {};
-    data.forEach(row => {
+    filteredData.forEach(row => {
       const deptName = row.Dept ? String(row.Dept).toUpperCase() : "N/A";
       deptCounts[deptName] = (deptCounts[deptName] || 0) + 1;
     });
@@ -114,29 +145,14 @@ export default function CallCenterDashboard() {
       .map(([label, val]) => ({ label, val }))
       .sort((a, b) => b.val - a.val);
 
-    // Ubah urutan jadi yang terbanyak
     const deptData = Object.entries(deptCounts)
       .map(([label, val]) => ({ label, val }))
       .sort((a, b) => b.val - a.val);
 
-    const totalTickets = data.length; 
-
-    const calculateAreaPerformance = (areaName) => {
-      const areaRows = data.filter(row => 
-        row.Area && String(row.Area).toUpperCase().includes(areaName.toUpperCase())
-      );
-      const totalInArea = areaRows.length;
-      const doneInArea = areaRows.filter(row => 
-        row.Status && String(row.Status).toUpperCase() === "DONE"
-      ).length;
-
-      if (totalInArea === 0) return "No Ticket";
-
-      return totalInArea > 0 ? ((doneInArea / totalInArea) * 100).toFixed(0) + "%" : "0%";
-    };
+    const totalTickets = filteredData.length; 
 
     const dailyMap = {};
-    data.forEach(row => {
+    filteredData.forEach(row => {
       const dateKey = row.Tanggal || row.Date || "N/A";
       dailyMap[dateKey] = (dailyMap[dateKey] || 0) + 1;
     });
@@ -162,28 +178,25 @@ export default function CallCenterDashboard() {
       },
       dailyData
     };
-  }, [data]);
+  }, [filteredData]);
 
-  // --- LOGIKA SORTING TABEL (Urutkan Tanggal lalu Waktu) ---
   const sortedData = useMemo(() => {
-    if (!data) return [];
+    if (!filteredData) return [];
     
-    return [...data].sort((a, b) => {
+    return [...filteredData].sort((a, b) => {
       const dateA = String(a.Tanggal || a.TANGGAL || a.Date || a.DATE || "");
       const dateB = String(b.Tanggal || b.TANGGAL || b.Date || b.DATE || "");
       
       const sortValA = getSortValue(dateA);
       const sortValB = getSortValue(dateB);
 
-      if (sortValA !== sortValB) {
-        return sortValA - sortValB; 
-      }
+      if (sortValA !== sortValB) return sortValA - sortValB; 
 
       const timeA = String(a.Waktu || a.WAKTU || a.Time || a.TIME || "");
       const timeB = String(b.Waktu || b.WAKTU || b.Time || b.TIME || "");
       return timeA.localeCompare(timeB);
     });
-  }, [data]);
+  }, [filteredData]);
 
   const totalPages = Math.ceil(sortedData.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -201,11 +214,12 @@ export default function CallCenterDashboard() {
     );
   }
 
-  if (!data || data.length === 0) {
+  // UBAH VALIDASI KOSONG MENGGUNAKAN filteredData
+  if (!filteredData || filteredData.length === 0) {
     return (
       <div style={{ padding: "50px", textAlign: "center", color: "#64748B" }}>
         <p style={{ fontSize: "18px", fontWeight: "bold" }}>⚠️ Tidak ada data ditemukan.</p>
-        <p>Gagal mengambil rekaman tiket atau data kosong.</p>
+        <p>Gagal mengambil rekaman tiket atau data rentang tanggal kosong.</p>
       </div>
     );
   }
