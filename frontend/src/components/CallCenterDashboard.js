@@ -331,7 +331,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
                 flexDirection: "column",
                 justifyContent: "center",
                 height: "100%",
-                marginTop: "4px" // Menurunkan posisi teks sedikit ke bawah
+                marginTop: item.label === "TOTAL TICKETS" ? "15px" : "0px"
               }}>
                 <div style={{ 
                   fontSize: labelFontSize, 
