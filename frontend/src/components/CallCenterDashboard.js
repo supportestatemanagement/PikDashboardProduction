@@ -331,7 +331,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
                 flexDirection: "column",
                 justifyContent: "center",
                 height: "100%",
-                marginTop: item.label === "TOTAL TICKETS" ? "6px" : "0px"
+                transform: item.label === "TOTAL TICKETS" ? "translateY(6px)" : "translateY(0px)"
               }}>
                 <div style={{ 
                   fontSize: labelFontSize, 
