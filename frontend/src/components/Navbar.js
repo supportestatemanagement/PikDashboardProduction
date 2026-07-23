@@ -15,7 +15,7 @@ export default function Navbar({ activeTab, setActiveTab, onLogout, dateRange, o
   const [endDate, setEndDate] = useState(formatDate(new Date()));
   const [tempStart, setTempStart] = useState(dateRange?.start || new Date());
   const [tempEnd, setTempEnd] = useState(dateRange?.end || new Date());
-  const [preset, setPreset] = useState("Hari ini");
+  const [preset, setPreset] = useState("Bulan ini");
   const dropdownRef = useRef(null);
 
   // MAPPING JUDUL DASHBOARD YANG SUDAH DIPERBAIKI SECARA TERPISAH

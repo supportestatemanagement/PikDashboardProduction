@@ -64,6 +64,7 @@ export default function CallCenterDashboard({ dateRange }) {
     const parts = String(dateStr).trim().split(/[- /]/);
     if (parts.length < 3) return null;
 
+    // Jika format YYYY-MM-DD
     if (parts[0].length === 4) {
       return new Date(parts[0], parseInt(parts[1], 10) - 1, parts[2]);
     }
@@ -75,7 +76,10 @@ export default function CallCenterDashboard({ dateRange }) {
     
     const day = parseInt(parts[0], 10);
     const year = parseInt(parts[2], 10);
-    let month = isNaN(parts[1]) ? (mMap[parts[1].toLowerCase()] || 0) : (parseInt(parts[1], 10) - 1);
+    
+    // Deteksi jika bulan ditulis angka ("07") atau huruf ("Jul")
+    let monthStr = parts[1].toLowerCase();
+    let month = mMap[monthStr] !== undefined ? mMap[monthStr] : (parseInt(parts[1], 10) - 1);
     
     return new Date(year, month, day);
   };

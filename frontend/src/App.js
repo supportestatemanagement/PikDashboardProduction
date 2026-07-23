@@ -42,10 +42,13 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [data, setData] = useState(INITIAL);
 
-  // State untuk menyimpan rentang tanggal dari Navbar
-  const [dateRange, setDateRange] = useState({
-    start: new Date(),
-    end: new Date()
+  // PERBAIKAN: Set default rentang tanggal ke "Bulan ini"
+  const [dateRange, setDateRange] = useState(() => {
+    const today = new Date();
+    return {
+      start: new Date(today.getFullYear(), today.getMonth(), 1),
+      end: new Date(today.getFullYear(), today.getMonth() + 1, 0)
+    };
   });
 
   const handleLogout = () => {
