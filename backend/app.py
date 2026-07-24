@@ -52,9 +52,9 @@ def login():
     return jsonify({"status": "failed"}), 401
 
 # Tambahkan di bagian setup Google Sheets
-cc_spreadsheet = client.open("Report Daily Call Center 2026")
-cc_sheet = cc_spreadsheet.worksheet("CC2026")
-cctv2026_sheet = cc_spreadsheet.worksheet("CCTV2026")
+cc_spreadsheet = client.open("Master Data Dashboard")
+cc_sheet = cc_spreadsheet.worksheet("CallCenter")
+cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
 
 # ================= GET CALL CENTER DATA =================
 @app.route('/api/call-center-data', methods=['GET'])
