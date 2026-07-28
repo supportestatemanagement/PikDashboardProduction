@@ -240,7 +240,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
               border: item.bg === "white" ? "1px solid #E2E8F0" : "none" 
             }}>
               {item.logo && (
-                <div style={{ width: logoSize, height: logoSize, display: "flex", marginleft: "4px", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.3s ease" }}>
+                <div style={{ width: logoSize, height: logoSize, display: "flex", marginleft: "16px", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.3s ease" }}>
                   <img src={item.logo} alt={item.label} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                 </div>
               )}
