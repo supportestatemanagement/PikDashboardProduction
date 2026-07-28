@@ -189,8 +189,8 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
   
   // UI sizing dynamics
   const logoSize = isSidebarOpen ? "80px" : "100px";
-  const valFontSize = isSidebarOpen ? "25px" : "45px";
-  const labelFontSize = "10px";
+  const valFontSize = isSidebarOpen ? "25px" : "35px";
+  const labelFontSize = "12px";
 
   const colors = {
     BGM: "#22C55E", // Hijau
@@ -228,7 +228,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
               animationDelay: `${i * 0.1}s`,
               background: item.bg, 
               color: item.color, 
-              padding: "12px 14px", 
+              padding: "14px 16px", 
               borderRadius: "12px", 
               display: "flex",
               alignItems: "center",
