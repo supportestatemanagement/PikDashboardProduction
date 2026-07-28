@@ -27,7 +27,8 @@ export default function Navbar({
     dashboard: "TRAFFIC DASHBOARD",
     traffic: "DATA TRAFFIC MONITORING",
     callcenter: "CALL CENTER DASHBOARD",
-    cctv: "CCTV DASHBOARD"
+    cctv: "CCTV DASHBOARD",
+    perparkiran: "PERPARKIRAN DASHBOARD"
   };
 
   useEffect(() => {
@@ -282,6 +283,7 @@ export default function Navbar({
               { id: "traffic", label: "Data Traffic", icon: "🚦" },
               { id: "callcenter", label: "Call Center", icon: "📞" },
               { id: "cctv", label: "CCTV Dashboard", icon: "📹" },
+              { id: "perparkiran", label: "Perparkiran", icon: "🅿️" },
             ].map(tab => {
               const isActive = activeTab === tab.id;
               return (

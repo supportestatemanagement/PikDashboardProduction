@@ -10,6 +10,7 @@ import HeatmapMap from "./components/HeatmapMap";
 import CctvGrid from "./components/CctvGrid";
 import CallCenterDashboard from "./components/CallCenterDashboard";
 import CctvDashboard from "./components/CctvDashboard";
+import PerparkiranDashboard from "./components/PerparkiranDashboard";
 
 const INITIAL = {
   totalVehicles: 1319,
@@ -185,6 +186,15 @@ export default function App() {
         <div style={{ display: activeTab === "cctv" ? "block" : "none" }}>
           <CctvDashboard />
         </div>
+
+        <div style={{ display: activeTab === "cctv" ? "block" : "none" }}>
+          <CctvDashboard />
+        </div>
+
+        <div style={{ display: activeTab === "perparkiran" ? "block" : "none" }}>
+          <PerparkiranDashboard />
+        </div>
+
       </div>
     </div>
   );

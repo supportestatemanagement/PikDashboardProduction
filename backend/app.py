@@ -55,6 +55,21 @@ def login():
 cc_spreadsheet = client.open("Master Data Dashboard")
 cc_sheet = cc_spreadsheet.worksheet("CallCenter")
 cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
+perparkiran_sheet = cc_spreadsheet.worksheet("Perparkiran")
+
+# ================= GET DATA PERPARKIRAN =================
+@app.route('/api/perparkiran-data', methods=['GET'])
+def get_perparkiran_data():
+    try:
+        # Mengambil semua record dari sheet Perparkiran
+        records = perparkiran_sheet.get_all_records()
+        
+        return jsonify({
+            "status": "success",
+            "data": records
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # ================= GET CALL CENTER DATA =================
 @app.route('/api/call-center-data', methods=['GET'])
