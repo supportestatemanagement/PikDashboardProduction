@@ -242,7 +242,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
             }}>
               {item.logo && (
                 // Typo marginleft diubah menjadi marginLeft dengan format camelCase.
-                <div style={{ width: logoSize, height: logoSize, display: "flex", marginLeft: "2px", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.3s ease" }}>
+                <div style={{ width: logoSize, height: logoSize, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.3s ease" }}>
                   <img src={item.logo} alt={item.label} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                 </div>
               )}
