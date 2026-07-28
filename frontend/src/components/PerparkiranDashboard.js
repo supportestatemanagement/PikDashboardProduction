@@ -188,7 +188,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
   }
   
   // UI sizing dynamics
-  const logoSize = isSidebarOpen ? "80px" : "100px";
+  const logoSize = isSidebarOpen ? "100px" : "120px";
   const valFontSize = isSidebarOpen ? "25px" : "35px";
   const labelFontSize = "12px";
 
@@ -228,11 +228,10 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
               animationDelay: `${i * 0.1}s`,
               background: item.bg, 
               color: item.color, 
-              padding: "14px 16px", 
+              padding: "12px 14px", 
               borderRadius: "12px", 
               display: "flex",
               alignItems: "center",
-              // Mengubah justifyContent menjadi 'center' secara default agar isi (termasuk logo) berada di tengah
               justifyContent: "center", 
               gap: "15px", 
               boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
@@ -241,7 +240,6 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
               border: item.bg === "white" ? "1px solid #E2E8F0" : "none" 
             }}>
               {item.logo && (
-                // Typo marginleft diubah menjadi marginLeft dengan format camelCase.
                 <div style={{ width: logoSize, height: logoSize, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.3s ease" }}>
                   <img src={item.logo} alt={item.label} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                 </div>
