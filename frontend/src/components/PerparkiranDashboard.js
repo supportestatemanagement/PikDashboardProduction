@@ -88,7 +88,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
         metrics: { bgm: 0, gi: 0, rwi: 0 },
         dailyData: [],
         topIssues: { bgm: [], gi: [], rwi: [] },
-        overallTop5Issues: [] // Tambahan state penampung Top 5
+        overallTop5Issues: [] 
       };
     }
 
@@ -232,7 +232,8 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
               borderRadius: "12px", 
               display: "flex",
               alignItems: "center",
-              justifyContent: item.label === "TOTAL TICKETS" ? "center" : "flex-start", 
+              // Mengubah justifyContent menjadi 'center' secara default agar isi (termasuk logo) berada di tengah
+              justifyContent: "center", 
               gap: "15px", 
               boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
               minHeight: "90px",
@@ -240,7 +241,8 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
               border: item.bg === "white" ? "1px solid #E2E8F0" : "none" 
             }}>
               {item.logo && (
-                <div style={{ width: logoSize, height: logoSize, display: "flex", marginleft: "16px", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.3s ease" }}>
+                // Typo marginleft diubah menjadi marginLeft dengan format camelCase.
+                <div style={{ width: logoSize, height: logoSize, display: "flex", marginLeft: "16px", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.3s ease" }}>
                   <img src={item.logo} alt={item.label} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                 </div>
               )}
@@ -265,6 +267,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
         }}>
           {/* Kolom Kiri: Daily Ticket Volume */}
           <div className="animate-card" style={{ animationDelay: "0.3s", background: "white", padding: "24px", borderRadius: "12px", border: "1px solid #E2E8F0", position: "relative", minWidth: 0 }}>
+            {/* Bagian Daily Volume (Sama seperti sebelumnya) */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <div style={{ fontWeight: "800", fontSize: "16px", color: "#1E3A8A" }}>Daily Ticket Volume</div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: "700", color: "#64748B" }}>
@@ -353,7 +356,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
               {processedData.overallTop5Issues.length === 0 ? (
                 <div style={{ margin: "auto", color: "#94A3B8" }}>Belum ada data isu.</div>
               ) : (
-                <TopIssueVerticalChart issues={processedData.overallTop5Issues} />
+                <TopIssueVerticalChart issues={processedData.overallTop5Issues} isSidebarOpen={isSidebarOpen} />
               )}
             </div>
           </div>
@@ -361,6 +364,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
 
         {/* ROW 3: ALL ISSUES PERPARKIRAN BY AREA */}
         <div className="animate-card" style={{ animationDelay: "0.5s", background: "white", borderRadius: "12px", padding: "24px", border: "1px solid #E2E8F0" }}>
+          {/* ... (Konten Row 3 tidak berubah) ... */}
           <div style={{ textAlign: "center", marginBottom: "30px" }}>
             <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#1E3A8A", margin: 0 }}>All Issues Perparkiran by Area</h2>
           </div>
@@ -427,7 +431,8 @@ function HorizontalBar({ label, val, max, color }) {
   );
 }
 
-function TopIssueVerticalChart({ issues }) {
+// Menerima parameter isSidebarOpen
+function TopIssueVerticalChart({ issues, isSidebarOpen }) {
   if (!issues || issues.length === 0) return null;
 
   const chartAreaHeight = 150; 
@@ -518,7 +523,8 @@ function TopIssueVerticalChart({ issues }) {
                 top: "105%", 
                 width: "100%",
                 textAlign: "center",
-                fontSize: "10px",
+                // Mengubah ukuran font secara dinamis berdasarkan state sidebar
+                fontSize: isSidebarOpen ? "8px" : "10px", 
                 fontWeight: "700",
                 color: "#475569",
                 lineHeight: "1.2",
