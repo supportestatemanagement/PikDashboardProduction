@@ -1,60 +1,183 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 
-export default function PerparkiranDashboard() {
-  const [bgmData, setBgmData] = useState([]);
-  const [giData, setGiData] = useState([]);
-  const [rwiData, setRwiData] = useState([]);
-  const [totalTiket, setTotalTiket] = useState(0);
-  const [loading, setLoading] = useState(true);
+export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }) {
+  const [data, setData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hoveredPoint, setHoveredPoint] = useState(null);
 
   useEffect(() => {
-    // Sesuaikan URL dengan port backend Flask Anda
+    setIsLoading(true);
     fetch(`${process.env.REACT_APP_API_URL || ""}/api/perparkiran-data`)
       .then((res) => res.json())
-      .then((res) => {
-        if (res.status === "success") {
-          const data = res.data;
-          setTotalTiket(data.length);
-
-          // Fungsi utilitas untuk memproses area tertentu
-          const processArea = (areaName) => {
-            const filtered = data.filter((item) => {
-              const area = String(item.Area || "").trim().toUpperCase();
-              return area === areaName;
-            });
-
-            const counts = {};
-            filtered.forEach((item) => {
-              const issue = String(item.Detailed || "").trim().toLowerCase();
-              if (issue && issue !== "unknown") {
-                counts[issue] = (counts[issue] || 0) + 1;
-              }
-            });
-
-            return Object.keys(counts)
-              .map((key) => ({ label: key, val: counts[key] }))
-              .sort((a, b) => b.val - a.val); // Sort descending
-          };
-
-          setBgmData(processArea("BGM"));
-          setGiData(processArea("GI"));
-          setRwiData(processArea("RWI"));
+      .then((result) => {
+        if (result.status === "success") {
+          setData(result.data);
         }
-        setLoading(false);
+        setIsLoading(false);
       })
       .catch((err) => {
-        console.error("Error fetching Perparkiran data:", err);
-        setLoading(false);
+        console.error("Gagal mengambil data Perparkiran:", err);
+        setIsLoading(false);
       });
   }, []);
 
-  // Menentukan nilai maksimum untuk skala progress bar
-  const maxBgm = bgmData.length > 0 ? bgmData[0].val : 10;
-  const maxGi = giData.length > 0 ? giData[0].val : 10;
-  const maxRwi = rwiData.length > 0 ? rwiData[0].val : 10;
+  // --- LOGIKA DATE PARSING & SORTING ---
+  // Penyesuaian format tanggal "1-Jan" yang dominan di sheet Perparkiran
+  const parseSheetDate = (dateStr) => {
+    if (!dateStr || dateStr === "N/A") return null;
+    const parts = String(dateStr).trim().split(/[- /]/);
+    if (parts.length < 2) return null;
 
-  // Warna sesuai gambar referensi
+    if (parts[0].length === 4) {
+      return new Date(parts[0], parseInt(parts[1], 10) - 1, parts[2] || 1);
+    }
+    
+    const mMap = { 
+      jan:0, feb:1, mar:2, apr:3, mei:4, may:4, jun:5, jul:6, 
+      agu:7, aug:7, sep:8, okt:9, oct:9, nov:10, des:11, dec:11 
+    };
+    
+    const day = parseInt(parts[0], 10);
+    let monthStr = parts[1].toLowerCase();
+    let month = mMap[monthStr] !== undefined ? mMap[monthStr] : 0;
+    // Jika format tidak mencantumkan tahun (misal: "1-Jan"), asumsikan 2026 atau current year
+    const year = parts.length > 2 ? parseInt(parts[2], 10) : 2026; 
+    
+    return new Date(year, month, day);
+  };
+
+  const getSortValue = (dateStr) => {
+    if (!dateStr || dateStr === "N/A") return 0;
+    const parts = String(dateStr).trim().split(/[- /]/);
+    if (parts.length < 2) return 0;
+    
+    const mMap = { 
+      jan:"01", feb:"02", mar:"03", apr:"04", mei:"05", may:"05", jun:"06", jul:"07", 
+      agu:"08", aug:"08", sep:"09", okt:"10", oct:"10", nov:"11", des:"12", dec:"12" 
+    };
+    
+    const day = parts[0].padStart(2, '0');
+    const month = mMap[parts[1].toLowerCase()] || "00";
+    const year = parts.length > 2 ? parts[2] : "2026";
+    
+    return parseInt(`${year}${month}${day}`, 10);
+  };
+
+  // --- FILTERING DATA ---
+  const filteredData = useMemo(() => {
+    if (!data || data.length === 0 || !dateRange) return data;
+    
+    return data.filter(row => {
+      const rowDateRaw = row.Date;
+      const rowDate = parseSheetDate(rowDateRaw);
+      
+      if (!rowDate) return false;
+
+      const d = new Date(rowDate.getFullYear(), rowDate.getMonth(), rowDate.getDate()).getTime();
+      const s = new Date(dateRange.start.getFullYear(), dateRange.start.getMonth(), dateRange.start.getDate()).getTime();
+      const e = new Date(dateRange.end.getFullYear(), dateRange.end.getMonth(), dateRange.end.getDate()).getTime();
+
+      return d >= s && d <= e;
+    });
+  }, [data, dateRange]);
+
+  // --- DATA PROCESSING (Aggregations) ---
+  const processedData = useMemo(() => {
+    if (!filteredData || filteredData.length === 0) {
+      return { 
+        totalTickets: 0, 
+        metrics: { bgm: 0, gi: 0, rwi: 0 },
+        dailyData: [],
+        topIssues: { bgm: [], gi: [], rwi: [] }
+      };
+    }
+
+    const getAreaCount = (areaName) => {
+      return filteredData.filter(row => String(row.Area || "").toUpperCase() === areaName).length;
+    };
+
+    const processIssues = (areaName) => {
+      const filtered = filteredData.filter(row => String(row.Area || "").toUpperCase() === areaName);
+      const counts = {};
+      filtered.forEach((item) => {
+        const issue = String(item.Detailed || "").trim().toLowerCase();
+        if (issue && issue !== "unknown" && issue !== "n/a" && issue !== "") {
+          counts[issue] = (counts[issue] || 0) + 1;
+        }
+      });
+      return Object.keys(counts)
+        .map((key) => ({ label: key, val: counts[key] }))
+        .sort((a, b) => b.val - a.val);
+    };
+
+    const dailyMap = {};
+    filteredData.forEach(row => {
+      const dateKey = row.Date || "N/A";
+      dailyMap[dateKey] = (dailyMap[dateKey] || 0) + 1;
+    });
+
+    const sortedDates = Object.keys(dailyMap).sort((a, b) => getSortValue(a) - getSortValue(b));
+    const dailyData = sortedDates.map(date => ({
+      date: date,
+      count: dailyMap[date]
+    }));
+
+    return {
+      totalTickets: filteredData.length,
+      metrics: {
+        bgm: getAreaCount("BGM"),
+        gi: getAreaCount("GI"),
+        rwi: getAreaCount("RWI")
+      },
+      dailyData,
+      topIssues: {
+        bgm: processIssues("BGM"),
+        gi: processIssues("GI"),
+        rwi: processIssues("RWI")
+      }
+    };
+  }, [filteredData]);
+
+  if (isLoading) {
+    return (
+      <div style={{ padding: "50px", textAlign: "center", color: "#1E3A8A", fontWeight: "bold" }}>
+        <div className="spinner" style={{ marginBottom: "10px", fontSize: "24px" }}>⌛</div>
+        Menghubungkan ke Server ...
+      </div>
+    );
+  }
+
+  // Pengaturan Chart SVG untuk Daily Ticket
+  const chartWidth = 800;
+  const chartHeight = 220; 
+  const padding = { top: 30, right: 20, bottom: 30, left: 30 };
+  
+  const dailyData = processedData.dailyData;
+  const rawMaxCount = dailyData.length > 0 ? Math.max(...dailyData.map(d => d.count)) : 10;
+  // Dinamis scale y-axis
+  const maxY = Math.ceil(rawMaxCount * 1.2) || 10; 
+
+  const points = dailyData.map((d, i) => {
+    const x = padding.left + (i * (chartWidth - padding.left - padding.right)) / (dailyData.length - 1 || 1);
+    const y = chartHeight - padding.bottom - (d.count * (chartHeight - padding.top - padding.bottom)) / maxY;
+    return { x, y, count: d.count, date: d.date };
+  });
+
+  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+  const areaPath = `${linePath} L ${points[points.length - 1]?.x} ${chartHeight - padding.bottom} L ${points[0]?.x} ${chartHeight - padding.bottom} Z`;
+
+  // Scale Y-Axis grid generator
+  const gridLevels = [];
+  for (let i = 0; i <= 5; i++) {
+    gridLevels.push(Math.round((maxY / 5) * i));
+  }
+  
+  // UI sizing dynamics
+  const logoSize = isSidebarOpen ? "45px" : "65px";
+  const valFontSize = isSidebarOpen ? "20px" : "24px";
+  const labelFontSize = "10px";
+
   const colors = {
     BGM: "#22C55E", // Hijau
     GI: "#3B82F6",  // Biru
@@ -72,106 +195,163 @@ export default function PerparkiranDashboard() {
           animation: slideFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           opacity: 0;
         }
-        /* Custom Scrollbar untuk area list isian yang panjang */
-        .custom-scroll::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-          background: #f1f5f9; 
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-          background: #cbd5e1; 
-          border-radius: 4px;
-        }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
       `}</style>
-
-      <div
-        style={{
-          padding: "2px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "20px",
-          background: "#F1F5F9",
-          minHeight: "100vh",
-          color: "#1E3A8A",
-          fontFamily: "Inter, sans-serif",
-        }}
-      >
-        {/* ROW 1: KARTU SUMMARY */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
-          
-          {/* Card Total Tiket */}
-          <div
-            className="animate-card"
-            style={{
-              animationDelay: "0s",
-              background: "#1E3A8A",
-              color: "white",
-              padding: "20px 24px",
-              borderRadius: "12px",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)",
+      
+      <div style={{ padding: "2px", color: "#1E3A8A", display: "flex", flexDirection: "column", gap: "20px" }}>
+        
+        {/* ROW 1: SUMMARY CARDS (Scoreboard) */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "10px" }}>
+          {[
+            { label: "TOTAL TICKETS", val: processedData.totalTickets, bg: "#1E3A8A", color: "white", logo: null },
+            { label: "BGM TICKET", val: processedData.metrics.bgm, bg: "white", color: "black", logo: "/logobgm.png" },
+            { label: "GI TICKET", val: processedData.metrics.gi, bg: "white", color: "black", logo: "/logogi2.png" },
+            { label: "RWI TICKET", val: processedData.metrics.rwi, bg: "white", color: "black", logo: "/logorwi2.png" },
+          ].map((item, i) => (
+            <div key={i} className="animate-card" style={{ 
+              animationDelay: `${i * 0.1}s`,
+              background: item.bg, 
+              color: item.color, 
+              padding: "12px 14px", 
+              borderRadius: "12px", 
               display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <div style={{ fontWeight: "800", fontSize: "14px", color: "white", marginBottom: "10px" }}>
-              Total Tiket Perparkiran
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1 }}>
-              <div style={{ fontSize: "68px", fontWeight: "800", fontFamily: "'Rajdhani', sans-serif", lineHeight: "1" }}>
-                {loading ? "..." : totalTiket}
+              alignItems: "center",
+              justifyContent: item.label === "TOTAL TICKETS" ? "center" : "flex-start", 
+              gap: "15px", 
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              minHeight: "90px",
+              minWidth: 0,
+              border: item.bg === "white" ? "1px solid #E2E8F0" : "none" 
+            }}>
+              {item.logo && (
+                <div style={{ width: logoSize, height: logoSize, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.3s ease" }}>
+                  <img src={item.logo} alt={item.label} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                </div>
+              )}
+              <div style={{ textAlign: item.label === "TOTAL TICKETS" ? "center" : "left", minWidth: 0, overflow: "hidden" }}>
+                <div style={{ fontSize: labelFontSize, fontWeight: "800", opacity: 0.7, textTransform: "uppercase", marginBottom: "0.5px" }}>
+                  {item.label}
+                </div>
+                <div style={{ fontSize: valFontSize, fontWeight: "900", color: item.color }}>
+                  {item.val}
+                </div>
               </div>
-              <div style={{ fontSize: "12px", opacity: 0.8, letterSpacing: "2px", marginTop: "5px" }}>
-                TIKET TERCATAT
-              </div>
             </div>
-          </div>
-          
-          {/* Anda bisa menambahkan card summary tambahan di sini jika diperlukan, seperti rata-rata harian dsb */}
+          ))}
         </div>
 
-        {/* ROW 2: TOP ISSUES PERPARKIRAN (Sesuai Referensi Gambar) */}
-        <div className="animate-card" style={{ animationDelay: "0.2s", background: "white", borderRadius: "12px", padding: "24px", border: "1px solid #E2E8F0" }}>
-          
+        {/* ROW 2: CHART DAILY VOLUME */}
+        <div className="animate-card" style={{ animationDelay: "0.3s", background: "white", padding: "24px", borderRadius: "12px", border: "1px solid #E2E8F0", position: "relative" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+            <div style={{ fontWeight: "800", fontSize: "16px", color: "#1E3A8A" }}>Daily Ticket Volume</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: "700", color: "#64748B" }}>
+              <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#3B82F6" }} /> Volume Tiket
+            </div>
+          </div>
+
+          <div style={{ width: "100%", position: "relative" }}>
+            {dailyData.length === 0 ? (
+               <div style={{ textAlign: "center", color: "#94A3B8", padding: "50px 0" }}>Tidak ada data pada rentang tanggal ini.</div>
+            ) : (
+              <svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" style={{ overflow: "visible" }}>
+                {gridLevels.map(v => {
+                  const y = chartHeight - padding.bottom - (v * (chartHeight - padding.top - padding.bottom)) / maxY;
+                  return (
+                    <g key={v}>
+                      <line x1={padding.left} y1={y} x2={chartWidth - padding.right} y2={y} stroke="#F1F5F9" strokeWidth="1" />
+                      <text x={padding.left - 10} y={y + 4} textAnchor="end" fontSize="11" fill="#94A3B8" fontWeight="600">{v}</text>
+                    </g>
+                  );
+                })}
+                
+                <path d={areaPath} fill="rgba(59, 130, 246, 0.1)" />
+                <path d={linePath} fill="none" stroke="#3B82F6" strokeWidth="2.5" />
+
+                {points.map((p, i) => (
+                  <g key={i}>
+                    {hoveredPoint?.date === p.date && (
+                      <line x1={p.x} y1={padding.top} x2={p.x} y2={chartHeight - padding.bottom} stroke="#3B82F6" strokeWidth="1" strokeDasharray="4" />
+                    )}
+                    <circle cx={p.x} cy={p.y} r="4" fill="#3B82F6" stroke="white" strokeWidth="2" />
+                    <text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="11" fontWeight="800" fill="#3B82F6">{p.count}</text>
+                    
+                    <circle 
+                      cx={p.x} cy={p.y} r="15" fill="transparent" style={{ cursor: "pointer" }}
+                      onMouseEnter={() => setHoveredPoint(p)}
+                      onMouseLeave={() => setHoveredPoint(null)}
+                    />
+
+                    {/* Label Tgl x-Axis */}
+                    <text x={p.x} y={chartHeight - padding.bottom + 15} fontSize="10" fill="#64748B" fontWeight="700" transform={`rotate(35, ${p.x}, ${chartHeight - padding.bottom + 15})`}>
+                      {p.date} 
+                    </text>
+                  </g>
+                ))}
+              </svg>
+            )}
+
+            {hoveredPoint && (
+              <div style={{
+                position: "absolute",
+                top: `calc(${(hoveredPoint.y / chartHeight) * 100}% - 80px)`, 
+                left: `calc(${(hoveredPoint.x / chartWidth) * 100}% - 60px)`,
+                background: "white", padding: "10px", borderRadius: "8px",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.15)", border: "1px solid #E2E8F0", zIndex: 100, pointerEvents: "none", minWidth: "120px"
+              }}>
+                <div style={{ fontSize: "11px", fontWeight: "bold", color: "#1E293B", marginBottom: "4px" }}>
+                  Tanggal: {hoveredPoint.date}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px" }}>
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#3B82F6" }} />
+                  <span style={{ color: "#3b3b3b", flex: 1 }}>Tiket Issued</span>
+                  <span style={{ fontWeight: "bold", color: "#1E293B" }}>{hoveredPoint.count}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ROW 3: TOP ISSUES PERPARKIRAN */}
+        <div className="animate-card" style={{ animationDelay: "0.4s", background: "white", borderRadius: "12px", padding: "24px", border: "1px solid #E2E8F0" }}>
           <div style={{ textAlign: "center", marginBottom: "30px" }}>
-            <h2 style={{ fontSize: "24px", fontWeight: "800", color: "#475569", margin: 0 }}>Top Issues Perparkiran</h2>
+            <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#1E3A8A", margin: 0 }}>Top Issues Perparkiran by Area</h2>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "30px" }}>
-            
-            {/* Kolom BGM */}
+            {/* BGM */}
             <div style={{ display: "flex", flexDirection: "column" }}>
               <h3 style={{ textAlign: "center", color: colors.BGM, fontSize: "20px", fontWeight: "800", marginBottom: "20px" }}>BGM</h3>
               <div className="custom-scroll" style={{ maxHeight: "400px", overflowY: "auto", paddingRight: "10px" }}>
-                {loading ? <div style={{ fontSize: "12px", textAlign: "center" }}>Memuat...</div> : null}
-                {bgmData.map((item, idx) => (
-                  <HorizontalBar key={idx} label={item.label} val={item.val} max={maxBgm} color={colors.BGM} />
+                {processedData.topIssues.bgm.length === 0 && <div style={{ textAlign: "center", fontSize:"12px", color:"#94a3b8" }}>N/A</div>}
+                {processedData.topIssues.bgm.map((item, idx) => (
+                  <HorizontalBar key={idx} label={item.label} val={item.val} max={processedData.topIssues.bgm[0]?.val} color={colors.BGM} />
                 ))}
               </div>
             </div>
 
-            {/* Kolom GI */}
+            {/* GI */}
             <div style={{ display: "flex", flexDirection: "column" }}>
               <h3 style={{ textAlign: "center", color: colors.GI, fontSize: "20px", fontWeight: "800", marginBottom: "20px" }}>GI</h3>
               <div className="custom-scroll" style={{ maxHeight: "400px", overflowY: "auto", paddingRight: "10px" }}>
-                {loading ? <div style={{ fontSize: "12px", textAlign: "center" }}>Memuat...</div> : null}
-                {giData.map((item, idx) => (
-                  <HorizontalBar key={idx} label={item.label} val={item.val} max={maxGi} color={colors.GI} />
+                {processedData.topIssues.gi.length === 0 && <div style={{ textAlign: "center", fontSize:"12px", color:"#94a3b8" }}>N/A</div>}
+                {processedData.topIssues.gi.map((item, idx) => (
+                  <HorizontalBar key={idx} label={item.label} val={item.val} max={processedData.topIssues.gi[0]?.val} color={colors.GI} />
                 ))}
               </div>
             </div>
 
-            {/* Kolom RWI */}
+            {/* RWI */}
             <div style={{ display: "flex", flexDirection: "column" }}>
               <h3 style={{ textAlign: "center", color: colors.RWI, fontSize: "20px", fontWeight: "800", marginBottom: "20px" }}>RWI</h3>
               <div className="custom-scroll" style={{ maxHeight: "400px", overflowY: "auto", paddingRight: "10px" }}>
-                {loading ? <div style={{ fontSize: "12px", textAlign: "center" }}>Memuat...</div> : null}
-                {rwiData.map((item, idx) => (
-                  <HorizontalBar key={idx} label={item.label} val={item.val} max={maxRwi} color={colors.RWI} />
+                {processedData.topIssues.rwi.length === 0 && <div style={{ textAlign: "center", fontSize:"12px", color:"#94a3b8" }}>N/A</div>}
+                {processedData.topIssues.rwi.map((item, idx) => (
+                  <HorizontalBar key={idx} label={item.label} val={item.val} max={processedData.topIssues.rwi[0]?.val} color={colors.RWI} />
                 ))}
               </div>
             </div>
-
           </div>
         </div>
 
@@ -184,52 +364,16 @@ export default function PerparkiranDashboard() {
 // UI HELPER COMPONENTS
 // ==========================================
 
-// Komponen Bar Chart Horizontal Custom untuk Top Issues
 function HorizontalBar({ label, val, max, color }) {
-  // Hindari pembagian dengan 0
   const percentage = max > 0 ? (val / max) * 100 : 0;
-  
   return (
     <div style={{ display: "flex", alignItems: "center", marginBottom: "12px", gap: "12px" }}>
-      {/* Area Text / Label (Di sebelah kiri) */}
-      <div 
-        style={{ 
-          width: "100px", 
-          flexShrink: 0,
-          textAlign: "right", 
-          fontSize: "10px", 
-          fontWeight: "600", 
-          color: "#475569", 
-          lineHeight: "1.3",
-          textTransform: "capitalize"
-        }}
-      >
+      <div style={{ width: "100px", flexShrink: 0, textAlign: "right", fontSize: "10px", fontWeight: "600", color: "#475569", lineHeight: "1.3", textTransform: "capitalize" }}>
         {label}
       </div>
-      
-      {/* Area Bar (Membentang ke kanan) */}
       <div style={{ flex: 1, display: "flex", alignItems: "center", position: "relative" }}>
-        {/* Background bayangan bar (opsional, jika ingin ada efek track) */}
         <div style={{ position: "absolute", width: "100%", height: "24px", background: "transparent" }}></div>
-        
-        {/* Bar Utama (Warna 3D effect tipis) */}
-        <div 
-          style={{ 
-            width: `${Math.max(percentage, 5)}%`, // Minimal 5% agar angka tetap terlihat
-            height: "26px", 
-            background: color, 
-            borderRadius: "0 4px 4px 0",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            paddingRight: "8px",
-            color: "white",
-            fontSize: "11px",
-            fontWeight: "bold",
-            transition: "width 0.8s ease-out",
-            boxShadow: "inset 0px -3px 0px rgba(0,0,0,0.15)" // Efek sedikit 3D seperti di foto
-          }}
-        >
+        <div style={{ width: `${Math.max(percentage, 5)}%`, height: "26px", background: color, borderRadius: "0 4px 4px 0", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "8px", color: "white", fontSize: "11px", fontWeight: "bold", transition: "width 0.8s ease-out", boxShadow: "inset 0px -3px 0px rgba(0,0,0,0.15)" }}>
           {val}
         </div>
       </div>

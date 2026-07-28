@@ -141,7 +141,7 @@ export default function Navbar({
           )}
 
           {/* RENTANG TANGGAL DATERANGE UNTUK CALL CENTER */}
-          {activeTab === "callcenter" && dateRange && (
+          {(activeTab === "callcenter" || activeTab === "perparkiran") && dateRange && (
             <div style={{ position: "relative" }}>
               <div 
                 onClick={() => {
