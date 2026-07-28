@@ -242,7 +242,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
             }}>
               {item.logo && (
                 // Typo marginleft diubah menjadi marginLeft dengan format camelCase.
-                <div style={{ width: logoSize, height: logoSize, display: "flex", marginLeft: "16px", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.3s ease" }}>
+                <div style={{ width: logoSize, height: logoSize, display: "flex", marginLeft: "10px", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.3s ease" }}>
                   <img src={item.logo} alt={item.label} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                 </div>
               )}
@@ -524,7 +524,7 @@ function TopIssueVerticalChart({ issues, isSidebarOpen }) {
                 width: "100%",
                 textAlign: "center",
                 // Mengubah ukuran font secara dinamis berdasarkan state sidebar
-                fontSize: isSidebarOpen ? "8px" : "10px", 
+                fontSize: isSidebarOpen ? "6px" : "10px", 
                 fontWeight: "700",
                 color: "#475569",
                 lineHeight: "1.2",
