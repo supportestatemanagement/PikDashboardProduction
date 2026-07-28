@@ -188,8 +188,8 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
   }
   
   // UI sizing dynamics
-  const logoSize = isSidebarOpen ? "45px" : "85px";
-  const valFontSize = isSidebarOpen ? "20px" : "24px";
+  const logoSize = isSidebarOpen ? "60px" : "100px";
+  const valFontSize = isSidebarOpen ? "40px" : "80px";
   const labelFontSize = "10px";
 
   const colors = {
