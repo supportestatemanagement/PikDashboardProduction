@@ -274,16 +274,16 @@ export default function Navbar({
             marginBottom: "15px",
             letterSpacing: "1px"
           }}>
-            Navigation Menu
+            DASHBOARD MENU
           </div>
 
           <nav style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {[
-              { id: "dashboard", label: "Traffic Dashboard", icon: "📊" },
+              { id: "dashboard", label: "Traffic", icon: "📊" },
               { id: "traffic", label: "Data Traffic", icon: "🚦" },
-              { id: "callcenter", label: "Call Center Dashboard", icon: "📞" },
-              { id: "cctv", label: "CCTV Dashboard", icon: "📹" },
-              { id: "perparkiran", label: "Parking Dashboard", icon: "🅿️" },
+              { id: "callcenter", label: "Call Center", icon: "📞" },
+              { id: "cctv", label: "CCTV", icon: "📹" },
+              { id: "perparkiran", label: "Parking", icon: "🅿️" },
             ].map(tab => {
               const isActive = activeTab === tab.id;
               return (
