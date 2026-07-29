@@ -188,7 +188,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
   }
   
   // UI sizing dynamics
-  const logoSize = isSidebarOpen ? "100px" : "120px";
+  const logoSize = isSidebarOpen ? "110px" : "140px";
   const valFontSize = isSidebarOpen ? "25px" : "35px";
   const labelFontSize = "12px";
 
@@ -228,12 +228,13 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
               animationDelay: `${i * 0.1}s`,
               background: item.bg, 
               color: item.color, 
-              padding: "12px 14px", 
+              padding: "12px 20px", // Padding kiri disesuaikan agar tidak terlalu menempel ke tepi
               borderRadius: "12px", 
               display: "flex",
               alignItems: "center",
-              justifyContent: "center", 
-              gap: "15px", 
+              // Mengubah posisi elemen menjadi flex-start untuk rata kiri (kecuali Total Tickets)
+              justifyContent: item.label === "TOTAL TICKETS" ? "center" : "flex-start", 
+              gap: "24px", // Menambahkan gap agar posisi angka menyesuaikan dan seimbang
               boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
               minHeight: "90px",
               minWidth: 0,
@@ -265,7 +266,6 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
         }}>
           {/* Kolom Kiri: Daily Ticket Volume */}
           <div className="animate-card" style={{ animationDelay: "0.3s", background: "white", padding: "24px", borderRadius: "12px", border: "1px solid #E2E8F0", position: "relative", minWidth: 0 }}>
-            {/* Bagian Daily Volume (Sama seperti sebelumnya) */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <div style={{ fontWeight: "800", fontSize: "16px", color: "#1E3A8A" }}>Daily Ticket Volume</div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: "700", color: "#64748B" }}>
@@ -362,7 +362,6 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
 
         {/* ROW 3: ALL ISSUES PERPARKIRAN BY AREA */}
         <div className="animate-card" style={{ animationDelay: "0.5s", background: "white", borderRadius: "12px", padding: "24px", border: "1px solid #E2E8F0" }}>
-          {/* ... (Konten Row 3 tidak berubah) ... */}
           <div style={{ textAlign: "center", marginBottom: "30px" }}>
             <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#1E3A8A", margin: 0 }}>All Issues Perparkiran by Area</h2>
           </div>
@@ -429,7 +428,6 @@ function HorizontalBar({ label, val, max, color }) {
   );
 }
 
-// Menerima parameter isSidebarOpen
 function TopIssueVerticalChart({ issues, isSidebarOpen }) {
   if (!issues || issues.length === 0) return null;
 
@@ -521,7 +519,6 @@ function TopIssueVerticalChart({ issues, isSidebarOpen }) {
                 top: "105%", 
                 width: "100%",
                 textAlign: "center",
-                // Mengubah ukuran font secara dinamis berdasarkan state sidebar
                 fontSize: isSidebarOpen ? "7px" : "10px", 
                 fontWeight: "700",
                 color: "#475569",
