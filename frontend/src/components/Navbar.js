@@ -23,14 +23,6 @@ export default function Navbar({
   const [tempEnd, setTempEnd] = useState(dateRange?.end || new Date());
   const [preset, setPreset] = useState("Bulan ini");
 
-  const tabTitles = {
-    dashboard: "TRAFFIC DASHBOARD",
-    traffic: "DATA TRAFFIC MONITORING",
-    callcenter: "CALL CENTER DASHBOARD",
-    cctv: "CCTV DASHBOARD",
-    perparkiran: "PERPARKIRAN DASHBOARD"
-  };
-
   useEffect(() => {
     const tick = () => {
       const now = new Date();
