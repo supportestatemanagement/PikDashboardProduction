@@ -169,7 +169,6 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
   
   const dailyData = processedData.dailyData;
   const rawMaxCount = dailyData.length > 0 ? Math.max(...dailyData.map(d => d.count)) : 10;
-  // Dinamis scale y-axis
   const maxY = Math.ceil(rawMaxCount * 1.2) || 10; 
 
   const points = dailyData.map((d, i) => {
@@ -193,9 +192,9 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
   const labelFontSize = "12px";
 
   const colors = {
-    BGM: "#22C55E", // Hijau
-    GI: "#3B82F6",  // Biru
-    RWI: "#EAB308", // Kuning/Gold
+    BGM: "#22C55E", 
+    GI: "#3B82F6",  
+    RWI: "#EAB308", 
   };
 
   return (
@@ -219,22 +218,24 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
         {/* ROW 1: SUMMARY CARDS (Scoreboard) */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "10px" }}>
           {[
-            { label: "TOTAL TICKETS", val: processedData.totalTickets, bg: "#1E3A8A", color: "white", logo: null },
-            { label: "", val: processedData.metrics.bgm, bg: "white", color: "black", logo: "/logobgm.png" },
-            { label: "", val: processedData.metrics.gi, bg: "white", color: "black", logo: "/logogi2.png" },
-            { label: "", val: processedData.metrics.rwi, bg: "white", color: "black", logo: "/logorwi2.png" },
+            // Menambahkan property "align" untuk mengatur posisi spesifik tiap card
+            { label: "TOTAL TICKETS", val: processedData.totalTickets, bg: "#1E3A8A", color: "white", logo: null, align: "center" },
+            { label: "", val: processedData.metrics.bgm, bg: "white", color: "black", logo: "/logobgm.png", align: "flex-start" },
+            { label: "", val: processedData.metrics.gi, bg: "white", color: "black", logo: "/logogi2.png", align: "center" },
+            { label: "", val: processedData.metrics.rwi, bg: "white", color: "black", logo: "/logorwi2.png", align: "center" },
           ].map((item, i) => (
             <div key={i} className="animate-card" style={{ 
               animationDelay: `${i * 0.1}s`,
               background: item.bg, 
               color: item.color, 
-              padding: "12px 20px", // Padding kiri disesuaikan agar tidak terlalu menempel ke tepi
+              padding: "12px 14px", 
+              // Memberikan sedikit padding kiri ekstra jika posisinya flex-start (BGM) agar tidak terlalu menempel ke tepi
+              paddingLeft: item.align === "flex-start" ? "24px" : "14px",
               borderRadius: "12px", 
               display: "flex",
               alignItems: "center",
-              // Mengubah posisi elemen menjadi flex-start untuk rata kiri (kecuali Total Tickets)
-              justifyContent: item.label === "TOTAL TICKETS" ? "center" : "flex-start", 
-              gap: "24px", // Menambahkan gap agar posisi angka menyesuaikan dan seimbang
+              justifyContent: item.align, // Menggunakan properti align dari array
+              gap: "15px", 
               boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
               minHeight: "90px",
               minWidth: 0,
