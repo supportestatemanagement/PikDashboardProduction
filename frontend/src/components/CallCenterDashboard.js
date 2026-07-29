@@ -367,7 +367,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
           
           <div className="chart-card animate-card" style={{ animationDelay: "0.4s", background: "white", padding: "24px", borderRadius: "12px", border: "2px solid #E2E8F0", position: "relative", minWidth: 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <div style={{ fontWeight: "800", fontSize: "16px", color: "#1E3A8A" }}>Daily Ticket Call Center</div>
+              <div style={{ fontWeight: "800", fontSize: "16px", color: "#1E3A8A" }}>Daily Call Center Tickets</div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: "700", color: "#64748B" }}>
                 <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#3B82F6" }} /> Total Ticket
               </div>

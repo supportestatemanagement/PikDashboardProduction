@@ -268,7 +268,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
           {/* Kolom Kiri: Daily Ticket Volume */}
           <div className="animate-card" style={{ animationDelay: "0.3s", background: "white", padding: "24px", borderRadius: "12px", border: "1px solid #E2E8F0", position: "relative", minWidth: 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <div style={{ fontWeight: "800", fontSize: "16px", color: "#1E3A8A" }}>Daily Ticket Perparkiran</div>
+              <div style={{ fontWeight: "800", fontSize: "16px", color: "#1E3A8A" }}>Daily Parking Tickets</div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: "700", color: "#64748B" }}>
                 <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#3B82F6" }} /> Volume Tiket
               </div>
@@ -364,7 +364,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
         {/* ROW 3: ALL ISSUES PERPARKIRAN BY AREA */}
         <div className="animate-card" style={{ animationDelay: "0.5s", background: "white", borderRadius: "12px", padding: "24px", border: "1px solid #E2E8F0" }}>
           <div style={{ textAlign: "center", marginBottom: "30px" }}>
-            <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#1E3A8A", margin: 0 }}>All Issues Perparkiran by Area</h2>
+            <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#1E3A8A", margin: 0 }}>All Parking Issues by Area</h2>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "30px" }}>
