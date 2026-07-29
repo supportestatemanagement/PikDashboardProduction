@@ -220,7 +220,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
           {[
             // Menambahkan properti "padLeft" untuk mempermudah pengaturan jarak kiri
             { label: "TOTAL TICKETS", val: processedData.totalTickets, bg: "#1E3A8A", color: "white", logo: null, align: "center" },
-            { label: "", val: processedData.metrics.bgm, bg: "white", color: "black", logo: "/logobgm.png", align: "flex-start", padLeft: "12px" },
+            { label: "", val: processedData.metrics.bgm, bg: "white", color: "black", logo: "/logobgm.png", align: "flex-start", padLeft: "15px" },
             { label: "", val: processedData.metrics.gi, bg: "white", color: "black", logo: "/logogi2.png", align: "center" },
             { label: "", val: processedData.metrics.rwi, bg: "white", color: "black", logo: "/logorwi2.png", align: "center" },
           ].map((item, i) => (
@@ -230,7 +230,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
               color: item.color, 
               padding: "12px 14px", 
               // Membaca nilai padLeft dari data di atas, jika tidak ada gunakan default 14px
-              paddingLeft: item.padLeft || "14px",
+              paddingLeft: item.padLeft || "15px",
               borderRadius: "12px", 
               display: "flex",
               alignItems: "center",
