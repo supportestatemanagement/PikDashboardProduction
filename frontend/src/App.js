@@ -187,10 +187,6 @@ export default function App() {
           <CctvDashboard />
         </div>
 
-        <div style={{ display: activeTab === "cctv" ? "block" : "none" }}>
-          <CctvDashboard />
-        </div>
-
         <div style={{ display: activeTab === "perparkiran" ? "block" : "none" }}>
           <PerparkiranDashboard 
             dateRange={dateRange} 
