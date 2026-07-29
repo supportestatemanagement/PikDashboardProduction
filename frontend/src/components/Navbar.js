@@ -281,9 +281,9 @@ export default function Navbar({
             {[
               { id: "dashboard", label: "Traffic Dashboard", icon: "📊" },
               { id: "traffic", label: "Data Traffic", icon: "🚦" },
-              { id: "callcenter", label: "Call Center", icon: "📞" },
+              { id: "callcenter", label: "Call Center Dashboard", icon: "📞" },
               { id: "cctv", label: "CCTV Dashboard", icon: "📹" },
-              { id: "perparkiran", label: "Perparkiran", icon: "🅿️" },
+              { id: "perparkiran", label: "Parking Dashboard", icon: "🅿️" },
             ].map(tab => {
               const isActive = activeTab === tab.id;
               return (
