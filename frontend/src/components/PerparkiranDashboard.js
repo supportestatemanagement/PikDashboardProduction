@@ -220,7 +220,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
           {[
             // Menambahkan properti "gap" agar jarak tiap card bisa diatur secara individu
             { label: "TOTAL TICKETS", val: processedData.totalTickets, bg: "#1E3A8A", color: "white", logo: null, align: "center", gap: "15px" },
-            { label: "", val: processedData.metrics.bgm, bg: "white", color: "black", logo: "/logobgm.png", align: "flex-start", padLeft: "20px", gap: "15px" },
+            { label: "", val: processedData.metrics.bgm, bg: "white", color: "black", logo: "/logobgm.png", align: "flex-start", padLeft: "30px", gap: "10px" },
             { label: "", val: processedData.metrics.gi, bg: "white", color: "black", logo: "/logogi2.png", align: "center", gap: "15px" },
             { label: "", val: processedData.metrics.rwi, bg: "white", color: "black", logo: "/logorwi2.png", align: "center", gap: "15px" },
           ].map((item, i) => (
