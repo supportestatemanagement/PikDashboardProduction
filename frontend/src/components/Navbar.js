@@ -125,12 +125,6 @@ export default function Navbar({
 
         {/* HEADER RIGHT (LIVE TIME, DATE FILTER, LOGOUT) */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {/* JUDUL AKTIF BILA MOBILE */}
-          {isMobile && (
-            <span style={{ color: "white", fontSize: "11px", fontWeight: "700" }}>
-              {tabTitles[activeTab]}
-            </span>
-          )}
 
           {/* RENTANG TANGGAL DATERANGE UNTUK CALL CENTER */}
           {(activeTab === "callcenter" || activeTab === "perparkiran") && dateRange && (
