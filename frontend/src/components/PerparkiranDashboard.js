@@ -218,9 +218,9 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
         {/* ROW 1: SUMMARY CARDS (Scoreboard) */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "10px" }}>
           {[
-            // Menambahkan property "align" untuk mengatur posisi spesifik tiap card
+            // Menambahkan properti "padLeft" untuk mempermudah pengaturan jarak kiri
             { label: "TOTAL TICKETS", val: processedData.totalTickets, bg: "#1E3A8A", color: "white", logo: null, align: "center" },
-            { label: "", val: processedData.metrics.bgm, bg: "white", color: "black", logo: "/logobgm.png", align: "flex-start" },
+            { label: "", val: processedData.metrics.bgm, bg: "white", color: "black", logo: "/logobgm.png", align: "flex-start", padLeft: "5px" },
             { label: "", val: processedData.metrics.gi, bg: "white", color: "black", logo: "/logogi2.png", align: "center" },
             { label: "", val: processedData.metrics.rwi, bg: "white", color: "black", logo: "/logorwi2.png", align: "center" },
           ].map((item, i) => (
@@ -229,12 +229,12 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
               background: item.bg, 
               color: item.color, 
               padding: "12px 14px", 
-              // Memberikan sedikit padding kiri ekstra jika posisinya flex-start (BGM) agar tidak terlalu menempel ke tepi
-              paddingLeft: item.align === "flex-start" ? "24px" : "14px",
+              // Membaca nilai padLeft dari data di atas, jika tidak ada gunakan default 14px
+              paddingLeft: item.padLeft || "14px",
               borderRadius: "12px", 
               display: "flex",
               alignItems: "center",
-              justifyContent: item.align, // Menggunakan properti align dari array
+              justifyContent: item.align, 
               gap: "15px", 
               boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
               minHeight: "90px",
