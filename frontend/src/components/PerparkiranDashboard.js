@@ -229,7 +229,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
               background: item.bg, 
               color: item.color, 
               padding: "12px 14px", 
-              paddingLeft: item.padLeft || "20px",
+              paddingLeft: item.padLeft || "15px",
               borderRadius: "12px", 
               display: "flex",
               alignItems: "center",
