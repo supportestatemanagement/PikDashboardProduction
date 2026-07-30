@@ -272,6 +272,103 @@ def submit_ocr():
         print(f"ERROR SUBMIT OCR [{data.get('gate', 'Unknown')}]:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
+
+# --- KONFIGURASI CROP HCP LAYAR PENUH (2 Kolom x 3 Baris) ---
+HCP_GRID_CONFIG = {
+    "Marina IN": (0.0, 0.0, 0.50, 0.33),         # Baris 1, Kolom 1
+    "Marina OUT": (0.50, 0.0, 1.00, 0.33),       # Baris 1, Kolom 2
+    "Toll Kataraja IN": (0.0, 0.33, 0.50, 0.66), # Baris 2, Kolom 1
+    "Toll Kataraja OUT": (0.50, 0.33, 1.00, 0.66) # Baris 2, Kolom 2
+}
+
+def extract_vehicle_data(text):
+    """
+    Mengekstrak nilai Mobil dan Motor dari hasil teks OCR.
+    Menggunakan [-1] untuk mengambil angka paling terakhir agar 
+    tidak salah mengambil angka dari kata seperti 'PIK2'.
+    """
+    mobil = 0
+    motor = 0
+    lines = text.upper().split("\n")
+    
+    for line in lines:
+        # 1. Cek Motor ("NON-MOTOR VEHICLE")
+        if "NON-MOTOR" in line or "NON MOTOR" in line or "NONMOTOR" in line:
+            nums = re.findall(r'\d+', line)
+            if nums:
+                motor = int(nums[-1])
+                
+        # 2. Cek Mobil ("VEHICLE") - Pastikan bukan baris Non-Motor
+        elif "VEHICLE" in line or "VEHIC" in line:
+            if "NON" not in line:
+                nums = re.findall(r'\d+', line)
+                if nums:
+                    mobil = int(nums[-1])
+                    
+    return mobil, motor
+
+@app.route('/api/upload-hcp-grid', methods=['POST'])
+def upload_hcp_grid():
+    try:
+        data = request.json
+        image_data = data['image']
+
+        header, encoded = image_data.split(",", 1)
+        img = Image.open(io.BytesIO(base64.b64decode(encoded)))
+        width, height = img.size
+
+        sheet = spreadsheet.worksheet("DATA")
+        now = datetime.datetime.now()
+        
+        date_str = now.strftime("%Y-%m-%d")
+        time_str = now.strftime("%H:%M:%S")
+        
+        results = []
+
+        for gate_name, crop_setting in HCP_GRID_CONFIG.items():
+            left = int(width * crop_setting[0])
+            top = int(height * crop_setting[1])
+            right = int(width * crop_setting[2])
+            bottom = int(height * crop_setting[3])
+            
+            img_cropped = img.crop((left, top, right, bottom))
+            
+            # Pre-processing
+            img_gray = img_cropped.convert('L')
+            img_resized = img_gray.resize((img_gray.width * 3, img_gray.height * 3), Image.Resampling.LANCZOS)
+            sharpen = ImageEnhance.Sharpness(img_resized)
+            img_sharp = sharpen.enhance(2.0)
+            img_binary = img_sharp.point(lambda p: 255 if p > 180 else 0)
+            img_final = ImageOps.invert(img_binary)
+
+            # OCR
+            config = r'--psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:- '
+            text = pytesseract.image_to_string(img_final, config=config)
+            
+            # Ekstraksi Data
+            mobil, motor = extract_vehicle_data(text)
+            total = mobil + motor
+            
+            print(f"DEBUG HCP {gate_name}: Mobil={mobil}, Motor={motor}, Total={total}")
+            
+            # Simpan ke Spreadsheet jika ada data yang terbaca
+            if total > 0:
+                sheet.append_row([
+                    date_str,
+                    time_str,
+                    gate_name,
+                    mobil,
+                    motor,
+                    total
+                ])
+                results.append({"gate": gate_name, "mobil": mobil, "motor": motor, "total": total})
+
+        return jsonify({"status": "success", "results": results})
+
+    except Exception as e:
+        print("ERROR BACKEND HCP GRID:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
     
 # Hapus baris app.run(port=5000, debug=True) yang ganda
 if __name__ == '__main__':
