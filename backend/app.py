@@ -191,15 +191,14 @@ def submit_ocr():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# --- Konfigurasi Grid HCP (2 Kolom x 3 Baris) ---
+# --- Konfigurasi Grid HCP (Area Crop Diperluas) ---
 HCP_GRID_CONFIG = {
     # Format: (Kiri, Atas, Kanan, Bawah)
-    # Kita hanya memotong 25% area dari masing-masing kotak grid 
-    # tempat teks counting berada untuk menghemat CPU Server
-    "Marina IN": (0.0, 0.0, 0.25, 0.15),           # Grid 1: Pojok kiri atas
-    "Marina OUT": (0.50, 0.0, 0.75, 0.15),         # Grid 2: Pojok kiri atas (di kolom 2)
-    "Toll Kataraja IN": (0.0, 0.33, 0.25, 0.48),   # Grid 3: Pojok kiri atas (di baris 2)
-    "Toll Kataraja OUT": (0.50, 0.33, 0.75, 0.48)  # Grid 4: Pojok kiri atas (di kolom 2, baris 2)
+    # Area diperluas menjadi 40% lebar dan 30% tinggi dari masing-masing kotak
+    "Marina IN": (0.0, 0.0, 0.40, 0.30),         
+    "Marina OUT": (0.50, 0.0, 0.90, 0.30),       
+    "Toll Kataraja IN": (0.0, 0.33, 0.40, 0.63), 
+    "Toll Kataraja OUT": (0.50, 0.33, 0.90, 0.63) 
 }
 
 def extract_vehicle_data(text):
@@ -217,6 +216,7 @@ def extract_vehicle_data(text):
                 nums = re.findall(r'\d+', line)
                 if nums:
                     mobil = int(nums[-1])
+                    
     return mobil, motor
 
 @app.route('/api/upload-hcp-grid', methods=['POST', 'OPTIONS'])
@@ -244,7 +244,6 @@ def upload_hcp_grid():
         results_log = []
 
         for gate_name, crop_setting in HCP_GRID_CONFIG.items():
-            # MENGGUNAKAN TRY-EXCEPT DI SINI AGAR ERROR 1 GATE TIDAK MEMBUAT SERVER CRASH
             try:
                 left = int(width * crop_setting[0])
                 top = int(height * crop_setting[1])
@@ -253,16 +252,10 @@ def upload_hcp_grid():
                 
                 img_cropped = img.crop((left, top, right, bottom))
                 
+                # OPTIMASI RAM FATAL: Hapus Resize & Sharpen. 
+                # Langsung ubah ke hitam putih pekat (Binary)
                 img_gray = img_cropped.convert('L')
-                
-                # PERBAIKAN FATAL: Menurunkan resize dari x3 menjadi x1.5 agar RAM Server tidak meledak
-                new_width = int(img_gray.width * 1.5)
-                new_height = int(img_gray.height * 1.5)
-                img_resized = img_gray.resize((new_width, new_height), Image.Resampling.LANCZOS)
-                
-                sharpen = ImageEnhance.Sharpness(img_resized)
-                img_sharp = sharpen.enhance(2.0)
-                img_binary = img_sharp.point(lambda p: 255 if p > 180 else 0)
+                img_binary = img_gray.point(lambda p: 255 if p > 160 else 0)
                 img_final = ImageOps.invert(img_binary)
 
                 config = r'--psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:- '
@@ -271,7 +264,9 @@ def upload_hcp_grid():
                 mobil, motor = extract_vehicle_data(text)
                 total = mobil + motor
                 
-                print(f"[OCR HCP] {gate_name}: Mobil={mobil}, Motor={motor}, Total={total}")
+                # Menampilkan log mentah dari Tesseract untuk keperluan debugging
+                print(f"\n[RAW TEXT {gate_name}]\n{text.strip()}")
+                print(f"[OCR HASIL] {gate_name}: Mobil={mobil}, Motor={motor}, Total={total}")
                 
                 if total > 0:
                     row = [timestamp_str, date_str, time_str, gate_name, mobil, motor, total]
@@ -280,10 +275,13 @@ def upload_hcp_grid():
 
             except Exception as inner_e:
                 print(f"[OCR ERROR] Gagal memproses {gate_name}: {inner_e}")
-                continue # Lanjut ke kamera berikutnya meski kamera ini gagal
+                continue 
 
         if rows_to_insert:
             sheet.append_rows(rows_to_insert)
+
+        # Menutup file gambar agar memori RAM langsung dikosongkan (Mencegah RAM Leak)
+        img.close()
 
         return jsonify({"status": "success", "results": results_log})
 
