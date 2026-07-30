@@ -106,7 +106,7 @@ function ShareScreenCard({ title, apiEndpoint, intervalMs }) {
 
 export default function CctvGrid() {
   // 30 menit = 30 * 60 * 1000 milidetik = 1.800.000 ms
-  const THIRTY_MINUTES = 1800000;
+  const THIRTY_MINUTES = 10000;
 
   return (
     <div style={{ padding: "10px" }}>
