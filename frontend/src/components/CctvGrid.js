@@ -1,42 +1,20 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 
-const GATES = [
-  { id: 1, name: "Marina In", zone: "Zona A" },
-  { id: 2, name: "Marina Out", zone: "Zona A" },
-  { id: 3, name: "Linggi In 1", zone: "Zona A" },
-  { id: 4, name: "Linggi In 2", zone: "Zona A" },
-  { id: 5, name: "Linggi Out", zone: "Zona A" },
-  { id: 6, name: "Tataban In", zone: "Zona B" },
-  { id: 7, name: "Tataban Out", zone: "Zona B" },
-  { id: 8, name: "Baruyungan In", zone: "Zona B" },
-  { id: 9, name: "Baruyungan Out", zone: "Zona C" },
-  { id: 10, name: "Toll Kataraja In", zone: "Zona C" },
-  { id: 11, name: "Toll Kataraja Out", zone: "Zona C" },
-];
-
-function rand(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function CctvCard({ gate, stats, time }) {
+// Komponen Reusable untuk Share Screen
+function ShareScreenCard({ title, apiEndpoint, intervalMs }) {
   const [stream, setStream] = useState(null);
-
   const videoRef = useRef(null);
-  const lastMinuteRef = useRef(null);
 
   const handleShareScreen = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-      });
+      const mediaStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
       setStream(mediaStream);
     } catch (err) {
-      console.error("Error share screen:", err);
+      console.error(`Error share screen ${title}:`, err);
     }
   };
 
-  // Fungsi baru untuk menghentikan screen sharing
   const handleStopShare = () => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
@@ -57,43 +35,50 @@ function CctvCard({ gate, stats, time }) {
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(video, 0, 0);
-      const base64 = canvas.toDataURL("image/png");
+      
+      // JPEG dengan kompresi 70% agar ringan dikirim dan lolos CORS
+      const base64 = canvas.toDataURL("image/jpeg", 0.7); 
 
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/upload-image`, {
+      console.log(`[CAPTURE] Mengirim data ${title} ke server...`);
+      
+      const res = await fetch(`${process.env.REACT_APP_API_URL}${apiEndpoint}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          gate: gate.name,
-          image: base64,
-        }),
+        mode: "cors",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({ image: base64 }),
       });
 
+      if (!res.ok) {
+        throw new Error(`Server merespons dengan status: ${res.status}`);
+      }
+
       const data = await res.json();
-      console.log("SUCCESS:", data);
+      console.log(`[SUCCESS] ${title}:`, data);
     } catch (err) {
-      console.error("FETCH ERROR:", err);
+      console.error(`[FETCH ERROR] ${title}:`, err);
     }
   };
 
   useEffect(() => {
     if (!stream) return;
+    
+    // Looping interval
     const interval = setInterval(() => {
-      const now = new Date();
-      if (now.getSeconds() % 10 === 0 && lastMinuteRef.current !== now.getSeconds()) {
-        lastMinuteRef.current = now.getSeconds();
-        if (videoRef.current) {
-          captureAndSend(videoRef.current);
-        }
+      if (videoRef.current) {
+        captureAndSend(videoRef.current);
       }
-    }, 1000);
+    }, intervalMs);
+    
     return () => clearInterval(interval);
-  }, [stream]);
+  }, [stream, intervalMs]);
 
-  // Gaya tombol kecil dan berwarna
   const buttonStyle = {
-    padding: "3px 8px",
-    fontSize: "10px",
-    borderRadius: "4px",
+    padding: "8px 16px",
+    fontSize: "12px",
+    borderRadius: "6px",
     border: "none",
     cursor: "pointer",
     color: "white",
@@ -102,76 +87,56 @@ function CctvCard({ gate, stats, time }) {
   };
 
   return (
-    <div className="cctv-card">
-      <div className="cctv-header">
-        <span>{gate.name}</span>
-        {/* Tombol kondisional: Share atau Stop Share */}
+    <div style={{ background: "white", borderRadius: "12px", border: "1px solid #E2E8F0", overflow: "hidden", display: "flex", flexDirection: "column", height: "100%", minHeight: "450px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", background: "#1E3A8A", color: "white" }}>
+        <span style={{ fontWeight: "800", letterSpacing: "0.5px" }}>{title}</span>
         {!stream ? (
-          <button 
-            onClick={handleShareScreen} 
-            style={{ ...buttonStyle, backgroundColor: "#3B82F6" }}
-          >
-            Share
-          </button>
+          <button onClick={handleShareScreen} style={{ ...buttonStyle, backgroundColor: "#10B981" }}>Mulai Share Screen</button>
         ) : (
-          <button 
-            onClick={handleStopShare} 
-            style={{ ...buttonStyle, backgroundColor: "#EF4444" }}
-          >
-            Stop Share
-          </button>
+          <button onClick={handleStopShare} style={{ ...buttonStyle, backgroundColor: "#EF4444" }}>Stop Share</button>
         )}
       </div>
-
-      <div className="cctv-screen">
+      
+      <div style={{ flex: 1, background: "#0F172A", position: "relative" }}>
         {stream ? (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
+          <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "contain", position: "absolute", top: 0, left: 0 }} />
         ) : (
-          <div className="cctv-share-text">NO SIGNAL</div>
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: "#475569", fontWeight: "bold", textAlign: "center" }}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginBottom: "10px", opacity: 0.5, margin: "0 auto" }}>
+              <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+              <polyline points="17 2 12 7 7 2"></polyline>
+            </svg>
+            <div>BELUM ADA TANGKAPAN LAYAR</div>
+          </div>
         )}
-
-        <span className="cctv-timestamp">{time}</span>
-
-        {/* Teks statistik IN/OUT telah dihapus sesuai instruksi[cite: 36] */}
       </div>
     </div>
   );
 }
 
 export default function CctvGrid() {
-  const [stats, setStats] = useState(() =>
-    GATES.reduce((acc, g) => {
-      acc[g.id] = { in: rand(40, 400), out: rand(30, 350) };
-      return acc;
-    }, {})
-  );
-
-  const [time, setTime] = useState("");
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date();
-      setTime(now.toLocaleTimeString());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  const INTERVAL_TIME = 10000; // 10 detik untuk testing. (Ubah ke 1800000 jika sudah selesai testing)
 
   return (
-    <div>
-      <div className="cctv-grid">
-        {GATES.map((gate) => (
-          <CctvCard
-            key={gate.id}
-            gate={gate}
-            stats={stats[gate.id] || { in: 0, out: 0 }}
-            time={time}
-          />
-        ))}
+    <div style={{ padding: "10px" }}>
+      <div style={{ marginBottom: "20px", color: "#1E3A8A", fontWeight: "800", fontSize: "18px" }}>
+        CONTROL PANEL OCR AUTOMATION
+      </div>
+      
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(450px, 1fr))", gap: "24px" }}>
+        {/* Card HCP */}
+        <ShareScreenCard 
+          title="HCP MONITORING (Hikvision)" 
+          apiEndpoint="/api/upload-hcp-grid" 
+          intervalMs={INTERVAL_TIME} 
+        />
+        
+        {/* Card Dahua */}
+        <ShareScreenCard 
+          title="DAHUA MONITORING (DSS)" 
+          apiEndpoint="/api/upload-dahua-grid" 
+          intervalMs={INTERVAL_TIME} 
+        />
       </div>
     </div>
   );
