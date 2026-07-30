@@ -6,6 +6,7 @@ backend/credentials.json
 backend/credentials.json
 backend/__pycache__/
 backend/debug_images/
+backend/ocr_agent_lokal/
 
 # --- FRONTEND IGNORES ---
 frontend/node_modules/

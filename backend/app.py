@@ -236,6 +236,43 @@ def upload_image():
         print(f"ERROR BACKEND [{gate}]:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
+
+# ================= ENDPOINT BARU UNTUK AGENT LOKAL =================
+@app.route('/api/submit-ocr', methods=['POST'])
+def submit_ocr():
+    """
+    Endpoint ringan ini HANYA menerima data matang (JSON) dari OCR Agent Lokal.
+    Tidak ada lagi pemrosesan gambar atau CPU berat di server ini.
+    """
+    try:
+        data = request.json
+        gate = data.get('gate')
+        value = data.get('value')
+        
+        if not gate or value is None:
+            return jsonify({"status": "error", "message": "Data tidak lengkap"}), 400
+
+        print(f"[WEBHOOK LOKAL] Menerima data matang: {gate} -> {value}")
+        
+        # Simpan langsung ke Google Sheets
+        sheet = spreadsheet.worksheet("DATA") 
+        now = datetime.datetime.now()
+        
+        sheet.append_row([
+            str(now),
+            now.strftime("%Y-%m-%d"),
+            now.strftime("%H:%M:%S"),
+            gate,
+            value
+        ])
+
+        return jsonify({"status": "success", "message": "Data tersimpan"}), 200
+
+    except Exception as e:
+        print(f"ERROR SUBMIT OCR [{data.get('gate', 'Unknown')}]:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+    
 # Hapus baris app.run(port=5000, debug=True) yang ganda
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
