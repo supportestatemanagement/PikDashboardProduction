@@ -7,12 +7,15 @@ import datetime
 from PIL import Image, ImageEnhance, ImageOps
 import pytesseract
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin # PERBAIKAN: Import cross_origin
 import os
 import json
 
 app = Flask(__name__)
-CORS(app)
+
+# --- PERBAIKAN: KONFIGURASI CORS & PAYLOAD ---
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # Izinkan payload hingga 50 MB
 
 # ================= GOOGLE SHEETS SETUP =================
 scope = [
@@ -78,9 +81,6 @@ def get_call_center_data():
         # Mengambil semua record dari sheet CC2026
         records = cc_sheet.get_all_records()
         
-        # Anda bisa melakukan pemrosesan data di sini jika diperlukan 
-        # (misal: mengambil baris terbaru saja atau melakukan agregasi)
-        
         return jsonify({
             "status": "success",
             "data": records
@@ -108,11 +108,8 @@ def get_cctv_growth_data():
 @app.route('/api/save-data', methods=['POST'])
 def save_data():
     data = request.json
-
     sheet = spreadsheet.worksheet("DATA")
-
     now = datetime.datetime.now()
-
     new_row = [
         str(now),
         now.strftime("%Y-%m-%d"),
@@ -121,9 +118,7 @@ def save_data():
         data['in'],
         data['out']
     ]
-
     sheet.append_row(new_row)
-
     return jsonify({"status": "success"})
 
 
@@ -132,13 +127,10 @@ def save_data():
 def get_cctv_data():
     sheet = spreadsheet.worksheet("DATA")
     records = sheet.get_all_records()
-
     return jsonify(records)
 
 
 # --- KONFIGURASI CROP PER GATE ---
-# Format: (left, top, right, bottom) dalam persentase (0.0 - 1.0)
-# Marina 2 dibuat lebih lebar (0.65) agar angka 5 digit tidak terpotong
 UNIVERSAL_CROP = (0, 0, 0.45, 0.30) 
 
 GATE_CONFIG = {
@@ -160,15 +152,13 @@ GATE_CONFIG = {
 def upload_image():
     try:
         data = request.json
-        gate = data['gate'] # Nama gate sekarang (misal: "Marina In")
+        gate = data['gate'] 
         image_data = data['image']
 
         header, encoded = image_data.split(",", 1)
         img = Image.open(io.BytesIO(base64.b64decode(encoded)))
         width, height = img.size
 
-        # --- STEP 1: CROP DINAMIS BERDASARKAN GATE ---
-        # Kode ini sekarang akan mengenali nama gate dari frontend dengan tepat
         crop_setting = GATE_CONFIG.get(gate, GATE_CONFIG["Default"])
         left = int(width * crop_setting[0])
         top = int(height * crop_setting[1])
@@ -177,19 +167,13 @@ def upload_image():
         
         img_cropped = img.crop((left, top, right, bottom))
         
-        # --- STEP 2: PRE-PROCESSING (Kembali ke versi asli Anda yang berhasil di Marina Out) ---
         img_gray = img_cropped.convert('L')
-        
         img_resized = img_gray.resize((img_gray.width * 3, img_gray.height * 3), Image.Resampling.LANCZOS)
-        
         sharpen = ImageEnhance.Sharpness(img_resized)
         img_sharp = sharpen.enhance(2.0)
-        
         img_binary = img_sharp.point(lambda p: 255 if p > 180 else 0)
-        
         img_final = ImageOps.invert(img_binary)
 
-        # --- STEP 3: OCR DENGAN WHITELIST ---
         config = r'--psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ: '
         text = pytesseract.image_to_string(img_final, config=config)
         
@@ -198,13 +182,8 @@ def upload_image():
         def extract_vehicle_value(text):
             lines = text.upper().split("\n")
             for line in lines:
-                # 1. Abaikan baris Non-Motor/Petugas
                 if any(x in line for x in ["NON", "MOTOR", "NM", "STAFF"]):
                     continue
-                
-                # 2. Keyword Fleksibel (Menangkap V:, Q, atau OUT, IN)
-                # Saya menambahkan "IN" di sini agar Marina In juga terbaca jika 
-                # menggunakan struktur teks yang sama.
                 keywords = ["VEHIC", "OUT", "IN", "OAT", "OT", "V:", "V-", "V ", "Q "]
                 if any(k in line for k in keywords):
                     numbers = re.findall(r'\d+', line)
@@ -217,7 +196,6 @@ def upload_image():
         
         value = extract_vehicle_value(text)
 
-        # --- STEP 4: LOG & SIMPAN ---
         print(f"DEBUG: {gate} -> Terdeteksi: {value}")
         
         sheet = spreadsheet.worksheet("DATA") 
@@ -240,10 +218,6 @@ def upload_image():
 # ================= ENDPOINT BARU UNTUK AGENT LOKAL =================
 @app.route('/api/submit-ocr', methods=['POST'])
 def submit_ocr():
-    """
-    Endpoint ringan ini HANYA menerima data matang (JSON) dari OCR Agent Lokal.
-    Tidak ada lagi pemrosesan gambar atau CPU berat di server ini.
-    """
     try:
         data = request.json
         gate = data.get('gate')
@@ -254,7 +228,6 @@ def submit_ocr():
 
         print(f"[WEBHOOK LOKAL] Menerima data matang: {gate} -> {value}")
         
-        # Simpan langsung ke Google Sheets
         sheet = spreadsheet.worksheet("DATA") 
         now = datetime.datetime.now()
         
@@ -282,23 +255,15 @@ HCP_GRID_CONFIG = {
 }
 
 def extract_vehicle_data(text):
-    """
-    Mengekstrak nilai Mobil dan Motor dari hasil teks OCR.
-    Menggunakan [-1] untuk mengambil angka paling terakhir agar 
-    tidak salah mengambil angka dari kata seperti 'PIK2'.
-    """
     mobil = 0
     motor = 0
     lines = text.upper().split("\n")
     
     for line in lines:
-        # 1. Cek Motor ("NON-MOTOR VEHICLE")
         if "NON-MOTOR" in line or "NON MOTOR" in line or "NONMOTOR" in line:
             nums = re.findall(r'\d+', line)
             if nums:
                 motor = int(nums[-1])
-                
-        # 2. Cek Mobil ("VEHICLE") - Pastikan bukan baris Non-Motor
         elif "VEHICLE" in line or "VEHIC" in line:
             if "NON" not in line:
                 nums = re.findall(r'\d+', line)
@@ -307,8 +272,13 @@ def extract_vehicle_data(text):
                     
     return mobil, motor
 
-@app.route('/api/upload-hcp-grid', methods=['POST'])
+# --- PERBAIKAN: TAMBAHKAN OPTIONS & CROSS_ORIGIN DECORATOR ---
+@app.route('/api/upload-hcp-grid', methods=['POST', 'OPTIONS'])
+@cross_origin()
 def upload_hcp_grid():
+    if request.method == 'OPTIONS':
+        return jsonify({"status": "ok"}), 200
+
     try:
         data = request.json
         image_data = data['image']
@@ -351,7 +321,6 @@ def upload_hcp_grid():
             
             print(f"DEBUG HCP {gate_name}: Mobil={mobil}, Motor={motor}, Total={total}")
             
-            # Simpan ke Spreadsheet jika ada data yang terbaca
             if total > 0:
                 sheet.append_row([
                     date_str,
@@ -370,7 +339,6 @@ def upload_hcp_grid():
         return jsonify({"status": "error", "message": str(e)}), 500
     
     
-# Hapus baris app.run(port=5000, debug=True) yang ganda
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)

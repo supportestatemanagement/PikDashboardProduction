@@ -35,15 +35,25 @@ function ShareScreenCard({ title, apiEndpoint, intervalMs }) {
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(video, 0, 0);
-      const base64 = canvas.toDataURL("image/png");
+      
+      // PERBAIKAN: Ubah PNG ke JPEG dengan kualitas 0.7 untuk menghindari Payload Terlalu Besar
+      const base64 = canvas.toDataURL("image/jpeg", 0.7); 
 
       console.log(`Mengirim data ${title} ke server...`);
       
       const res = await fetch(`${process.env.REACT_APP_API_URL}${apiEndpoint}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        mode: "cors", // PERBAIKAN: Mode CORS diaktifkan eksplisit
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
         body: JSON.stringify({ image: base64 }),
       });
+
+      if (!res.ok) {
+        throw new Error(`Server merespons dengan status: ${res.status}`);
+      }
 
       const data = await res.json();
       console.log(`SUCCESS ${title}:`, data);
@@ -55,7 +65,6 @@ function ShareScreenCard({ title, apiEndpoint, intervalMs }) {
   useEffect(() => {
     if (!stream) return;
     
-    // Interval diatur berdasarkan properti (misal: 30 menit)
     const interval = setInterval(() => {
       if (videoRef.current) {
         captureAndSend(videoRef.current);
@@ -105,8 +114,7 @@ function ShareScreenCard({ title, apiEndpoint, intervalMs }) {
 }
 
 export default function CctvGrid() {
-  // 30 menit = 30 * 60 * 1000 milidetik = 1.800.000 ms
-  const THIRTY_MINUTES = 10000;
+  const INTERVAL_TIME = 10000; // 10 detik
 
   return (
     <div style={{ padding: "10px" }}>
@@ -119,14 +127,14 @@ export default function CctvGrid() {
         <ShareScreenCard 
           title="HCP MONITORING (Hikvision)" 
           apiEndpoint="/api/upload-hcp-grid" 
-          intervalMs={THIRTY_MINUTES} 
+          intervalMs={INTERVAL_TIME} 
         />
         
         {/* Card Dahua (Disiapkan untuk endpoint masa depan) */}
         <ShareScreenCard 
           title="DAHUA MONITORING (DSS)" 
           apiEndpoint="/api/upload-dahua-grid" 
-          intervalMs={THIRTY_MINUTES} 
+          intervalMs={INTERVAL_TIME} 
         />
       </div>
     </div>
