@@ -193,10 +193,13 @@ def submit_ocr():
 
 # --- Konfigurasi Grid HCP (2 Kolom x 3 Baris) ---
 HCP_GRID_CONFIG = {
-    "Marina IN": (0.0, 0.0, 0.50, 0.33),         # Kolom 1 Baris 1
-    "Marina OUT": (0.50, 0.0, 1.00, 0.33),       # Kolom 2 Baris 1
-    "Toll Kataraja IN": (0.0, 0.33, 0.50, 0.66), # Kolom 1 Baris 2
-    "Toll Kataraja OUT": (0.50, 0.33, 1.00, 0.66) # Kolom 2 Baris 2
+    # Format: (Kiri, Atas, Kanan, Bawah)
+    # Kita hanya memotong 25% area dari masing-masing kotak grid 
+    # tempat teks counting berada untuk menghemat CPU Server
+    "Marina IN": (0.0, 0.0, 0.25, 0.15),           # Grid 1: Pojok kiri atas
+    "Marina OUT": (0.50, 0.0, 0.75, 0.15),         # Grid 2: Pojok kiri atas (di kolom 2)
+    "Toll Kataraja IN": (0.0, 0.33, 0.25, 0.48),   # Grid 3: Pojok kiri atas (di baris 2)
+    "Toll Kataraja OUT": (0.50, 0.33, 0.75, 0.48)  # Grid 4: Pojok kiri atas (di kolom 2, baris 2)
 }
 
 def extract_vehicle_data(text):
@@ -214,7 +217,6 @@ def extract_vehicle_data(text):
                 nums = re.findall(r'\d+', line)
                 if nums:
                     mobil = int(nums[-1])
-                    
     return mobil, motor
 
 @app.route('/api/upload-hcp-grid', methods=['POST', 'OPTIONS'])
@@ -242,34 +244,44 @@ def upload_hcp_grid():
         results_log = []
 
         for gate_name, crop_setting in HCP_GRID_CONFIG.items():
-            left = int(width * crop_setting[0])
-            top = int(height * crop_setting[1])
-            right = int(width * crop_setting[2])
-            bottom = int(height * crop_setting[3])
-            
-            img_cropped = img.crop((left, top, right, bottom))
-            
-            img_gray = img_cropped.convert('L')
-            img_resized = img_gray.resize((img_gray.width * 3, img_gray.height * 3), Image.Resampling.LANCZOS)
-            sharpen = ImageEnhance.Sharpness(img_resized)
-            img_sharp = sharpen.enhance(2.0)
-            img_binary = img_sharp.point(lambda p: 255 if p > 180 else 0)
-            img_final = ImageOps.invert(img_binary)
+            # MENGGUNAKAN TRY-EXCEPT DI SINI AGAR ERROR 1 GATE TIDAK MEMBUAT SERVER CRASH
+            try:
+                left = int(width * crop_setting[0])
+                top = int(height * crop_setting[1])
+                right = int(width * crop_setting[2])
+                bottom = int(height * crop_setting[3])
+                
+                img_cropped = img.crop((left, top, right, bottom))
+                
+                img_gray = img_cropped.convert('L')
+                
+                # PERBAIKAN FATAL: Menurunkan resize dari x3 menjadi x1.5 agar RAM Server tidak meledak
+                new_width = int(img_gray.width * 1.5)
+                new_height = int(img_gray.height * 1.5)
+                img_resized = img_gray.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                
+                sharpen = ImageEnhance.Sharpness(img_resized)
+                img_sharp = sharpen.enhance(2.0)
+                img_binary = img_sharp.point(lambda p: 255 if p > 180 else 0)
+                img_final = ImageOps.invert(img_binary)
 
-            config = r'--psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:- '
-            text = pytesseract.image_to_string(img_final, config=config)
-            
-            mobil, motor = extract_vehicle_data(text)
-            total = mobil + motor
-            
-            print(f"[OCR HCP] {gate_name}: Mobil={mobil}, Motor={motor}, Total={total}")
-            
-            if total > 0:
-                row = [timestamp_str, date_str, time_str, gate_name, mobil, motor, total]
-                rows_to_insert.append(row)
-                results_log.append({"gate": gate_name, "mobil": mobil, "motor": motor, "total": total})
+                config = r'--psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:- '
+                text = pytesseract.image_to_string(img_final, config=config)
+                
+                mobil, motor = extract_vehicle_data(text)
+                total = mobil + motor
+                
+                print(f"[OCR HCP] {gate_name}: Mobil={mobil}, Motor={motor}, Total={total}")
+                
+                if total > 0:
+                    row = [timestamp_str, date_str, time_str, gate_name, mobil, motor, total]
+                    rows_to_insert.append(row)
+                    results_log.append({"gate": gate_name, "mobil": mobil, "motor": motor, "total": total})
 
-        # BATCH UPDATE: Simpan sekaligus
+            except Exception as inner_e:
+                print(f"[OCR ERROR] Gagal memproses {gate_name}: {inner_e}")
+                continue # Lanjut ke kamera berikutnya meski kamera ini gagal
+
         if rows_to_insert:
             sheet.append_rows(rows_to_insert)
 
