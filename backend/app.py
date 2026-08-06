@@ -14,9 +14,6 @@ import json
 import pytesseract 
 import easyocr
 
-# Tambahkan EasyOCR (Pastikan library sudah terinstall di server production)
-import easyocr
-
 app = Flask(__name__)
 
 # --- KONFIGURASI CORS & PAYLOAD ---
