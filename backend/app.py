@@ -20,12 +20,6 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 
 
-# --- INISIALISASI LOCK DAN AI EASYOCR ---
-sheet_write_lock = threading.Lock()
-print("Memuat Model AI EasyOCR...")
-reader = easyocr.Reader(['en'], gpu=False) 
-print("Model EasyOCR Siap!")
-
 # ================= GOOGLE SHEETS SETUP =================
 scope = [
     "https://spreadsheets.google.com/feeds",
@@ -105,6 +99,13 @@ def get_cctv_data():
     sheet = spreadsheet.worksheet("DATA")
     records = sheet.get_all_records()
     return jsonify(records)
+
+
+# --- INISIALISASI LOCK DAN AI EASYOCR ---
+sheet_write_lock = threading.Lock()
+print("Memuat Model AI EasyOCR...")
+reader = easyocr.Reader(['en']) 
+print("Model EasyOCR Siap!")
 
 
 # --- KONFIGURASI CROP LAMA PER GATE ---
