@@ -1,30 +1,29 @@
-import os
-import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import io
 import base64
 import re
 import datetime
-import threading
-from PIL import Image, ImageEnhance, ImageFilter
+from PIL import Image, ImageEnhance, ImageOps, ImageFilter # Tambahan ImageFilter
+import pytesseract
 from flask import Flask, request, jsonify
-from flask_cors import CORS
-import numpy as np
-
-# Menggunakan EasyOCR sesuai dengan versi Development
-import easyocr
+from flask_cors import CORS, cross_origin
+import os
+import json
+import threading # Tambahan threading
+import numpy as np # Tambahan numpy
+import easyocr # Tambahan easyocr
 
 app = Flask(__name__)
 
-# --- KONFIGURASI PRODUCTION ---
+# --- PERBAIKAN: KONFIGURASI CORS & PAYLOAD ---
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # Izinkan payload besar hingga 50 MB
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # Izinkan payload layar penuh hingga 50 MB
 
-# LOCK GLOBAL UNTUK MENCEGAH TABRAKAN DATA DI GOOGLE SHEETS
+# INISIALISASI LOCK GLOBAL UNTUK CCTV GRID
 sheet_write_lock = threading.Lock()
 
-# ================= INISIALISASI EASYOCR (AI) =================
+# INISIALISASI EASYOCR (KHUSUS CCTV GRID)
 print("Memuat Model AI EasyOCR...")
 reader = easyocr.Reader(['en'], gpu=False) 
 print("Model EasyOCR Siap!")
@@ -35,12 +34,12 @@ scope = [
     "https://www.googleapis.com/auth/drive"
 ]
 
-# Mendukung Environment Variables untuk Production, Fallback ke credentials.json untuk Lokal
 creds_json = os.environ.get('GOOGLE_CREDENTIALS')
 if creds_json:
     creds_dict = json.loads(creds_json)
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 else:
+    # Fallback lokal
     creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 
 client = gspread.authorize(creds)
@@ -51,7 +50,7 @@ cc_sheet = cc_spreadsheet.worksheet("CallCenter")
 cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
 perparkiran_sheet = cc_spreadsheet.worksheet("Perparkiran")
 
-# ================= ENDPOINT DATA DASHBOARD =================
+# ================= 1. SEMUA ENDPOINT LAMA (TIDAK ADA YANG DIUBAH) =================
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -66,32 +65,52 @@ def login():
 @app.route('/api/perparkiran-data', methods=['GET'])
 def get_perparkiran_data():
     try:
-        return jsonify({"status": "success", "data": perparkiran_sheet.get_all_records()})
+        records = perparkiran_sheet.get_all_records()
+        return jsonify({"status": "success", "data": records})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/call-center-data', methods=['GET'])
 def get_call_center_data():
     try:
-        return jsonify({"status": "success", "data": cc_sheet.get_all_records()})
+        records = cc_sheet.get_all_records()
+        return jsonify({"status": "success", "data": records})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
         
 @app.route('/api/cctv-growth-data', methods=['GET'])
 def get_cctv_growth_data():
     try:
-        return jsonify({"status": "success", "data": cctv2026_sheet.get_all_records()})
+        records = cctv2026_sheet.get_all_records()
+        return jsonify({"status": "success", "data": records})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/save-data', methods=['POST'])
+def save_data():
+    data = request.json
+    sheet = spreadsheet.worksheet("DATA")
+    now = datetime.datetime.now()
+    new_row = [
+        str(now),
+        now.strftime("%Y-%m-%d"),
+        now.strftime("%H:%M:%S"),
+        data['gate'],
+        data['in'],
+        data['out']
+    ]
+    sheet.append_row(new_row)
+    return jsonify({"status": "success"})
 
 @app.route('/api/cctv-data', methods=['GET'])
 def get_cctv_data():
     sheet = spreadsheet.worksheet("DATA")
-    return jsonify(sheet.get_all_records())
+    records = sheet.get_all_records()
+    return jsonify(records)
 
 
-# ================= ENDPOINT OCR (DARI DEVELOPMENT) =================
-
+# ================= GANTIKAN HANYA BAGIAN INI DARI DEVELOPMENT =================
+# KONFIGURASI CROP BARU (KHUSUS CCTV GRID SHARESCREEN)
 GATE_CONFIG = {
     "Marina In": {
         "motor_box": (0.26, 0.025, 0.30, 0.05), 
@@ -118,23 +137,17 @@ GATE_CONFIG = {
 }
 
 def process_single_crop(img_cropped, box_name):
-    """Membaca gambar menggunakan AI EasyOCR dengan Binarisasi Ekstrem"""
+    """Membaca gambar menggunakan AI EasyOCR (Logika Development)"""
     try:
         img_gray = img_cropped.convert('L')
-        
         new_width = int(img_gray.width * 1)
         new_height = int(img_gray.height * 1)
         img_resized = img_gray.resize((new_width, new_height), Image.Resampling.LANCZOS)
-        
         img_sharp = img_resized.filter(ImageFilter.SHARPEN)
-        
         enhancer = ImageEnhance.Contrast(img_sharp)
         img_final = enhancer.enhance(2) 
         
-        # Simpan gambar akhir untuk kalibrasi visual (opsional di production)
-        img_final.save(f"DEBUG_CROP_{box_name}.jpg")
         img_np = np.array(img_final)
-        
         results = reader.readtext(img_np, allowlist='0123456789')
         
         valid_numbers = []
@@ -145,26 +158,23 @@ def process_single_crop(img_cropped, box_name):
                 
         if valid_numbers:
             return max(valid_numbers)
-            
     except Exception as e:
         print(f"Error processing {box_name}: {e}")
     return 0
 
 @app.route('/api/upload-image', methods=['POST'])
 def upload_image():
+    """Endpoint ini menggunakan logika EasyOCR Development dan Queue/Lock"""
     try:
         data = request.json
         gate = data['gate'] 
         image_data = data['image']
-
         header, encoded = image_data.split(",", 1)
         img = Image.open(io.BytesIO(base64.b64decode(encoded)))
         width, height = img.size
 
         config_gate = GATE_CONFIG.get(gate, GATE_CONFIG["Default"])
         
-        img.save(f"DEBUG_1_FULLSCREEN_{gate}.jpg")
-
         motor = 0
         mobil = 0
 
@@ -182,14 +192,11 @@ def upload_image():
 
         total = mobil + motor
 
-        print(f"\n[EASYOCR RESULT - {gate}] -> Mobil: {mobil}, Motor: {motor}, Total: {total}")
-        
-        # GUNAKAN LOCK SEBELUM MENYIMPAN KE SPREADSHEET (Mencegah Race Condition)
+        # MENGGUNAKAN LOCK AGAR TIDAK TABRAKAN SAAT DIKIRIM BERURUTAN
         if total > 0:
             with sheet_write_lock: 
                 sheet = spreadsheet.worksheet("DATA") 
                 now = datetime.datetime.now()
-                
                 sheet.append_row([
                     now.strftime("%Y-%m-%d"),
                     now.strftime("%H:%M:%S"),
@@ -200,14 +207,131 @@ def upload_image():
                 ])
 
         img.close()
-
         return jsonify({"status": "success", "mobil": mobil, "motor": motor, "total": total})
 
     except Exception as e:
         print(f"ERROR BACKEND [{data.get('gate', 'Unknown')}]:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
+
+# ================= 2. ENDPOINT BARU (HCP MULTIPLEXING & LOKAL AGENT) (TIDAK DIUBAH) =================
+
+@app.route('/api/submit-ocr', methods=['POST'])
+def submit_ocr():
+    try:
+        data = request.json
+        gate = data.get('gate')
+        value = data.get('value')
+        if not gate or value is None: return jsonify({"status": "error", "message": "Data tidak lengkap"}), 400
+        
+        sheet = spreadsheet.worksheet("DATA") 
+        now = datetime.datetime.now()
+        sheet.append_row([
+            str(now), now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S"), gate, value
+        ])
+        return jsonify({"status": "success", "message": "Data tersimpan"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# --- Konfigurasi Grid HCP (Area Crop Diperluas) ---
+HCP_GRID_CONFIG = {
+    # Format: (Kiri, Atas, Kanan, Bawah)
+    # Area diperluas menjadi 40% lebar dan 30% tinggi dari masing-masing kotak
+    "Marina IN": (0.0, 0.0, 0.40, 0.30),         
+    "Marina OUT": (0.50, 0.0, 0.90, 0.30),       
+    "Toll Kataraja IN": (0.0, 0.33, 0.40, 0.63), 
+    "Toll Kataraja OUT": (0.50, 0.33, 0.90, 0.63) 
+}
+
+def extract_vehicle_data(text):
+    mobil = 0
+    motor = 0
+    lines = text.upper().split("\n")
+    
+    for line in lines:
+        if "NON-MOTOR" in line or "NON MOTOR" in line or "NONMOTOR" in line:
+            nums = re.findall(r'\d+', line)
+            if nums:
+                motor = int(nums[-1])
+        elif "VEHICLE" in line or "VEHIC" in line:
+            if "NON" not in line:
+                nums = re.findall(r'\d+', line)
+                if nums:
+                    mobil = int(nums[-1])
+                    
+    return mobil, motor
+
+@app.route('/api/upload-hcp-grid', methods=['POST', 'OPTIONS'])
+@cross_origin()
+def upload_hcp_grid():
+    if request.method == 'OPTIONS':
+        return jsonify({"status": "ok"}), 200
+
+    try:
+        data = request.json
+        image_data = data['image']
+
+        header, encoded = image_data.split(",", 1)
+        img = Image.open(io.BytesIO(base64.b64decode(encoded)))
+        width, height = img.size
+
+        sheet = spreadsheet.worksheet("DATA")
+        now = datetime.datetime.now()
+        
+        timestamp_str = str(now)
+        date_str = now.strftime("%Y-%m-%d")
+        time_str = now.strftime("%H:%M:%S")
+        
+        rows_to_insert = []
+        results_log = []
+
+        for gate_name, crop_setting in HCP_GRID_CONFIG.items():
+            try:
+                left = int(width * crop_setting[0])
+                top = int(height * crop_setting[1])
+                right = int(width * crop_setting[2])
+                bottom = int(height * crop_setting[3])
+                
+                img_cropped = img.crop((left, top, right, bottom))
+                
+                # OPTIMASI RAM FATAL: Hapus Resize & Sharpen. 
+                # Langsung ubah ke hitam putih pekat (Binary)
+                img_gray = img_cropped.convert('L')
+                img_binary = img_gray.point(lambda p: 255 if p > 160 else 0)
+                img_final = ImageOps.invert(img_binary)
+
+                config = r'--psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:- '
+                text = pytesseract.image_to_string(img_final, config=config)
+                
+                mobil, motor = extract_vehicle_data(text)
+                total = mobil + motor
+                
+                # Menampilkan log mentah dari Tesseract untuk keperluan debugging
+                print(f"\n[RAW TEXT {gate_name}]\n{text.strip()}")
+                print(f"[OCR HASIL] {gate_name}: Mobil={mobil}, Motor={motor}, Total={total}")
+                
+                if total > 0:
+                    row = [timestamp_str, date_str, time_str, gate_name, mobil, motor, total]
+                    rows_to_insert.append(row)
+                    results_log.append({"gate": gate_name, "mobil": mobil, "motor": motor, "total": total})
+
+            except Exception as inner_e:
+                print(f"[OCR ERROR] Gagal memproses {gate_name}: {inner_e}")
+                continue 
+
+        if rows_to_insert:
+            sheet.append_rows(rows_to_insert)
+
+        # Menutup file gambar agar memori RAM langsung dikosongkan (Mencegah RAM Leak)
+        img.close()
+
+        return jsonify({"status": "success", "results": results_log})
+
+    except Exception as e:
+        print("ERROR BACKEND HCP GRID:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 if __name__ == '__main__':
-    # Pastikan port dinamis berjalan dengan benar di lingkungan server
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
