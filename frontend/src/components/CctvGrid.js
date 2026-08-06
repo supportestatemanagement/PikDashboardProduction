@@ -1,14 +1,13 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 
-// GATES sudah dipisahkan untuk Vehicle dan Non Vehicle
+// GATES disesuaikan dengan 5 kamera development (Marina In, Marina Out, Toll Kataraja In, Toll Kataraja Out, BGM In)[cite: 10]
 const GATES = [
-  { id: 1, name: "Marina Vehicle In" },
-  { id: 2, name: "Marina Non Vehicle In" },
-  { id: 3, name: "Marina Out" },
-  { id: 4, name: "Toll Kataraja In" },
-  { id: 5, name: "Toll Kataraja Out" },
-  { id: 6, name: "BGM In" },
+  { id: 1, name: "Marina In" },
+  { id: 2, name: "Marina Out" },
+  { id: 3, name: "Toll Kataraja In" },
+  { id: 4, name: "Toll Kataraja Out" },
+  { id: 5, name: "BGM In" },
 ];
 
 // ================= SISTEM ANTREAN PENGIRIMAN =================
@@ -24,7 +23,7 @@ const processUploadQueue = async () => {
   try {
     console.log(`[CAPTURE] Mengirim data ${gateName} ke server...`);
     
-    // Pastikan URL Render dimasukkan dengan benar.
+    // Menggunakan URL production Render dengan fallback yang aman[cite: 9]
     const baseUrl = process.env.REACT_APP_API_URL || "https://pikdashboard.onrender.com"; 
     
     const res = await fetch(`${baseUrl}/api/upload-image`, {
@@ -170,7 +169,7 @@ export default function CctvGrid() {
   return (
     <div style={{ padding: "20px" }}>
       <div style={{ marginBottom: "20px", color: "#1E3A8A", fontWeight: "800", fontSize: "18px" }}>
-        CONTROL PANEL OCR AUTOMATION
+        PRODUCTION CONTROL PANEL OCR AUTOMATION
       </div>
       
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "20px" }}>
