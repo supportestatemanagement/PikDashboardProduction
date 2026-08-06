@@ -11,6 +11,8 @@ from PIL import Image, ImageEnhance, ImageOps, ImageFilter
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 import json
+import pytesseract 
+import easyocr
 
 # Tambahkan EasyOCR (Pastikan library sudah terinstall di server production)
 import easyocr
