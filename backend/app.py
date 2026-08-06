@@ -20,6 +20,7 @@ import easyocr
 app = Flask(__name__)
 
 # --- KONFIGURASI CORS & PAYLOAD (ASLI PRODUCTION) ---
+# Pastikan origin diatur ke * agar bisa diakses dari domain Vercel mana pun
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # Izinkan payload layar penuh hingga 50 MB
 
@@ -52,10 +53,14 @@ cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
 perparkiran_sheet = cc_spreadsheet.worksheet("Perparkiran")
 
 
-# ================= 1. SEMUA ENDPOINT LAMA (TIDAK DIUBAH SAMA SEKALI) =================
+# ================= 1. SEMUA ENDPOINT LAMA =================
 
-@app.route('/api/login', methods=['POST'])
+# Tambahkan OPTIONS untuk mengatasi error CORS Preflight dari Vercel
+@app.route('/api/login', methods=['POST', 'OPTIONS'])
 def login():
+    if request.method == 'OPTIONS':
+        return jsonify({"status": "ok"}), 200
+        
     data = request.json
     sheet = spreadsheet.worksheet("OFFICER")
     records = sheet.get_all_records()
@@ -114,9 +119,11 @@ def get_cctv_data():
 # ================= GANTIKAN HANYA BAGIAN INI DARI DEVELOPMENT =================
 
 GATE_CONFIG = {
-    "Marina In": {
-        "motor_box": (0.26, 0.025, 0.30, 0.05), 
+    "Marina Vehicle In": {
         "mobil_box": (0.22, 0.040, 0.30, 0.06)   
+    },
+    "Marina Non Vehicle In": {
+        "motor_box": (0.26, 0.025, 0.30, 0.05) 
     },
     "Marina Out": {
         "motor_box": (0.593, 0.038, 0.62, 0.06),
@@ -139,20 +146,27 @@ GATE_CONFIG = {
 }
 
 def process_single_crop(img_cropped, box_name):
-    """Membaca gambar menggunakan AI EasyOCR dengan Binarisasi Ekstrem"""
+    """Membaca gambar dengan format Black on White (Angka Hitam, Background Putih) yang tajam"""
     try:
+        safe_name = box_name.replace(" ", "_")
+        
+        # Konversi ke Grayscale
         img_gray = img_cropped.convert('L')
         
-        new_width = int(img_gray.width * 1)
-        new_height = int(img_gray.height * 1)
-        img_resized = img_gray.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        # Balikkan warna (Invert) agar angka jadi hitam
+        img_inverted = ImageOps.invert(img_gray)
         
+        # Perbesar dan tajamkan
+        new_width = int(img_inverted.width * 3)
+        new_height = int(img_inverted.height * 3)
+        img_resized = img_inverted.resize((new_width, new_height), Image.Resampling.LANCZOS)
         img_sharp = img_resized.filter(ImageFilter.SHARPEN)
         
+        # Tambah kontras
         enhancer = ImageEnhance.Contrast(img_sharp)
-        img_final = enhancer.enhance(2) 
+        img_final = enhancer.enhance(1.8) 
         
-        img_final.save(f"DEBUG_CROP_{box_name}.jpg")
+        img_final.save(f"DEBUG_CROP_{safe_name}.jpg")
         img_np = np.array(img_final)
         
         results = reader.readtext(img_np, allowlist='0123456789')
@@ -170,8 +184,12 @@ def process_single_crop(img_cropped, box_name):
         print(f"Error processing {box_name}: {e}")
     return 0
 
-@app.route('/api/upload-image', methods=['POST'])
+# Tambahkan OPTIONS untuk mengatasi error CORS Preflight dari Vercel
+@app.route('/api/upload-image', methods=['POST', 'OPTIONS'])
 def upload_image():
+    if request.method == 'OPTIONS':
+        return jsonify({"status": "ok"}), 200
+
     try:
         data = request.json
         gate = data['gate'] 
@@ -183,7 +201,8 @@ def upload_image():
 
         config_gate = GATE_CONFIG.get(gate, GATE_CONFIG["Default"])
         
-        img.save(f"DEBUG_1_FULLSCREEN_{gate}.jpg")
+        safe_gate_name = gate.replace(" ", "_")
+        img.save(f"DEBUG_1_FULLSCREEN_{safe_gate_name}.jpg")
 
         motor = 0
         mobil = 0
@@ -202,7 +221,7 @@ def upload_image():
 
         total = mobil + motor
 
-        print(f"\n[EASYOCR RESULT - {gate}] -> Mobil: {mobil}, Motor: {motor}, Total: {total}")
+        print(f"\n[EASYOCR B&W RESULT - {gate}] -> Mobil: {mobil}, Motor: {motor}, Total: {total}")
         
         # GUNAKAN LOCK SEBELUM MENYIMPAN KE SPREADSHEET
         if total > 0:
@@ -211,6 +230,7 @@ def upload_image():
                 now = datetime.datetime.now()
                 
                 sheet.append_row([
+                    str(now),
                     now.strftime("%Y-%m-%d"),
                     now.strftime("%H:%M:%S"),
                     gate,

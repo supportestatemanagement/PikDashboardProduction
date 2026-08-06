@@ -1,12 +1,14 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 
+// GATES sudah dipisahkan untuk Vehicle dan Non Vehicle
 const GATES = [
-  { id: 1, name: "Marina In" },
-  { id: 2, name: "Marina Out" },
-  { id: 3, name: "Toll Kataraja In" },
-  { id: 4, name: "Toll Kataraja Out" },
-  { id: 5, name: "BGM In" },
+  { id: 1, name: "Marina Vehicle In" },
+  { id: 2, name: "Marina Non Vehicle In" },
+  { id: 3, name: "Marina Out" },
+  { id: 4, name: "Toll Kataraja In" },
+  { id: 5, name: "Toll Kataraja Out" },
+  { id: 6, name: "BGM In" },
 ];
 
 // ================= SISTEM ANTREAN PENGIRIMAN =================
@@ -22,6 +24,7 @@ const processUploadQueue = async () => {
   try {
     console.log(`[CAPTURE] Mengirim data ${gateName} ke server...`);
     
+    // Pastikan URL Render dimasukkan dengan benar.
     const baseUrl = process.env.REACT_APP_API_URL || "https://pikdashboard.onrender.com"; 
     
     const res = await fetch(`${baseUrl}/api/upload-image`, {
