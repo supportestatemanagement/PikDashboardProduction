@@ -8,7 +8,7 @@ import datetime
 from PIL import Image, ImageEnhance, ImageOps, ImageFilter
 import pytesseract
 from flask import Flask, request, jsonify
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 import os
 import json
 
@@ -19,12 +19,12 @@ import easyocr
 
 app = Flask(__name__)
 
-# --- KONFIGURASI CORS & PAYLOAD (ASLI PRODUCTION) ---
-# Pastikan origin diatur ke * agar bisa diakses dari domain Vercel mana pun
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+# --- KONFIGURASI CORS & PAYLOAD ---
+# Gunakan konfigurasi standar ini. Flask-CORS akan otomatis menangani preflight (OPTIONS)
+CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # Izinkan payload layar penuh hingga 50 MB
 
-# --- INISIALISASI SISTEM ANTREAN & AI (DARI DEVELOPMENT) ---
+# --- INISIALISASI SISTEM ANTREAN & AI ---
 sheet_write_lock = threading.Lock()
 
 print("Memuat Model AI EasyOCR...")
@@ -55,12 +55,9 @@ perparkiran_sheet = cc_spreadsheet.worksheet("Perparkiran")
 
 # ================= 1. SEMUA ENDPOINT LAMA =================
 
-# Tambahkan OPTIONS untuk mengatasi error CORS Preflight dari Vercel
-@app.route('/api/login', methods=['POST', 'OPTIONS'])
+# Hapus 'OPTIONS' dari methods, biarkan Flask-CORS yang mengurusnya
+@app.route('/api/login', methods=['POST'])
 def login():
-    if request.method == 'OPTIONS':
-        return jsonify({"status": "ok"}), 200
-        
     data = request.json
     sheet = spreadsheet.worksheet("OFFICER")
     records = sheet.get_all_records()
@@ -184,12 +181,10 @@ def process_single_crop(img_cropped, box_name):
         print(f"Error processing {box_name}: {e}")
     return 0
 
-# Tambahkan OPTIONS untuk mengatasi error CORS Preflight dari Vercel
-@app.route('/api/upload-image', methods=['POST', 'OPTIONS'])
-def upload_image():
-    if request.method == 'OPTIONS':
-        return jsonify({"status": "ok"}), 200
 
+# Hapus 'OPTIONS' dan blok if manual
+@app.route('/api/upload-image', methods=['POST'])
+def upload_image():
     try:
         data = request.json
         gate = data['gate'] 
@@ -248,7 +243,7 @@ def upload_image():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# ================= 2. ENDPOINT BARU (HCP MULTIPLEXING DLL) (TIDAK DIUBAH) =================
+# ================= 2. ENDPOINT BARU (HCP MULTIPLEXING DLL) =================
 
 @app.route('/api/submit-ocr', methods=['POST'])
 def submit_ocr():
@@ -291,12 +286,9 @@ def extract_vehicle_data(text):
                     mobil = int(nums[-1])
     return mobil, motor
 
-@app.route('/api/upload-hcp-grid', methods=['POST', 'OPTIONS'])
-@cross_origin()
+# Hapus 'OPTIONS' dan @cross_origin manual, biarkan Flask-CORS yang mengatur
+@app.route('/api/upload-hcp-grid', methods=['POST'])
 def upload_hcp_grid():
-    if request.method == 'OPTIONS':
-        return jsonify({"status": "ok"}), 200
-
     try:
         data = request.json
         image_data = data['image']
