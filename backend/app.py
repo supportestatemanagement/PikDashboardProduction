@@ -5,19 +5,26 @@ import io
 import base64
 import re
 import datetime
-import threading # Tambahan untuk sistem antrean GSheets
-import numpy as np # Tambahan untuk EasyOCR array
-from PIL import Image, ImageEnhance, ImageOps, ImageFilter
+import threading
+import numpy as np
+from PIL import Image
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 import json
-import pytesseract 
+
+# Menggunakan RapidOCR (Ringan, Cepat, dan Akurat untuk Angka CCTV)
+from rapidocr_onnxruntime import RapidOCR
 
 app = Flask(__name__)
 
 # --- KONFIGURASI CORS & PAYLOAD ---
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 
+
+# ================= INISIALISASI RAPIDOCR =================
+print("Memuat Model RapidOCR...")
+engine = RapidOCR()
+print("RapidOCR Siap!")
 
 # ================= GOOGLE SHEETS SETUP =================
 scope = [
@@ -136,30 +143,24 @@ def upload_image():
         bottom = int(height * crop_setting[3])
         
         img_cropped = img.crop((left, top, right, bottom))
-        img_gray = img_cropped.convert('L')
-        img_resized = img_gray.resize((img_gray.width * 3, img_gray.height * 3), Image.Resampling.LANCZOS)
-        sharpen = ImageEnhance.Sharpness(img_resized)
-        img_sharp = sharpen.enhance(2.0)
-        img_binary = img_sharp.point(lambda p: 255 if p > 180 else 0)
-        img_final = ImageOps.invert(img_binary)
-
-        config = r'--psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ: '
-        text = pytesseract.image_to_string(img_final, config=config)
         
-        def extract_vehicle_value(text):
-            lines = text.upper().split("\n")
-            for line in lines:
-                if any(x in line for x in ["NON", "MOTOR", "NM", "STAFF"]): continue
-                keywords = ["VEHIC", "OUT", "IN", "OAT", "OT", "V:", "V-", "V ", "Q "]
-                if any(k in line for k in keywords):
-                    numbers = re.findall(r'\d+', line)
-                    if numbers:
-                        val_str = "".join(numbers)
-                        val = int(val_str)
-                        if 3 <= len(str(val)) <= 6: return val
-            return 0
+        # Proses OCR menggunakan RapidOS
+        img_np = np.array(img_cropped)
+        result, _ = engine(img_np)
         
-        value = extract_vehicle_value(text)
+        value = 0
+        if result:
+            all_text_combined = ""
+            for line in result:
+                text = line[1]
+                confidence = float(line[2])
+                if confidence > 0.4:
+                    all_text_combined += text + " "
+            
+            nums = re.findall(r'\d+', all_text_combined)
+            if nums:
+                best_num = max(nums, key=len)
+                value = int(best_num)
         
         sheet = spreadsheet.worksheet("DATA") 
         now = datetime.datetime.now()
@@ -202,7 +203,7 @@ HCP_GRID_CONFIG = {
     },
     "Marina OUT": {
         "mobil_box": (0.55, 0.048, 0.585, 0.08),
-        "motor_box": (0.593, 0.038, 0.62, 0.06)
+        "motor_box": (0.585, 0.035, 0.63, 0.07)
     },
     "Toll Kataraja IN": {
         "mobil_box": (0.10, 0.43, 0.20, 0.48)
@@ -213,48 +214,26 @@ HCP_GRID_CONFIG = {
 }
 
 def process_single_crop(img_cropped, box_name=""):
-    """Membaca angka menggunakan Tesseract dengan teknik presisi (Crop & Binarization)"""
+    """Membaca angka menggunakan RapidOCR secara stabil dan konsisten"""
     try:
-        # 1. Konversi ke Grayscale
-        img_gray = img_cropped.convert('L')
+        img_np = np.array(img_cropped)
+        result, _ = engine(img_np)
         
-        # 2. Perbesar gambar (Tesseract butuh resolusi lebih besar untuk baca angka kecil)
-        new_width = int(img_gray.width * 2.5)
-        new_height = int(img_gray.height * 2.5)
-        img_resized = img_gray.resize((new_width, new_height), Image.Resampling.LANCZOS)
-        
-        # 3. Pertajam gambar
-        img_sharp = img_resized.filter(ImageFilter.SHARPEN)
-        
-        # 4. Naikkan Kontras secara ekstrem
-        enhancer = ImageEnhance.Contrast(img_sharp)
-        img_contrast = enhancer.enhance(2.0)
-        
-        # 5. Binarization (Hitam Putih Pekat)
-        # Ubah pixel menjadi hitam pekat atau putih pekat berdasarkan threshold
-        img_binary = img_contrast.point(lambda p: 255 if p > 150 else 0)
-        
-        # CATATAN: Tesseract lebih pintar membaca Teks Hitam di atas Background Putih.
-        # Jika CCTV Anda menampilkan Teks Putih dengan Background Hitam, gunakan Invert:
-        img_final = ImageOps.invert(img_binary) 
-
-        # 6. Jalankan Tesseract dengan Whitelist (Hanya Angka)
-        # PSM 6 = Mengasumsikan satu blok teks yang seragam
-        config = r'--psm 6 -c tessedit_char_whitelist=0123456789'
-        text = pytesseract.image_to_string(img_final, config=config)
-        
-        # 7. Ekstrak angka menggunakan Regex
-        valid_numbers = []
-        nums = re.findall(r'\d+', text)
-        if nums:
-            # Ambil deret angka yang paling panjang (seperti logika dev sebelumnya)
-            valid_numbers.append(int(max(nums, key=len)))
-                
-        if valid_numbers:
-            return max(valid_numbers)
+        if result:
+            all_text_combined = ""
+            for line in result:
+                text = line[1]
+                confidence = float(line[2])
+                if confidence > 0.4:
+                    all_text_combined += text + " "
+            
+            nums = re.findall(r'\d+', all_text_combined)
+            if nums:
+                best_num = max(nums, key=len)
+                return int(best_num)
             
     except Exception as e:
-        print(f"Error processing {box_name}: {e}")
+        print(f"Error processing {box_name} with RapidOCR: {e}")
     return 0
 
 
@@ -298,7 +277,7 @@ def upload_hcp_grid():
                     motor = process_single_crop(crop_motor, f"MOTOR_{gate_name}")
 
                 total = mobil + motor
-                print(f"[OCR HASIL] {gate_name}: Mobil={mobil}, Motor={motor}, Total={total}")
+                print(f"[RAPIDOCR HASIL] {gate_name}: Mobil={mobil}, Motor={motor}, Total={total}")
                 
                 if total > 0:
                     row = [timestamp_str, date_str, time_str, gate_name, mobil, motor, total]
