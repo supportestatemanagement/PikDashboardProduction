@@ -1,17 +1,69 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 
-// Komponen Reusable untuk Share Screen
-function ShareScreenCard({ title, apiEndpoint, intervalMs }) {
+// 1. KEMBALIKAN GATES DARI DEVELOPMENT (5 Kamera)
+const GATES = [
+  { id: 1, name: "Marina In" },
+  { id: 2, name: "Marina Out" },
+  { id: 3, name: "Toll Kataraja In" },
+  { id: 4, name: "Toll Kataraja Out" },
+  { id: 5, name: "BGM In" },
+];
+
+// ================= SISTEM ANTREAN PENGIRIMAN =================
+// Sistem antrean agar kelima kamera tidak menembak API di detik yang persis sama
+const uploadQueue = [];
+let isProcessingQueue = false;
+
+const processUploadQueue = async () => {
+  if (isProcessingQueue || uploadQueue.length === 0) return;
+
+  isProcessingQueue = true;
+  const { gateName, payload } = uploadQueue.shift();
+
+  try {
+    console.log(`[CAPTURE] Mengirim data ${gateName} ke server...`);
+    
+    // Gunakan environment variable jika ada, jika tidak fallback ke localhost
+    const baseUrl = process.env.REACT_APP_API_URL || "http://localhost:5000"; 
+    
+    // Menembak ke endpoint upload-image yang membaca 1 gate per request
+    const res = await fetch(`${baseUrl}/api/upload-image`, {
+      method: "POST",
+      mode: "cors",
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Server merespons dengan status: ${res.status}`);
+    }
+
+    const data = await res.json();
+    console.log(`[SUCCESS] ${gateName}:`, data);
+  } catch (err) {
+    console.error(`[FETCH ERROR] ${gateName}:`, err);
+  } finally {
+    isProcessingQueue = false;
+    processUploadQueue(); // Panggil lagi untuk memproses antrean berikutnya
+  }
+};
+// =============================================================
+
+function CctvCard({ gate, time }) {
   const [stream, setStream] = useState(null);
   const videoRef = useRef(null);
+  const lastSecondRef = useRef(null);
 
   const handleShareScreen = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
       setStream(mediaStream);
     } catch (err) {
-      console.error(`Error share screen ${title}:`, err);
+      console.error(`Error share screen ${gate.name}:`, err);
     }
   };
 
@@ -28,7 +80,7 @@ function ShareScreenCard({ title, apiEndpoint, intervalMs }) {
     }
   }, [stream]);
 
-  const captureAndSend = async (video) => {
+  const captureAndQueue = (video) => {
     try {
       const canvas = document.createElement("canvas");
       canvas.width = video.videoWidth;
@@ -36,48 +88,44 @@ function ShareScreenCard({ title, apiEndpoint, intervalMs }) {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(video, 0, 0);
       
-      // JPEG dengan kompresi 70% agar ringan dikirim dan lolos CORS
+      // Menggunakan JPEG kompresi 70% agar lebih ringan di jaringan
       const base64 = canvas.toDataURL("image/jpeg", 0.7); 
 
-      console.log(`[CAPTURE] Mengirim data ${title} ke server...`);
-      
-      const res = await fetch(`${process.env.REACT_APP_API_URL}${apiEndpoint}`, {
-        method: "POST",
-        mode: "cors",
-        headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({ image: base64 }),
+      // Masukkan ke antrean, kirim nama gate dan base64-nya
+      uploadQueue.push({
+        gateName: gate.name,
+        payload: { 
+          gate: gate.name,
+          image: base64 
+        }
       });
 
-      if (!res.ok) {
-        throw new Error(`Server merespons dengan status: ${res.status}`);
-      }
-
-      const data = await res.json();
-      console.log(`[SUCCESS] ${title}:`, data);
+      processUploadQueue();
     } catch (err) {
-      console.error(`[FETCH ERROR] ${title}:`, err);
+      console.error(`[CAPTURE ERROR] ${gate.name}:`, err);
     }
   };
 
   useEffect(() => {
     if (!stream) return;
     
-    // Looping interval
     const interval = setInterval(() => {
-      if (videoRef.current) {
-        captureAndSend(videoRef.current);
+      const now = new Date();
+      // Trigger setiap 10 detik secara presisi
+      if (now.getSeconds() % 10 === 0 && lastSecondRef.current !== now.getSeconds()) {
+        lastSecondRef.current = now.getSeconds();
+        if (videoRef.current) {
+          captureAndQueue(videoRef.current);
+        }
       }
-    }, intervalMs);
+    }, 1000); 
     
     return () => clearInterval(interval);
-  }, [stream, intervalMs]);
+  }, [stream]);
 
   const buttonStyle = {
-    padding: "8px 16px",
-    fontSize: "12px",
+    padding: "6px 12px",
+    fontSize: "11px",
     borderRadius: "6px",
     border: "none",
     cursor: "pointer",
@@ -87,11 +135,11 @@ function ShareScreenCard({ title, apiEndpoint, intervalMs }) {
   };
 
   return (
-    <div style={{ background: "white", borderRadius: "12px", border: "1px solid #E2E8F0", overflow: "hidden", display: "flex", flexDirection: "column", height: "100%", minHeight: "450px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", background: "#1E3A8A", color: "white" }}>
-        <span style={{ fontWeight: "800", letterSpacing: "0.5px" }}>{title}</span>
+    <div style={{ background: "white", borderRadius: "12px", border: "1px solid #E2E8F0", overflow: "hidden", display: "flex", flexDirection: "column", height: "350px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: "#1E3A8A", color: "white" }}>
+        <span style={{ fontWeight: "800", fontSize: "14px" }}>{gate.name}</span>
         {!stream ? (
-          <button onClick={handleShareScreen} style={{ ...buttonStyle, backgroundColor: "#10B981" }}>Mulai Share Screen</button>
+          <button onClick={handleShareScreen} style={{ ...buttonStyle, backgroundColor: "#10B981" }}>Share Screen</button>
         ) : (
           <button onClick={handleStopShare} style={{ ...buttonStyle, backgroundColor: "#EF4444" }}>Stop Share</button>
         )}
@@ -99,44 +147,40 @@ function ShareScreenCard({ title, apiEndpoint, intervalMs }) {
       
       <div style={{ flex: 1, background: "#0F172A", position: "relative" }}>
         {stream ? (
-          <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "contain", position: "absolute", top: 0, left: 0 }} />
+          <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "contain" }} />
         ) : (
-          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: "#475569", fontWeight: "bold", textAlign: "center" }}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginBottom: "10px", opacity: 0.5, margin: "0 auto" }}>
-              <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
-              <polyline points="17 2 12 7 7 2"></polyline>
-            </svg>
-            <div>BELUM ADA TANGKAPAN LAYAR</div>
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: "#475569", fontWeight: "bold", fontSize: "12px", textAlign: "center" }}>
+            NO SIGNAL
           </div>
         )}
+        <span style={{ position: "absolute", bottom: "10px", right: "10px", background: "rgba(0,0,0,0.6)", color: "white", padding: "4px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "bold" }}>
+          {time}
+        </span>
       </div>
     </div>
   );
 }
 
 export default function CctvGrid() {
-  const INTERVAL_TIME = 10000; // 10 detik untuk testing. (Ubah ke 1800000 jika sudah selesai testing)
+  const [time, setTime] = useState("");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime(new Date().toLocaleTimeString());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div style={{ padding: "10px" }}>
+    <div style={{ padding: "20px" }}>
       <div style={{ marginBottom: "20px", color: "#1E3A8A", fontWeight: "800", fontSize: "18px" }}>
         CONTROL PANEL OCR AUTOMATION
       </div>
       
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(450px, 1fr))", gap: "24px" }}>
-        {/* Card HCP */}
-        <ShareScreenCard 
-          title="HCP MONITORING (Hikvision)" 
-          apiEndpoint="/api/upload-hcp-grid" 
-          intervalMs={INTERVAL_TIME} 
-        />
-        
-        {/* Card Dahua */}
-        <ShareScreenCard 
-          title="DAHUA MONITORING (DSS)" 
-          apiEndpoint="/api/upload-dahua-grid" 
-          intervalMs={INTERVAL_TIME} 
-        />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "20px" }}>
+        {GATES.map((gate) => (
+          <CctvCard key={gate.id} gate={gate} time={time} />
+        ))}
       </div>
     </div>
   );

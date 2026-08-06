@@ -4,6 +4,7 @@ import io
 import base64
 import re
 import datetime
+import threading # 1. IMPORT THREADING UNTUK SISTEM ANTREAN
 from PIL import Image, ImageEnhance, ImageOps
 import pytesseract
 from flask import Flask, request, jsonify
@@ -16,6 +17,9 @@ app = Flask(__name__)
 # --- PERBAIKAN: KONFIGURASI CORS & PAYLOAD ---
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # Izinkan payload layar penuh hingga 50 MB
+
+# 2. INISIALISASI LOCK GLOBAL UNTUK MENCEGAH TABRAKAN DATA
+sheet_write_lock = threading.Lock()
 
 # ================= GOOGLE SHEETS SETUP =================
 scope = [
@@ -39,7 +43,7 @@ cc_sheet = cc_spreadsheet.worksheet("CallCenter")
 cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
 perparkiran_sheet = cc_spreadsheet.worksheet("Perparkiran")
 
-# ================= 1. SEMUA ENDPOINT LAMA (TIDAK ADA YANG DIHAPUS) =================
+# ================= 1. SEMUA ENDPOINT LAMA =================
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -88,7 +92,9 @@ def save_data():
         data['in'],
         data['out']
     ]
-    sheet.append_row(new_row)
+    # 3. GUNAKAN LOCK
+    with sheet_write_lock:
+        sheet.append_row(new_row)
     return jsonify({"status": "success"})
 
 @app.route('/api/cctv-data', methods=['GET'])
@@ -159,13 +165,17 @@ def upload_image():
         
         sheet = spreadsheet.worksheet("DATA") 
         now = datetime.datetime.now()
-        sheet.append_row([
-            str(now),
-            now.strftime("%Y-%m-%d"),
-            now.strftime("%H:%M:%S"),
-            gate,
-            value
-        ])
+        
+        # 4. GUNAKAN LOCK
+        with sheet_write_lock:
+            sheet.append_row([
+                str(now),
+                now.strftime("%Y-%m-%d"),
+                now.strftime("%H:%M:%S"),
+                gate,
+                value
+            ])
+            
         return jsonify({"status": "success", "value": value})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -183,9 +193,13 @@ def submit_ocr():
         
         sheet = spreadsheet.worksheet("DATA") 
         now = datetime.datetime.now()
-        sheet.append_row([
-            str(now), now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S"), gate, value
-        ])
+        
+        # 5. GUNAKAN LOCK
+        with sheet_write_lock:
+            sheet.append_row([
+                str(now), now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S"), gate, value
+            ])
+            
         return jsonify({"status": "success", "message": "Data tersimpan"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -194,7 +208,6 @@ def submit_ocr():
 # --- Konfigurasi Grid HCP (Area Crop Diperluas) ---
 HCP_GRID_CONFIG = {
     # Format: (Kiri, Atas, Kanan, Bawah)
-    # Area diperluas menjadi 40% lebar dan 30% tinggi dari masing-masing kotak
     "Marina IN": (0.0, 0.0, 0.40, 0.30),         
     "Marina OUT": (0.50, 0.0, 0.90, 0.30),       
     "Toll Kataraja IN": (0.0, 0.33, 0.40, 0.63), 
@@ -252,8 +265,6 @@ def upload_hcp_grid():
                 
                 img_cropped = img.crop((left, top, right, bottom))
                 
-                # OPTIMASI RAM FATAL: Hapus Resize & Sharpen. 
-                # Langsung ubah ke hitam putih pekat (Binary)
                 img_gray = img_cropped.convert('L')
                 img_binary = img_gray.point(lambda p: 255 if p > 160 else 0)
                 img_final = ImageOps.invert(img_binary)
@@ -264,7 +275,6 @@ def upload_hcp_grid():
                 mobil, motor = extract_vehicle_data(text)
                 total = mobil + motor
                 
-                # Menampilkan log mentah dari Tesseract untuk keperluan debugging
                 print(f"\n[RAW TEXT {gate_name}]\n{text.strip()}")
                 print(f"[OCR HASIL] {gate_name}: Mobil={mobil}, Motor={motor}, Total={total}")
                 
@@ -277,10 +287,11 @@ def upload_hcp_grid():
                 print(f"[OCR ERROR] Gagal memproses {gate_name}: {inner_e}")
                 continue 
 
+        # 6. GUNAKAN LOCK UNTUK APPEND_ROWS
         if rows_to_insert:
-            sheet.append_rows(rows_to_insert)
+            with sheet_write_lock:
+                sheet.append_rows(rows_to_insert)
 
-        # Menutup file gambar agar memori RAM langsung dikosongkan (Mencegah RAM Leak)
         img.close()
 
         return jsonify({"status": "success", "results": results_log})
