@@ -4,30 +4,20 @@ import io
 import base64
 import re
 import datetime
-# Menggabungkan impor ImageFilter untuk EasyOCR dengan ImageOps untuk fungsi lama
-from PIL import Image, ImageEnhance, ImageOps, ImageFilter 
+from PIL import Image, ImageEnhance, ImageOps
 import pytesseract
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 import os
 import json
-import threading # Tambahan untuk sistem Lock
-import numpy as np # Tambahan untuk EasyOCR
-import easyocr # Tambahan untuk EasyOCR
 
 app = Flask(__name__)
 
-# --- KONFIGURASI CORS & PAYLOAD (ASLI DARI PRODUCTION) ---
+# --- PERBAIKAN: KONFIGURASI CORS & PAYLOAD ---
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # Izinkan payload layar penuh hingga 50 MB
 
-# --- INISIALISASI UNTUK CCTV GRID (DARI DEVELOPMENT) ---
-sheet_write_lock = threading.Lock()
-print("Memuat Model AI EasyOCR...")
-reader = easyocr.Reader(['en'], gpu=False) 
-print("Model EasyOCR Siap!")
-
-# ================= GOOGLE SHEETS SETUP (ASLI DARI PRODUCTION) =================
+# ================= GOOGLE SHEETS SETUP =================
 scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive"
@@ -49,7 +39,7 @@ cc_sheet = cc_spreadsheet.worksheet("CallCenter")
 cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
 perparkiran_sheet = cc_spreadsheet.worksheet("Perparkiran")
 
-# ================= 1. SEMUA ENDPOINT LAMA (ASLI DARI PRODUCTION & TIDAK DIUBAH) =================
+# ================= 1. SEMUA ENDPOINT LAMA (TIDAK ADA YANG DIHAPUS) =================
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -108,61 +98,22 @@ def get_cctv_data():
     return jsonify(records)
 
 
-# ================= BAGIAN INI SAJA YANG DIUBAH (MENGGUNAKAN LOGIKA DEVELOPMENT) =================
-
+# --- KONFIGURASI CROP LAMA PER GATE ---
+UNIVERSAL_CROP = (0, 0, 0.45, 0.30) 
 GATE_CONFIG = {
-    "Marina In": {
-        "motor_box": (0.26, 0.025, 0.30, 0.05), 
-        "mobil_box": (0.22, 0.040, 0.30, 0.06)   
-    },
-    "Marina Out": {
-        "motor_box": (0.593, 0.038, 0.62, 0.06),
-        "mobil_box": (0.55, 0.048, 0.585, 0.08)
-    },
-    "Toll Kataraja In": {
-        "mobil_box": (0.20, 0.025, 0.30, 0.10)  
-    },
-    "Toll Kataraja Out": {
-        "mobil_box": (0.20, 0.025, 0.30, 0.10)
-    },
-    "BGM In": {
-        "motor_box": (0.20, 0.025, 0.30, 0.06),
-        "mobil_box": (0.20, 0.06, 0.30, 0.10)
-    },
-    "Default": {
-        "motor_box": (0.20, 0.025, 0.30, 0.06),
-        "mobil_box": (0.20, 0.06, 0.30, 0.10)
-    }
+    "Marina In": UNIVERSAL_CROP,
+    "Marina Out": UNIVERSAL_CROP,
+    "Linggi In 1": UNIVERSAL_CROP,
+    "Linggi In 2": UNIVERSAL_CROP,
+    "Linggi Out": UNIVERSAL_CROP,
+    "Tataban In": UNIVERSAL_CROP,
+    "Tataban Out": UNIVERSAL_CROP,
+    "Baruyungan In": UNIVERSAL_CROP,
+    "Baruyungan Out": UNIVERSAL_CROP,
+    "Toll Kataraja In": UNIVERSAL_CROP,
+    "Toll Kataraja Out": UNIVERSAL_CROP,
+    "Default": (0, 0, 0.50, 0.30) 
 }
-
-def process_single_crop(img_cropped, box_name):
-    """Membaca gambar menggunakan AI EasyOCR dengan Binarisasi Ekstrem"""
-    try:
-        img_gray = img_cropped.convert('L')
-        new_width = int(img_gray.width * 1)
-        new_height = int(img_gray.height * 1)
-        img_resized = img_gray.resize((new_width, new_height), Image.Resampling.LANCZOS)
-        
-        img_sharp = img_resized.filter(ImageFilter.SHARPEN)
-        enhancer = ImageEnhance.Contrast(img_sharp)
-        img_final = enhancer.enhance(2) 
-        
-        img_np = np.array(img_final)
-        
-        results = reader.readtext(img_np, allowlist='0123456789')
-        
-        valid_numbers = []
-        for (bbox, text, prob) in results:
-            nums = re.findall(r'\d+', text)
-            if nums:
-                valid_numbers.append(int(max(nums, key=len)))
-                
-        if valid_numbers:
-            return max(valid_numbers)
-            
-    except Exception as e:
-        print(f"Error processing {box_name}: {e}")
-    return 0
 
 @app.route('/api/upload-image', methods=['POST'])
 def upload_image():
@@ -170,56 +121,57 @@ def upload_image():
         data = request.json
         gate = data['gate'] 
         image_data = data['image']
-
         header, encoded = image_data.split(",", 1)
         img = Image.open(io.BytesIO(base64.b64decode(encoded)))
         width, height = img.size
 
-        config_gate = GATE_CONFIG.get(gate, GATE_CONFIG["Default"])
-
-        motor = 0
-        mobil = 0
-
-        # POTONG & BACA MOTOR
-        if "motor_box" in config_gate:
-            box = config_gate["motor_box"]
-            crop_motor = img.crop((int(width * box[0]), int(height * box[1]), int(width * box[2]), int(height * box[3])))
-            motor = process_single_crop(crop_motor, f"MOTOR_{gate}")
-
-        # POTONG & BACA MOBIL
-        if "mobil_box" in config_gate:
-            box = config_gate["mobil_box"]
-            crop_mobil = img.crop((int(width * box[0]), int(height * box[1]), int(width * box[2]), int(height * box[3])))
-            mobil = process_single_crop(crop_mobil, f"MOBIL_{gate}")
-
-        total = mobil + motor
-
-        print(f"\n[EASYOCR RESULT - {gate}] -> Mobil: {mobil}, Motor: {motor}, Total: {total}")
+        crop_setting = GATE_CONFIG.get(gate, GATE_CONFIG["Default"])
+        left = int(width * crop_setting[0])
+        top = int(height * crop_setting[1])
+        right = int(width * crop_setting[2])
+        bottom = int(height * crop_setting[3])
         
-        # GUNAKAN LOCK SEBELUM MENYIMPAN KE SPREADSHEET
-        if total > 0:
-            with sheet_write_lock: 
-                sheet = spreadsheet.worksheet("DATA") 
-                now = datetime.datetime.now()
-                
-                sheet.append_row([
-                    str(now), # Menambahkan str(now) sesuai struktur asli production
-                    now.strftime("%Y-%m-%d"),
-                    now.strftime("%H:%M:%S"),
-                    gate,
-                    total # Mengirim total sesuai kebutuhan kolom aslinya
-                ])
+        img_cropped = img.crop((left, top, right, bottom))
+        img_gray = img_cropped.convert('L')
+        img_resized = img_gray.resize((img_gray.width * 3, img_gray.height * 3), Image.Resampling.LANCZOS)
+        sharpen = ImageEnhance.Sharpness(img_resized)
+        img_sharp = sharpen.enhance(2.0)
+        img_binary = img_sharp.point(lambda p: 255 if p > 180 else 0)
+        img_final = ImageOps.invert(img_binary)
 
-        img.close()
-
-        return jsonify({"status": "success", "value": total})
-
+        config = r'--psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ: '
+        text = pytesseract.image_to_string(img_final, config=config)
+        
+        def extract_vehicle_value(text):
+            lines = text.upper().split("\n")
+            for line in lines:
+                if any(x in line for x in ["NON", "MOTOR", "NM", "STAFF"]): continue
+                keywords = ["VEHIC", "OUT", "IN", "OAT", "OT", "V:", "V-", "V ", "Q "]
+                if any(k in line for k in keywords):
+                    numbers = re.findall(r'\d+', line)
+                    if numbers:
+                        val_str = "".join(numbers)
+                        val = int(val_str)
+                        if 3 <= len(str(val)) <= 6: return val
+            return 0
+        
+        value = extract_vehicle_value(text)
+        
+        sheet = spreadsheet.worksheet("DATA") 
+        now = datetime.datetime.now()
+        sheet.append_row([
+            str(now),
+            now.strftime("%Y-%m-%d"),
+            now.strftime("%H:%M:%S"),
+            gate,
+            value
+        ])
+        return jsonify({"status": "success", "value": value})
     except Exception as e:
-        print(f"ERROR BACKEND [{data.get('gate', 'Unknown')}]:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# ================= 2. ENDPOINT BARU (HCP MULTIPLEXING & LOKAL AGENT - ASLI DARI PRODUCTION & TIDAK DIUBAH) =================
+# ================= 2. ENDPOINT BARU (HCP MULTIPLEXING & LOKAL AGENT) =================
 
 @app.route('/api/submit-ocr', methods=['POST'])
 def submit_ocr():
@@ -241,6 +193,8 @@ def submit_ocr():
 
 # --- Konfigurasi Grid HCP (Area Crop Diperluas) ---
 HCP_GRID_CONFIG = {
+    # Format: (Kiri, Atas, Kanan, Bawah)
+    # Area diperluas menjadi 40% lebar dan 30% tinggi dari masing-masing kotak
     "Marina IN": (0.0, 0.0, 0.40, 0.30),         
     "Marina OUT": (0.50, 0.0, 0.90, 0.30),       
     "Toll Kataraja IN": (0.0, 0.33, 0.40, 0.63), 
@@ -298,6 +252,8 @@ def upload_hcp_grid():
                 
                 img_cropped = img.crop((left, top, right, bottom))
                 
+                # OPTIMASI RAM FATAL: Hapus Resize & Sharpen. 
+                # Langsung ubah ke hitam putih pekat (Binary)
                 img_gray = img_cropped.convert('L')
                 img_binary = img_gray.point(lambda p: 255 if p > 160 else 0)
                 img_final = ImageOps.invert(img_binary)
@@ -308,6 +264,7 @@ def upload_hcp_grid():
                 mobil, motor = extract_vehicle_data(text)
                 total = mobil + motor
                 
+                # Menampilkan log mentah dari Tesseract untuk keperluan debugging
                 print(f"\n[RAW TEXT {gate_name}]\n{text.strip()}")
                 print(f"[OCR HASIL] {gate_name}: Mobil={mobil}, Motor={motor}, Total={total}")
                 
@@ -323,6 +280,7 @@ def upload_hcp_grid():
         if rows_to_insert:
             sheet.append_rows(rows_to_insert)
 
+        # Menutup file gambar agar memori RAM langsung dikosongkan (Mencegah RAM Leak)
         img.close()
 
         return jsonify({"status": "success", "results": results_log})
