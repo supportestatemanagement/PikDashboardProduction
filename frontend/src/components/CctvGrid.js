@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 
-// 1. KEMBALIKAN GATES DARI DEVELOPMENT (5 Kamera)
 const GATES = [
   { id: 1, name: "Marina In" },
   { id: 2, name: "Marina Out" },
@@ -11,7 +10,6 @@ const GATES = [
 ];
 
 // ================= SISTEM ANTREAN PENGIRIMAN =================
-// Sistem antrean agar kelima kamera tidak menembak API di detik yang persis sama
 const uploadQueue = [];
 let isProcessingQueue = false;
 
@@ -24,10 +22,8 @@ const processUploadQueue = async () => {
   try {
     console.log(`[CAPTURE] Mengirim data ${gateName} ke server...`);
     
-    // Gunakan environment variable jika ada, jika tidak fallback ke localhost
-    const baseUrl = process.env.REACT_APP_API_URL || "http://localhost:5000"; 
+    const baseUrl = process.env.REACT_APP_API_URL || "https://pikdashboard.onrender.com"; 
     
-    // Menembak ke endpoint upload-image yang membaca 1 gate per request
     const res = await fetch(`${baseUrl}/api/upload-image`, {
       method: "POST",
       mode: "cors",
@@ -48,7 +44,7 @@ const processUploadQueue = async () => {
     console.error(`[FETCH ERROR] ${gateName}:`, err);
   } finally {
     isProcessingQueue = false;
-    processUploadQueue(); // Panggil lagi untuk memproses antrean berikutnya
+    processUploadQueue(); 
   }
 };
 // =============================================================
@@ -88,10 +84,8 @@ function CctvCard({ gate, time }) {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(video, 0, 0);
       
-      // Menggunakan JPEG kompresi 70% agar lebih ringan di jaringan
       const base64 = canvas.toDataURL("image/jpeg", 0.7); 
 
-      // Masukkan ke antrean, kirim nama gate dan base64-nya
       uploadQueue.push({
         gateName: gate.name,
         payload: { 
@@ -111,7 +105,6 @@ function CctvCard({ gate, time }) {
     
     const interval = setInterval(() => {
       const now = new Date();
-      // Trigger setiap 10 detik secara presisi
       if (now.getSeconds() % 10 === 0 && lastSecondRef.current !== now.getSeconds()) {
         lastSecondRef.current = now.getSeconds();
         if (videoRef.current) {
