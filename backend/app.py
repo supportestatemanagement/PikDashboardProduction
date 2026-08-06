@@ -1,21 +1,31 @@
+import os
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import io
 import base64
 import re
 import datetime
-from PIL import Image, ImageEnhance, ImageOps
-import pytesseract
+import threading # Tambahan untuk sistem antrean GSheets
+import numpy as np # Tambahan untuk EasyOCR array
+from PIL import Image, ImageEnhance, ImageOps, ImageFilter
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
-import os
 import json
+
+# Tambahkan EasyOCR (Pastikan library sudah terinstall di server production)
+import easyocr
 
 app = Flask(__name__)
 
-# --- PERBAIKAN: KONFIGURASI CORS & PAYLOAD ---
+# --- KONFIGURASI CORS & PAYLOAD ---
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # Izinkan payload layar penuh hingga 50 MB
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 
+
+# --- INISIALISASI LOCK DAN AI EASYOCR ---
+sheet_write_lock = threading.Lock()
+print("Memuat Model AI EasyOCR...")
+reader = easyocr.Reader(['en'], gpu=False) 
+print("Model EasyOCR Siap!")
 
 # ================= GOOGLE SHEETS SETUP =================
 scope = [
@@ -191,33 +201,55 @@ def submit_ocr():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# --- Konfigurasi Grid HCP (Area Crop Diperluas) ---
 HCP_GRID_CONFIG = {
-    # Format: (Kiri, Atas, Kanan, Bawah)
-    # Area diperluas menjadi 40% lebar dan 30% tinggi dari masing-masing kotak
-    "Marina IN": (0.0, 0.0, 0.40, 0.30),         
-    "Marina OUT": (0.50, 0.0, 0.90, 0.30),       
-    "Toll Kataraja IN": (0.0, 0.33, 0.40, 0.63), 
-    "Toll Kataraja OUT": (0.50, 0.33, 0.90, 0.63) 
+    "Marina IN": {
+        "mobil_box": (0.22, 0.040, 0.30, 0.06),
+        "motor_box": (0.26, 0.025, 0.30, 0.05)
+    },
+    "Marina OUT": {
+        "mobil_box": (0.55, 0.048, 0.585, 0.08),
+        "motor_box": (0.593, 0.038, 0.62, 0.06)
+    },
+    "Toll Kataraja IN": {
+        "mobil_box": (0.10, 0.43, 0.20, 0.48)
+    },
+    "Toll Kataraja OUT": {
+        "mobil_box": (0.60, 0.43, 0.70, 0.48)
+    }
 }
 
-def extract_vehicle_data(text):
-    mobil = 0
-    motor = 0
-    lines = text.upper().split("\n")
-    
-    for line in lines:
-        if "NON-MOTOR" in line or "NON MOTOR" in line or "NONMOTOR" in line:
-            nums = re.findall(r'\d+', line)
+def process_single_crop(img_cropped, box_name=""):
+    """Fungsi dari devapp.py untuk membaca angka dengan binarisasi ekstrem"""
+    try:
+        img_gray = img_cropped.convert('L')
+        
+        new_width = int(img_gray.width * 1)
+        new_height = int(img_gray.height * 1)
+        img_resized = img_gray.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        
+        img_sharp = img_resized.filter(ImageFilter.SHARPEN)
+        
+        enhancer = ImageEnhance.Contrast(img_sharp)
+        img_final = enhancer.enhance(2) 
+        
+        img_np = np.array(img_final)
+        
+        # Baca teks dengan batasan hanya angka
+        results = reader.readtext(img_np, allowlist='0123456789')
+        
+        valid_numbers = []
+        for (bbox, text, prob) in results:
+            nums = re.findall(r'\d+', text)
             if nums:
-                motor = int(nums[-1])
-        elif "VEHICLE" in line or "VEHIC" in line:
-            if "NON" not in line:
-                nums = re.findall(r'\d+', line)
-                if nums:
-                    mobil = int(nums[-1])
-                    
-    return mobil, motor
+                valid_numbers.append(int(max(nums, key=len)))
+                
+        if valid_numbers:
+            return max(valid_numbers)
+            
+    except Exception as e:
+        print(f"Error processing {box_name}: {e}")
+    return 0
+
 
 @app.route('/api/upload-hcp-grid', methods=['POST', 'OPTIONS'])
 @cross_origin()
@@ -233,9 +265,7 @@ def upload_hcp_grid():
         img = Image.open(io.BytesIO(base64.b64decode(encoded)))
         width, height = img.size
 
-        sheet = spreadsheet.worksheet("DATA")
         now = datetime.datetime.now()
-        
         timestamp_str = str(now)
         date_str = now.strftime("%Y-%m-%d")
         time_str = now.strftime("%H:%M:%S")
@@ -243,29 +273,24 @@ def upload_hcp_grid():
         rows_to_insert = []
         results_log = []
 
-        for gate_name, crop_setting in HCP_GRID_CONFIG.items():
+        for gate_name, config_gate in HCP_GRID_CONFIG.items():
+            mobil = 0
+            motor = 0
+            
             try:
-                left = int(width * crop_setting[0])
-                top = int(height * crop_setting[1])
-                right = int(width * crop_setting[2])
-                bottom = int(height * crop_setting[3])
-                
-                img_cropped = img.crop((left, top, right, bottom))
-                
-                # OPTIMASI RAM FATAL: Hapus Resize & Sharpen. 
-                # Langsung ubah ke hitam putih pekat (Binary)
-                img_gray = img_cropped.convert('L')
-                img_binary = img_gray.point(lambda p: 255 if p > 160 else 0)
-                img_final = ImageOps.invert(img_binary)
+                # POTONG & BACA MOBIL
+                if "mobil_box" in config_gate:
+                    box = config_gate["mobil_box"]
+                    crop_mobil = img.crop((int(width * box[0]), int(height * box[1]), int(width * box[2]), int(height * box[3])))
+                    mobil = process_single_crop(crop_mobil, f"MOBIL_{gate_name}")
 
-                config = r'--psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:- '
-                text = pytesseract.image_to_string(img_final, config=config)
-                
-                mobil, motor = extract_vehicle_data(text)
+                # POTONG & BACA MOTOR
+                if "motor_box" in config_gate:
+                    box = config_gate["motor_box"]
+                    crop_motor = img.crop((int(width * box[0]), int(height * box[1]), int(width * box[2]), int(height * box[3])))
+                    motor = process_single_crop(crop_motor, f"MOTOR_{gate_name}")
+
                 total = mobil + motor
-                
-                # Menampilkan log mentah dari Tesseract untuk keperluan debugging
-                print(f"\n[RAW TEXT {gate_name}]\n{text.strip()}")
                 print(f"[OCR HASIL] {gate_name}: Mobil={mobil}, Motor={motor}, Total={total}")
                 
                 if total > 0:
@@ -277,10 +302,13 @@ def upload_hcp_grid():
                 print(f"[OCR ERROR] Gagal memproses {gate_name}: {inner_e}")
                 continue 
 
+        # Menggunakan Threading Lock untuk antrean pengiriman ke Spreadsheet
         if rows_to_insert:
-            sheet.append_rows(rows_to_insert)
+            with sheet_write_lock:
+                sheet = spreadsheet.worksheet("DATA")
+                sheet.append_rows(rows_to_insert)
 
-        # Menutup file gambar agar memori RAM langsung dikosongkan (Mencegah RAM Leak)
+        # Hapus gambar dari RAM
         img.close()
 
         return jsonify({"status": "success", "results": results_log})
