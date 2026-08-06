@@ -4,25 +4,21 @@ import io
 import base64
 import re
 import datetime
-# Tambahan ImageFilter untuk EasyOCR
 from PIL import Image, ImageEnhance, ImageOps, ImageFilter
 import pytesseract
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 import os
 import json
-
-# Tambahan Library untuk sistem Queue dan EasyOCR
 import threading 
 import numpy as np
 import easyocr
 
 app = Flask(__name__)
 
-# --- KONFIGURASI CORS & PAYLOAD ---
-# Gunakan konfigurasi standar ini. Flask-CORS akan otomatis menangani preflight (OPTIONS)
-CORS(app, resources={r"/*": {"origins": "*"}})
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # Izinkan payload layar penuh hingga 50 MB
+# --- KONFIGURASI CORS & PAYLOAD DIKEMBALIKAN KE VERSI STABIL ---
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 
 
 # --- INISIALISASI SISTEM ANTREAN & AI ---
 sheet_write_lock = threading.Lock()
@@ -52,10 +48,8 @@ cc_sheet = cc_spreadsheet.worksheet("CallCenter")
 cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
 perparkiran_sheet = cc_spreadsheet.worksheet("Perparkiran")
 
+# ================= 1. ENDPOINT AUTH & DATA =================
 
-# ================= 1. SEMUA ENDPOINT LAMA =================
-
-# Hapus 'OPTIONS' dari methods, biarkan Flask-CORS yang mengurusnya
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
@@ -143,23 +137,18 @@ GATE_CONFIG = {
 }
 
 def process_single_crop(img_cropped, box_name):
-    """Membaca gambar dengan format Black on White (Angka Hitam, Background Putih) yang tajam"""
+    """Membaca gambar dengan format Black on White yang tajam menggunakan EasyOCR"""
     try:
         safe_name = box_name.replace(" ", "_")
         
-        # Konversi ke Grayscale
         img_gray = img_cropped.convert('L')
-        
-        # Balikkan warna (Invert) agar angka jadi hitam
         img_inverted = ImageOps.invert(img_gray)
         
-        # Perbesar dan tajamkan
         new_width = int(img_inverted.width * 3)
         new_height = int(img_inverted.height * 3)
         img_resized = img_inverted.resize((new_width, new_height), Image.Resampling.LANCZOS)
         img_sharp = img_resized.filter(ImageFilter.SHARPEN)
         
-        # Tambah kontras
         enhancer = ImageEnhance.Contrast(img_sharp)
         img_final = enhancer.enhance(1.8) 
         
@@ -181,8 +170,6 @@ def process_single_crop(img_cropped, box_name):
         print(f"Error processing {box_name}: {e}")
     return 0
 
-
-# Hapus 'OPTIONS' dan blok if manual
 @app.route('/api/upload-image', methods=['POST'])
 def upload_image():
     try:
@@ -202,13 +189,11 @@ def upload_image():
         motor = 0
         mobil = 0
 
-        # POTONG & BACA MOTOR
         if "motor_box" in config_gate:
             box = config_gate["motor_box"]
             crop_motor = img.crop((int(width * box[0]), int(height * box[1]), int(width * box[2]), int(height * box[3])))
             motor = process_single_crop(crop_motor, f"MOTOR_{gate}")
 
-        # POTONG & BACA MOBIL
         if "mobil_box" in config_gate:
             box = config_gate["mobil_box"]
             crop_mobil = img.crop((int(width * box[0]), int(height * box[1]), int(width * box[2]), int(height * box[3])))
@@ -218,7 +203,6 @@ def upload_image():
 
         print(f"\n[EASYOCR B&W RESULT - {gate}] -> Mobil: {mobil}, Motor: {motor}, Total: {total}")
         
-        # GUNAKAN LOCK SEBELUM MENYIMPAN KE SPREADSHEET
         if total > 0:
             with sheet_write_lock: 
                 sheet = spreadsheet.worksheet("DATA") 
@@ -235,7 +219,6 @@ def upload_image():
                 ])
 
         img.close()
-
         return jsonify({"status": "success", "mobil": mobil, "motor": motor, "total": total})
 
     except Exception as e:
@@ -286,9 +269,12 @@ def extract_vehicle_data(text):
                     mobil = int(nums[-1])
     return mobil, motor
 
-# Hapus 'OPTIONS' dan @cross_origin manual, biarkan Flask-CORS yang mengatur
-@app.route('/api/upload-hcp-grid', methods=['POST'])
+@app.route('/api/upload-hcp-grid', methods=['POST', 'OPTIONS'])
+@cross_origin()
 def upload_hcp_grid():
+    if request.method == 'OPTIONS':
+        return jsonify({"status": "ok"}), 200
+
     try:
         data = request.json
         image_data = data['image']
