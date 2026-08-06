@@ -1,13 +1,15 @@
-# 1. Gunakan versi Python 3.11 yang sangat stabil (menyelesaikan masalah Pillow)
+# 1. Gunakan versi Python 3.11 yang stabil
 FROM python:3.11-slim
 
 # 2. Atur folder kerja di dalam server
 WORKDIR /app
 
-# 3. Instal Tesseract OCR dan library sistem yang dibutuhkan OpenCV
+# 3. Instal Tesseract OCR, OpenCV, dan dependensi sistem penunjang PyTorch/EasyOCR
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     libgl1 \
+    libglib2.0-0 \
+    libgomp1 \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
