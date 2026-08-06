@@ -12,7 +12,6 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 import json
 import pytesseract 
-import easyocr
 
 app = Flask(__name__)
 
@@ -101,12 +100,7 @@ def get_cctv_data():
     return jsonify(records)
 
 
-# --- INISIALISASI LOCK DAN AI EASYOCR ---
 sheet_write_lock = threading.Lock()
-print("Memuat Model AI EasyOCR...")
-reader = easyocr.Reader(['en']) 
-print("Model EasyOCR Siap!")
-
 
 # --- KONFIGURASI CROP LAMA PER GATE ---
 UNIVERSAL_CROP = (0, 0, 0.45, 0.30) 
@@ -219,29 +213,42 @@ HCP_GRID_CONFIG = {
 }
 
 def process_single_crop(img_cropped, box_name=""):
-    """Fungsi dari devapp.py untuk membaca angka dengan binarisasi ekstrem"""
+    """Membaca angka menggunakan Tesseract dengan teknik presisi (Crop & Binarization)"""
     try:
+        # 1. Konversi ke Grayscale
         img_gray = img_cropped.convert('L')
         
-        new_width = int(img_gray.width * 1)
-        new_height = int(img_gray.height * 1)
+        # 2. Perbesar gambar (Tesseract butuh resolusi lebih besar untuk baca angka kecil)
+        new_width = int(img_gray.width * 2.5)
+        new_height = int(img_gray.height * 2.5)
         img_resized = img_gray.resize((new_width, new_height), Image.Resampling.LANCZOS)
         
+        # 3. Pertajam gambar
         img_sharp = img_resized.filter(ImageFilter.SHARPEN)
         
+        # 4. Naikkan Kontras secara ekstrem
         enhancer = ImageEnhance.Contrast(img_sharp)
-        img_final = enhancer.enhance(2) 
+        img_contrast = enhancer.enhance(2.0)
         
-        img_np = np.array(img_final)
+        # 5. Binarization (Hitam Putih Pekat)
+        # Ubah pixel menjadi hitam pekat atau putih pekat berdasarkan threshold
+        img_binary = img_contrast.point(lambda p: 255 if p > 150 else 0)
         
-        # Baca teks dengan batasan hanya angka
-        results = reader.readtext(img_np, allowlist='0123456789')
+        # CATATAN: Tesseract lebih pintar membaca Teks Hitam di atas Background Putih.
+        # Jika CCTV Anda menampilkan Teks Putih dengan Background Hitam, gunakan Invert:
+        img_final = ImageOps.invert(img_binary) 
+
+        # 6. Jalankan Tesseract dengan Whitelist (Hanya Angka)
+        # PSM 6 = Mengasumsikan satu blok teks yang seragam
+        config = r'--psm 6 -c tessedit_char_whitelist=0123456789'
+        text = pytesseract.image_to_string(img_final, config=config)
         
+        # 7. Ekstrak angka menggunakan Regex
         valid_numbers = []
-        for (bbox, text, prob) in results:
-            nums = re.findall(r'\d+', text)
-            if nums:
-                valid_numbers.append(int(max(nums, key=len)))
+        nums = re.findall(r'\d+', text)
+        if nums:
+            # Ambil deret angka yang paling panjang (seperti logika dev sebelumnya)
+            valid_numbers.append(int(max(nums, key=len)))
                 
         if valid_numbers:
             return max(valid_numbers)
