@@ -4,31 +4,30 @@ import io
 import base64
 import re
 import datetime
-from PIL import Image, ImageEnhance, ImageOps, ImageFilter # Tambahan ImageFilter
+# Menggabungkan impor ImageFilter untuk EasyOCR dengan ImageOps untuk fungsi lama
+from PIL import Image, ImageEnhance, ImageOps, ImageFilter 
 import pytesseract
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 import os
 import json
-import threading # Tambahan threading
-import numpy as np # Tambahan numpy
-import easyocr # Tambahan easyocr
+import threading # Tambahan untuk sistem Lock
+import numpy as np # Tambahan untuk EasyOCR
+import easyocr # Tambahan untuk EasyOCR
 
 app = Flask(__name__)
 
-# --- PERBAIKAN: KONFIGURASI CORS & PAYLOAD ---
+# --- KONFIGURASI CORS & PAYLOAD (ASLI DARI PRODUCTION) ---
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 # Izinkan payload layar penuh hingga 50 MB
 
-# INISIALISASI LOCK GLOBAL UNTUK CCTV GRID
+# --- INISIALISASI UNTUK CCTV GRID (DARI DEVELOPMENT) ---
 sheet_write_lock = threading.Lock()
-
-# INISIALISASI EASYOCR (KHUSUS CCTV GRID)
 print("Memuat Model AI EasyOCR...")
 reader = easyocr.Reader(['en'], gpu=False) 
 print("Model EasyOCR Siap!")
 
-# ================= GOOGLE SHEETS SETUP =================
+# ================= GOOGLE SHEETS SETUP (ASLI DARI PRODUCTION) =================
 scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive"
@@ -50,7 +49,7 @@ cc_sheet = cc_spreadsheet.worksheet("CallCenter")
 cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
 perparkiran_sheet = cc_spreadsheet.worksheet("Perparkiran")
 
-# ================= 1. SEMUA ENDPOINT LAMA (TIDAK ADA YANG DIUBAH) =================
+# ================= 1. SEMUA ENDPOINT LAMA (ASLI DARI PRODUCTION & TIDAK DIUBAH) =================
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -109,8 +108,8 @@ def get_cctv_data():
     return jsonify(records)
 
 
-# ================= GANTIKAN HANYA BAGIAN INI DARI DEVELOPMENT =================
-# KONFIGURASI CROP BARU (KHUSUS CCTV GRID SHARESCREEN)
+# ================= BAGIAN INI SAJA YANG DIUBAH (MENGGUNAKAN LOGIKA DEVELOPMENT) =================
+
 GATE_CONFIG = {
     "Marina In": {
         "motor_box": (0.26, 0.025, 0.30, 0.05), 
@@ -137,17 +136,19 @@ GATE_CONFIG = {
 }
 
 def process_single_crop(img_cropped, box_name):
-    """Membaca gambar menggunakan AI EasyOCR (Logika Development)"""
+    """Membaca gambar menggunakan AI EasyOCR dengan Binarisasi Ekstrem"""
     try:
         img_gray = img_cropped.convert('L')
         new_width = int(img_gray.width * 1)
         new_height = int(img_gray.height * 1)
         img_resized = img_gray.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        
         img_sharp = img_resized.filter(ImageFilter.SHARPEN)
         enhancer = ImageEnhance.Contrast(img_sharp)
         img_final = enhancer.enhance(2) 
         
         img_np = np.array(img_final)
+        
         results = reader.readtext(img_np, allowlist='0123456789')
         
         valid_numbers = []
@@ -158,23 +159,24 @@ def process_single_crop(img_cropped, box_name):
                 
         if valid_numbers:
             return max(valid_numbers)
+            
     except Exception as e:
         print(f"Error processing {box_name}: {e}")
     return 0
 
 @app.route('/api/upload-image', methods=['POST'])
 def upload_image():
-    """Endpoint ini menggunakan logika EasyOCR Development dan Queue/Lock"""
     try:
         data = request.json
         gate = data['gate'] 
         image_data = data['image']
+
         header, encoded = image_data.split(",", 1)
         img = Image.open(io.BytesIO(base64.b64decode(encoded)))
         width, height = img.size
 
         config_gate = GATE_CONFIG.get(gate, GATE_CONFIG["Default"])
-        
+
         motor = 0
         mobil = 0
 
@@ -192,29 +194,32 @@ def upload_image():
 
         total = mobil + motor
 
-        # MENGGUNAKAN LOCK AGAR TIDAK TABRAKAN SAAT DIKIRIM BERURUTAN
+        print(f"\n[EASYOCR RESULT - {gate}] -> Mobil: {mobil}, Motor: {motor}, Total: {total}")
+        
+        # GUNAKAN LOCK SEBELUM MENYIMPAN KE SPREADSHEET
         if total > 0:
             with sheet_write_lock: 
                 sheet = spreadsheet.worksheet("DATA") 
                 now = datetime.datetime.now()
+                
                 sheet.append_row([
+                    str(now), # Menambahkan str(now) sesuai struktur asli production
                     now.strftime("%Y-%m-%d"),
                     now.strftime("%H:%M:%S"),
                     gate,
-                    mobil,
-                    motor,
-                    total
+                    total # Mengirim total sesuai kebutuhan kolom aslinya
                 ])
 
         img.close()
-        return jsonify({"status": "success", "mobil": mobil, "motor": motor, "total": total})
+
+        return jsonify({"status": "success", "value": total})
 
     except Exception as e:
         print(f"ERROR BACKEND [{data.get('gate', 'Unknown')}]:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# ================= 2. ENDPOINT BARU (HCP MULTIPLEXING & LOKAL AGENT) (TIDAK DIUBAH) =================
+# ================= 2. ENDPOINT BARU (HCP MULTIPLEXING & LOKAL AGENT - ASLI DARI PRODUCTION & TIDAK DIUBAH) =================
 
 @app.route('/api/submit-ocr', methods=['POST'])
 def submit_ocr():
@@ -236,8 +241,6 @@ def submit_ocr():
 
 # --- Konfigurasi Grid HCP (Area Crop Diperluas) ---
 HCP_GRID_CONFIG = {
-    # Format: (Kiri, Atas, Kanan, Bawah)
-    # Area diperluas menjadi 40% lebar dan 30% tinggi dari masing-masing kotak
     "Marina IN": (0.0, 0.0, 0.40, 0.30),         
     "Marina OUT": (0.50, 0.0, 0.90, 0.30),       
     "Toll Kataraja IN": (0.0, 0.33, 0.40, 0.63), 
@@ -295,8 +298,6 @@ def upload_hcp_grid():
                 
                 img_cropped = img.crop((left, top, right, bottom))
                 
-                # OPTIMASI RAM FATAL: Hapus Resize & Sharpen. 
-                # Langsung ubah ke hitam putih pekat (Binary)
                 img_gray = img_cropped.convert('L')
                 img_binary = img_gray.point(lambda p: 255 if p > 160 else 0)
                 img_final = ImageOps.invert(img_binary)
@@ -307,7 +308,6 @@ def upload_hcp_grid():
                 mobil, motor = extract_vehicle_data(text)
                 total = mobil + motor
                 
-                # Menampilkan log mentah dari Tesseract untuk keperluan debugging
                 print(f"\n[RAW TEXT {gate_name}]\n{text.strip()}")
                 print(f"[OCR HASIL] {gate_name}: Mobil={mobil}, Motor={motor}, Total={total}")
                 
@@ -323,7 +323,6 @@ def upload_hcp_grid():
         if rows_to_insert:
             sheet.append_rows(rows_to_insert)
 
-        # Menutup file gambar agar memori RAM langsung dikosongkan (Mencegah RAM Leak)
         img.close()
 
         return jsonify({"status": "success", "results": results_log})
