@@ -42,6 +42,11 @@ export default function App() {
   }, [activeTab]);
 
   useEffect(() => {
+    document.body.classList.toggle("traffic-dashboard-body", activeTab === "dashboard" && isLoggedIn);
+    return () => document.body.classList.remove("traffic-dashboard-body");
+  }, [activeTab, isLoggedIn]);
+
+  useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth <= 768;
       setIsMobile(mobile);

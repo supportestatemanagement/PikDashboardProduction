@@ -22,6 +22,7 @@ export default function Navbar({
   const [tempStart, setTempStart] = useState(dateRange?.start || new Date());
   const [tempEnd, setTempEnd] = useState(dateRange?.end || new Date());
   const [preset, setPreset] = useState("Hari ini");
+  const isTrafficDashboard = activeTab === "dashboard";
   const todayKey = new Date().toDateString();
   const isLiveRange = dateRange?.start?.toDateString() === todayKey && dateRange?.end?.toDateString() === todayKey;
 
@@ -38,7 +39,9 @@ export default function Navbar({
 
   const handleApply = () => {
     if (onDateChange) {
-      onDateChange({ start: tempStart, end: tempEnd });
+      onDateChange(isTrafficDashboard
+        ? { start: tempStart, end: tempStart }
+        : { start: tempStart, end: tempEnd });
     }
     setIsOpen(false);
   };
@@ -152,7 +155,9 @@ export default function Navbar({
                   gap: "6px"
                 }}
               >
-                <span>📅 {formatDate(dateRange.start)} - {formatDate(dateRange.end)}</span>
+                <span>📅 {isTrafficDashboard
+                  ? formatDate(dateRange.start)
+                  : `${formatDate(dateRange.start)} - ${formatDate(dateRange.end)}`}</span>
                 <span style={{ fontSize: "8px" }}>▼</span>
               </div>
 
@@ -166,7 +171,7 @@ export default function Navbar({
                   zIndex: 1200, 
                   borderRadius: "12px", 
                   boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)", 
-                  width: isMobile ? "290px" : "500px",
+                  width: isMobile || isTrafficDashboard ? "290px" : "500px",
                   border: "1px solid #E2E8F0",
                   color: "#1E293B"
                 }}>
@@ -179,14 +184,14 @@ export default function Navbar({
                     >
                       <option value="Hari ini">Hari ini</option>
                       <option value="Kemarin">Kemarin</option>
-                      <option value="Bulan ini">Bulan ini</option>
-                      <option value="7 hari terakhir">7 hari terakhir</option>
+                      {!isTrafficDashboard && <option value="Bulan ini">Bulan ini</option>}
+                      {!isTrafficDashboard && <option value="7 hari terakhir">7 hari terakhir</option>}
                     </select>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "15px" }}>
-                    <CalendarPart title="Mulai" selectedDate={tempStart} setSelectedDate={setTempStart} />
-                    <CalendarPart title="Akhir" selectedDate={tempEnd} setSelectedDate={setTempEnd} />
+                    <CalendarPart title={isTrafficDashboard ? "Pilih Tanggal" : "Mulai"} selectedDate={tempStart} setSelectedDate={setTempStart} />
+                    {!isTrafficDashboard && <CalendarPart title="Akhir" selectedDate={tempEnd} setSelectedDate={setTempEnd} />}
                   </div>
 
                   <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
