@@ -55,13 +55,13 @@ TRAFFIC_SHEETS = {
 }
 
 TRAFFIC_SUMMARY_COLUMNS = [
-    "CP - BGM", "Vehicle IN - BGM", "CP - Linggi", "Vehicle IN - GI",
-    "CP - Tataban", "Vehicle IN- RWI", "CP - Baruyungan",
-    "CP - Toll Kataraja", "Vehicle IN - PIK2", "Total Pengunjung",
+    "CP-BGM", "VehicleIN-BGM", "CP-Linggi", "VehicleIN-GI",
+    "CP-Tataban", "VehicleIN-RWI", "CP-Baruyungan",
+    "CP-TollKataraja", "VehicleIN-PIK2", "TotalPengunjung",
 ]
 TRAFFIC_HOURLY_COLUMNS = [
-    "CP - BGM", "CP - Linggi", "CP - Tataban", "CP - Baruyungan",
-    "CP - Toll Kataraja",
+    "CP-BGM", "CP-Linggi", "CP-Tataban", "CP-Baruyungan",
+    "CP-TollKataraja",
 ]
 
 
