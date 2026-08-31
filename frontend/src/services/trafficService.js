@@ -17,18 +17,26 @@ export function getTrafficStage(total) {
 
 export function mapTrafficDashboard(payload) {
   const source = payload.summary || {};
+  const normalizeKey = (key) => String(key).toLowerCase().replace(/[^a-z0-9]/g, "");
+  const normalizedSource = Object.fromEntries(
+    Object.entries(source).map(([key, value]) => [normalizeKey(key), value])
+  );
+  const read = (...keys) => {
+    const matchedKey = keys.map(normalizeKey).find((key) => key in normalizedSource);
+    return Number(normalizedSource[matchedKey]) || 0;
+  };
   const vehicles = {
-    bgm: Number(source["Vehicle IN - BGM"]) || 0,
-    gi: Number(source["Vehicle IN - GI"]) || 0,
-    rwi: Number(source["Vehicle IN- RWI"]) || 0,
-    pik2: Number(source["Vehicle IN - PIK2"]) || 0,
+    bgm: read("VehicleIN-BGM", "Vehicle IN - BGM"),
+    gi: read("VehicleIN-GI", "Vehicle IN - GI"),
+    rwi: read("VehicleIN-RWI", "Vehicle IN - RWI"),
+    pik2: read("VehicleIN-PIK2", "Vehicle IN - PIK2"),
   };
   vehicles.pik1 = vehicles.bgm + vehicles.gi + vehicles.rwi;
 
   const checkpoints = Object.fromEntries(
-    CHECKPOINTS.map(({ key, column }) => [key, Number(source[column]) || 0])
+    CHECKPOINTS.map(({ key, column }) => [key, read(column)])
   );
-  const totalVehicles = Number(source["Total Pengunjung"]) || 0;
+  const totalVehicles = read("TotalPengunjung", "Total Pengunjung");
 
   return {
     totalVehicles,
@@ -52,4 +60,3 @@ export async function fetchTrafficDashboard(dateRange, signal) {
   }
   return mapTrafficDashboard(payload);
 }
-

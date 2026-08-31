@@ -506,7 +506,7 @@ export default function HeatmapMap({ traffic }) {
     <div className="traffic-map-layer">
       <MapContainer
         center={[-6.105, 106.742]}
-        zoom={14}
+        zoom={13}
         style={{ height: '100%', width: '100%' }}
       >
         <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />

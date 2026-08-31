@@ -7,10 +7,9 @@ export const TRAFFIC_STAGE_CONFIG = [
 ];
 
 export const CHECKPOINTS = [
-  { key: "bgm", label: "CP BGM", column: "CP - BGM", color: "#38bdf8" },
-  { key: "linggi", label: "CP Linggi", column: "CP - Linggi", color: "#a78bfa" },
-  { key: "tataban", label: "CP Tataban", column: "CP - Tataban", color: "#34d399" },
-  { key: "baruyungan", label: "CP Baruyungan", column: "CP - Baruyungan", color: "#fbbf24" },
-  { key: "kataraja", label: "CP Toll Kataraja", column: "CP - Toll Kataraja", color: "#fb7185" },
+  { key: "bgm", label: "CP BGM", column: "CP-BGM", color: "#38bdf8" },
+  { key: "linggi", label: "CP Linggi", column: "CP-Linggi", color: "#a78bfa" },
+  { key: "tataban", label: "CP Tataban", column: "CP-Tataban", color: "#34d399" },
+  { key: "baruyungan", label: "CP Baruyungan", column: "CP-Baruyungan", color: "#fbbf24" },
+  { key: "kataraja", label: "CP Toll Kataraja", column: "CP-TollKataraja", color: "#fb7185" },
 ];
-

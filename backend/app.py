@@ -86,6 +86,19 @@ def integer_value(value):
         return 0
 
 
+def normalized_column_key(value):
+    return re.sub(r"[^a-z0-9]", "", str(value or "").lower())
+
+
+def record_value(record, column):
+    """Read a sheet column without depending on spaces or dash formatting."""
+    wanted = normalized_column_key(column)
+    for key, value in record.items():
+        if normalized_column_key(key) == wanted:
+            return value
+    return None
+
+
 def filter_records_by_date(records, start_date, end_date):
     return [
         row for row in records
@@ -114,7 +127,7 @@ def get_traffic_dashboard():
         hourly_rows = filter_records_by_date(hourly_sheet.get_all_records(), start_date, end_date)
 
         summary = {
-            column: sum(integer_value(row.get(column)) for row in summary_rows)
+            column: sum(integer_value(record_value(row, column)) for row in summary_rows)
             for column in TRAFFIC_SUMMARY_COLUMNS
         }
         hourly_by_time = defaultdict(lambda: {column: 0 for column in TRAFFIC_HOURLY_COLUMNS})
@@ -123,11 +136,11 @@ def get_traffic_dashboard():
             hour_match = re.search(r"(?:^|\s)(\d{1,2})(?::\d{2})?", time_value)
             if not hour_match:
                 continue
-            hour = min(int(hour_match.group(1)), 23)
+            hour = int(hour_match.group(1)) % 24
             time_key = f"{hour:02d}:00"
             for column in TRAFFIC_HOURLY_COLUMNS:
                 # CheckpointHour already contains final hourly calculations.
-                hourly_by_time[time_key][column] += integer_value(row.get(column))
+                hourly_by_time[time_key][column] += integer_value(record_value(row, column))
 
         hourly = [
             {"time": f"{hour:02d}:00", **hourly_by_time[f"{hour:02d}:00"]}

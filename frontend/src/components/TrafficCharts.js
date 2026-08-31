@@ -2,7 +2,7 @@ import { useState } from "react";
 import { CHECKPOINTS } from "../config/trafficConfig";
 import { formatInteger } from "../services/trafficService";
 
-const W = 1000, H = 190, PAD = { top: 12, right: 14, bottom: 28, left: 44 };
+const W = 520, H = 210, PAD = { top: 12, right: 10, bottom: 28, left: 42 };
 
 export default function TrafficCharts({ hourly }) {
   const [active, setActive] = useState(["bgm", "linggi"]);
@@ -18,7 +18,7 @@ export default function TrafficCharts({ hourly }) {
     </div>
     <svg className="hourly-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Grafik checkpoint per jam">
       {[0, .25, .5, .75, 1].map((ratio) => { const gridY = y(max * ratio); return <g key={ratio}><line x1={PAD.left} y1={gridY} x2={W - PAD.right} y2={gridY} /><text x={PAD.left - 7} y={gridY + 4}>{formatInteger(max * ratio)}</text></g>; })}
-      {hourly.map((row, index) => index % 2 === 0 && <text className="x-label" key={row.time} x={x(index)} y={H - 7}>{row.time}</text>)}
+      {hourly.map((row, index) => index % 4 === 0 && <text className="x-label" key={row.time} x={x(index)} y={H - 7}>{row.time}</text>)}
       {selected.map((item) => { const points = hourly.map((row, index) => `${x(index)},${y(Number(row[item.column]) || 0)}`).join(" "); const area = `${PAD.left},${H - PAD.bottom} ${points} ${x(23)},${H - PAD.bottom}`; return <g key={item.key}><polygon points={area} fill={item.color} opacity=".06" /><polyline points={points} stroke={item.color} /></g>; })}
     </svg>
   </section>;
