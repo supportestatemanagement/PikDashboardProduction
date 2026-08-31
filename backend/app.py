@@ -11,6 +11,7 @@ from PIL import Image
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 import json
+from collections import defaultdict
 
 # Menggunakan RapidOCR (Ringan, Cepat, dan Akurat untuk Angka CCTV)
 from rapidocr_onnxruntime import RapidOCR
@@ -47,6 +48,109 @@ cc_spreadsheet = client.open("Master Data Dashboard")
 cc_sheet = cc_spreadsheet.worksheet("CallCenter")
 cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
 perparkiran_sheet = cc_spreadsheet.worksheet("Perparkiran")
+
+TRAFFIC_SHEETS = {
+    "summary": spreadsheet.worksheet("AllCheckpoint"),
+    "hourly": spreadsheet.worksheet("CheckpointHour"),
+}
+
+TRAFFIC_SUMMARY_COLUMNS = [
+    "CP - BGM", "Vehicle IN - BGM", "CP - Linggi", "Vehicle IN - GI",
+    "CP - Tataban", "Vehicle IN- RWI", "CP - Baruyungan",
+    "CP - Toll Kataraja", "Vehicle IN - PIK2", "Total Pengunjung",
+]
+TRAFFIC_HOURLY_COLUMNS = [
+    "CP - BGM", "CP - Linggi", "CP - Tataban", "CP - Baruyungan",
+    "CP - Toll Kataraja",
+]
+
+
+def parse_sheet_date(value):
+    """Parse the date formats currently used by the traffic worksheets."""
+    text = str(value or "").strip()
+    for date_format in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y"):
+        try:
+            return datetime.datetime.strptime(text, date_format).date()
+        except ValueError:
+            continue
+    return None
+
+
+def integer_value(value):
+    if isinstance(value, (int, float)):
+        return int(round(value))
+    cleaned = re.sub(r"[^0-9-]", "", str(value or ""))
+    try:
+        return int(cleaned) if cleaned not in ("", "-") else 0
+    except ValueError:
+        return 0
+
+
+def filter_records_by_date(records, start_date, end_date):
+    return [
+        row for row in records
+        if (row_date := parse_sheet_date(row.get("Date")))
+        and start_date <= row_date <= end_date
+    ]
+
+
+@app.route('/api/traffic-dashboard', methods=['GET'])
+def get_traffic_dashboard():
+    """Return final worksheet values, filtered at the data source boundary."""
+    try:
+        today = datetime.date.today()
+        start_date = datetime.datetime.strptime(
+            request.args.get("startDate", today.isoformat()), "%Y-%m-%d"
+        ).date()
+        end_date = datetime.datetime.strptime(
+            request.args.get("endDate", start_date.isoformat()), "%Y-%m-%d"
+        ).date()
+        if start_date > end_date:
+            return jsonify({"status": "error", "message": "startDate must be before endDate"}), 400
+
+        summary_sheet = TRAFFIC_SHEETS["summary"]
+        hourly_sheet = TRAFFIC_SHEETS["hourly"]
+        summary_rows = filter_records_by_date(summary_sheet.get_all_records(), start_date, end_date)
+        hourly_rows = filter_records_by_date(hourly_sheet.get_all_records(), start_date, end_date)
+
+        summary = {
+            column: sum(integer_value(row.get(column)) for row in summary_rows)
+            for column in TRAFFIC_SUMMARY_COLUMNS
+        }
+        hourly_by_time = defaultdict(lambda: {column: 0 for column in TRAFFIC_HOURLY_COLUMNS})
+        for row in hourly_rows:
+            time_value = str(row.get("TIME", "")).strip()
+            hour_match = re.search(r"(?:^|\s)(\d{1,2})(?::\d{2})?", time_value)
+            if not hour_match:
+                continue
+            hour = min(int(hour_match.group(1)), 23)
+            time_key = f"{hour:02d}:00"
+            for column in TRAFFIC_HOURLY_COLUMNS:
+                # CheckpointHour already contains final hourly calculations.
+                hourly_by_time[time_key][column] += integer_value(row.get(column))
+
+        hourly = [
+            {"time": f"{hour:02d}:00", **hourly_by_time[f"{hour:02d}:00"]}
+            for hour in range(24)
+        ]
+        return jsonify({
+            "status": "success",
+            "range": {"startDate": start_date.isoformat(), "endDate": end_date.isoformat()},
+            "summary": summary,
+            "hourly": hourly,
+            "meta": {
+                "summarySource": "AllCheckpoint",
+                "hourlySource": "CheckpointHour",
+                "summaryColumns": summary_sheet.row_values(1),
+                "hourlyColumns": hourly_sheet.row_values(1),
+                "summaryRowCount": len(summary_rows),
+                "hourlyRowCount": len(hourly_rows),
+            },
+        })
+    except ValueError:
+        return jsonify({"status": "error", "message": "Dates must use YYYY-MM-DD"}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # ================= 1. SEMUA ENDPOINT LAMA (TIDAK ADA YANG DIHAPUS) =================
 

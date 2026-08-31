@@ -3,40 +3,11 @@ import { useState, useEffect } from "react";
 import "./global.css";
 import Login from "./components/Login";
 import Navbar from "./components/Navbar";
-import AlertBanner from "./components/AlertBanner";
-import SummaryCards from "./components/SummaryCards";
-import TrafficCharts from "./components/TrafficCharts";
-import HeatmapMap from "./components/HeatmapMap";
+import TrafficDashboard from "./components/TrafficDashboard";
 import CctvGrid from "./components/CctvGrid";
 import CallCenterDashboard from "./components/CallCenterDashboard";
 import CctvDashboard from "./components/CctvDashboard";
 import PerparkiranDashboard from "./components/PerparkiranDashboard";
-
-const INITIAL = {
-  totalVehicles: 1319,
-  totalIn: 10510,
-  totalOut: 9191,
-  stage: 1,
-  indexes: {
-    lalulIntas: 1.14,
-    bgmMarina: 0.97,
-    tollBgm: 1.33,
-    tollPik2: 0.53,
-  },
-  areaVehicles: {
-    bgm: 850,
-    gi: 220,
-    rwi: 470,
-  }
-};
-
-function computeStage(vehicles) {
-  if (vehicles < 800) return 1;
-  if (vehicles < 1200) return 2;
-  if (vehicles < 1600) return 3;
-  if (vehicles < 2000) return 4;
-  return 5;
-}
 
 export default function App() {
   // BACA DARI LOCAL STORAGE AGAR TIDAK LOGOUT SAAT REFRESH
@@ -53,8 +24,6 @@ export default function App() {
     }
     return "dashboard";
   });
-
-  const [data, setData] = useState(INITIAL);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth <= 768 : false);
@@ -92,8 +61,8 @@ export default function App() {
   const [dateRange, setDateRange] = useState(() => {
     const today = new Date();
     return {
-      start: new Date(today.getFullYear(), today.getMonth(), 1),
-      end: new Date(today.getFullYear(), today.getMonth() + 1, 0)
+      start: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+      end: new Date(today.getFullYear(), today.getMonth(), today.getDate())
     };
   });
 
@@ -106,41 +75,12 @@ export default function App() {
     }
   };
 
-  useEffect(() => {
-    if (!isLoggedIn) return;
-
-    const id = setInterval(() => {
-      setData(prev => {
-        const delta = Math.floor((Math.random() - 0.45) * 8);
-        const newTotal = Math.max(100, prev.totalVehicles + delta);
-        const newStage = computeStage(newTotal);
-
-        return {
-          ...prev,
-          totalVehicles: newTotal,
-          totalIn: prev.totalIn + Math.floor(Math.random() * 4),
-          totalOut: prev.totalOut + Math.floor(Math.random() * 3),
-          stage: newStage,
-          areaVehicles: { 
-            bgm: Math.max(50, prev.areaVehicles.bgm + Math.floor((Math.random() - 0.4) * 12)), 
-            gi: Math.max(20, prev.areaVehicles.gi + Math.floor((Math.random() - 0.45) * 6)), 
-            rwi: Math.max(30, prev.areaVehicles.rwi + Math.floor((Math.random() - 0.42) * 8)) 
-          }
-        };
-      });
-    }, 3000);
-
-    return () => {
-      clearInterval(id);
-    };
-  }, [isLoggedIn]);
-
   if (!isLoggedIn) {
     return <Login onLogin={() => setIsLoggedIn(true)} />;
   }
 
   return (
-    <div className="app-wrapper" style={{ minHeight: "100vh", background: "#F1F5F9" }}>
+    <div className={`app-wrapper ${activeTab === "dashboard" ? "traffic-active" : ""}`}>
       <Navbar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
@@ -157,19 +97,16 @@ export default function App() {
         style={{
           marginLeft: isMobile ? "0px" : (isSidebarOpen ? "260px" : "0px"),
           paddingTop: "70px",
-          paddingLeft: "20px",
-          paddingRight: "20px",
-          paddingBottom: "20px",
+          paddingLeft: activeTab === "dashboard" ? "0" : "20px",
+          paddingRight: activeTab === "dashboard" ? "0" : "20px",
+          paddingBottom: activeTab === "dashboard" ? "0" : "20px",
           transition: "margin-left 0.3s ease",
           boxSizing: "border-box",
           minHeight: "100vh"
         }}
       >
         <div style={{ display: activeTab === "dashboard" ? "block" : "none" }}>
-          <AlertBanner stage={data.stage} />
-          <SummaryCards data={data} />
-          <TrafficCharts data={data} />
-          <HeatmapMap areaVehicles={data.areaVehicles} />
+          <TrafficDashboard dateRange={dateRange} />
         </div>
         
         <div style={{ display: activeTab === "traffic" ? "block" : "none" }}>

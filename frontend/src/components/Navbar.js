@@ -21,7 +21,9 @@ export default function Navbar({
   const [isOpen, setIsOpen] = useState(false);
   const [tempStart, setTempStart] = useState(dateRange?.start || new Date());
   const [tempEnd, setTempEnd] = useState(dateRange?.end || new Date());
-  const [preset, setPreset] = useState("Bulan ini");
+  const [preset, setPreset] = useState("Hari ini");
+  const todayKey = new Date().toDateString();
+  const isLiveRange = dateRange?.start?.toDateString() === todayKey && dateRange?.end?.toDateString() === todayKey;
 
   useEffect(() => {
     const tick = () => {
@@ -127,7 +129,7 @@ export default function Navbar({
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
 
           {/* RENTANG TANGGAL DATERANGE UNTUK CALL CENTER */}
-          {(activeTab === "callcenter" || activeTab === "perparkiran") && dateRange && (
+          {(activeTab === "dashboard" || activeTab === "callcenter" || activeTab === "perparkiran") && dateRange && (
             <div style={{ position: "relative" }}>
               <div 
                 onClick={() => {
@@ -193,6 +195,12 @@ export default function Navbar({
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === "dashboard" && (
+            <div className={isLiveRange ? "header-mode live" : "header-mode historical"}>
+              <i />{isLiveRange ? "LIVE" : "HISTORICAL"}
             </div>
           )}
 

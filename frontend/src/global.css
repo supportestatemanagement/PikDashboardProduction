@@ -215,3 +215,68 @@ body {
   .cctv-grid { grid-template-columns: repeat(2, 1fr); }
   .bottom-row { grid-template-columns: 1fr; }
 }
+
+/* SMART CITY TRAFFIC COMMAND CENTER */
+.traffic-active, .traffic-active .page-content { background: #071018; overflow: hidden; }
+.traffic-command-center { position: relative; height: calc(100vh - 70px); min-height: 620px; width: 100%; overflow: hidden; color: #e2e8f0; }
+.traffic-map-layer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; background: #08131c; }
+.traffic-map-layer .leaflet-container { background: #08131c; }
+.traffic-map-layer .leaflet-tile-pane { filter: brightness(.47) saturate(.55) contrast(1.15) hue-rotate(165deg); }
+.traffic-map-layer .leaflet-control-zoom { margin-top: 18px; }
+.traffic-overlay { position: absolute; inset: 16px; z-index: 400; display: grid; grid-template-columns: minmax(270px, 310px) 1fr minmax(250px, 285px); grid-template-rows: 1fr 238px; gap: 14px; pointer-events: none; }
+.glass-panel { background: rgba(7, 18, 28, .84); border: 1px solid rgba(148, 163, 184, .2); box-shadow: 0 14px 40px rgba(0,0,0,.3); backdrop-filter: blur(14px); border-radius: 13px; pointer-events: auto; }
+.traffic-summary-panel { grid-column: 1; grid-row: 1; align-self: start; padding: 18px; }
+.checkpoint-panel { grid-column: 3; grid-row: 1; align-self: start; padding: 17px; }
+.hourly-chart-panel { grid-column: 1 / 4; grid-row: 2; padding: 14px 18px 9px; min-width: 0; }
+.panel-eyebrow, .panel-heading > span, .panel-heading > div > span { font-size: 10px; font-weight: 700; letter-spacing: 1.25px; color: #94a3b8; }
+.traffic-total { font: 700 46px/1 'Rajdhani', sans-serif; color: #f8fafc; margin: 5px 0 14px; }
+.primary-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.traffic-metric, .stage-block { padding: 9px 10px; background: rgba(30, 41, 59, .62); border: 1px solid rgba(148,163,184,.12); border-radius: 9px; display: flex; flex-direction: column; }
+.traffic-metric span, .stage-block span { color: #94a3b8; font-size: 9px; letter-spacing: .5px; }
+.traffic-metric strong { color: #e2e8f0; font: 700 23px/1.2 'Rajdhani', sans-serif; }
+.traffic-metric.primary strong { color: #38bdf8; font-size: 27px; }
+.stage-block { border-left: 3px solid var(--stage-color); }
+.stage-block strong { font: 700 18px/1.35 'Rajdhani', sans-serif; color: var(--stage-color); }
+.stage-block small { font-size: 9px; color: #cbd5e1; }
+.area-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 8px; }
+.panel-heading { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 13px; }
+.panel-heading small { display: block; color: #64748b; font-size: 9px; margin-top: 2px; }
+.checkpoint-list { display: grid; gap: 3px; }
+.checkpoint-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 7px; border-bottom: 1px solid rgba(148,163,184,.1); }
+.checkpoint-row span { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #cbd5e1; }
+.checkpoint-row i, .chart-legend i { width: 6px; height: 6px; border-radius: 50%; }
+.checkpoint-row strong { font: 700 19px/1 'Rajdhani', sans-serif; color: #f8fafc; }
+.chart-heading { margin-bottom: 3px; }
+.chart-legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+.chart-legend button { display: flex; align-items: center; gap: 5px; padding: 4px 7px; border: 1px solid rgba(148,163,184,.12); background: rgba(15,23,42,.45); color: #64748b; font-size: 9px; border-radius: 12px; cursor: pointer; }
+.chart-legend button.active { color: #e2e8f0; border-color: rgba(148,163,184,.35); }
+.hourly-svg { width: 100%; height: 175px; overflow: visible; }
+.hourly-svg line { stroke: rgba(148,163,184,.12); stroke-width: 1; }
+.hourly-svg text { fill: #64748b; font: 9px 'Inter', sans-serif; text-anchor: end; }
+.hourly-svg text.x-label { text-anchor: middle; }
+.hourly-svg polyline { fill: none; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
+.traffic-loading, .traffic-error { position: absolute; z-index: 600; top: 16px; left: 50%; transform: translateX(-50%); padding: 8px 13px; border-radius: 8px; background: rgba(7,18,28,.9); color: #cbd5e1; font-size: 11px; border: 1px solid rgba(148,163,184,.2); }
+.traffic-loading span { display: inline-block; width: 9px; height: 9px; border: 2px solid #334155; border-top-color: #38bdf8; border-radius: 50%; animation: traffic-spin .8s linear infinite; }
+.traffic-error { color: #fecaca; border-color: rgba(239,68,68,.4); }
+@keyframes traffic-spin { to { transform: rotate(360deg); } }
+.header-mode { display: flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 15px; font: 700 9px 'JetBrains Mono', monospace; letter-spacing: .7px; }
+.header-mode i { width: 6px; height: 6px; border-radius: 50%; }
+.header-mode.live { color: #86efac; background: rgba(34,197,94,.13); border: 1px solid rgba(34,197,94,.25); }
+.header-mode.live i { background: #22c55e; animation: pulse-dot 1.5s infinite; }
+.header-mode.historical { color: #cbd5e1; background: rgba(148,163,184,.12); border: 1px solid rgba(148,163,184,.2); }
+.header-mode.historical i { background: #94a3b8; }
+.custom-label { background: transparent; border: 0; }
+.traffic-popup .leaflet-popup-content-wrapper, .traffic-popup .leaflet-popup-tip { background: rgba(7,18,28,.94); color: #e2e8f0; }
+.traffic-popup .leaflet-popup-content { margin: 12px 14px; min-width: 170px; }
+.popup-title { font: 700 17px 'Rajdhani', sans-serif; color: #fff; margin-bottom: 7px; }
+.popup-row { display: flex; justify-content: space-between; gap: 16px; padding: 4px 0; font-size: 10px; color: #94a3b8; }
+.popup-row strong { color: #e2e8f0; }
+@media (max-width: 1100px) { .traffic-overlay { grid-template-columns: 270px 1fr 245px; } }
+@media (max-width: 768px) {
+  .traffic-command-center { height: calc(100vh - 70px); min-height: 560px; }
+  .traffic-overlay { inset: 9px; grid-template-columns: 1fr 1fr; grid-template-rows: auto 205px; overflow-y: auto; align-content: space-between; }
+  .traffic-summary-panel { grid-column: 1; max-height: 285px; overflow: auto; }
+  .checkpoint-panel { grid-column: 2; max-height: 285px; overflow: auto; }
+  .hourly-chart-panel { grid-column: 1 / 3; grid-row: 2; overflow-x: auto; }
+  .hourly-svg { min-width: 720px; }
+}

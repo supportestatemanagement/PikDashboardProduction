@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -481,12 +481,12 @@ const createLabel = (name, count) => {
   });
 };
 
-export default function HeatmapMap({ areaVehicles }) {
+export default function HeatmapMap({ traffic }) {
   // Ambil data kendaraan dari props, berikan default jika kosong
   const data = {
-    BGM: areaVehicles?.bgm ?? 0,
-    GI: areaVehicles?.gi ?? 0,
-    RWI: areaVehicles?.rwi ?? 0,
+    BGM: traffic?.vehicles?.bgm ?? 0,
+    GI: traffic?.vehicles?.gi ?? 0,
+    RWI: traffic?.vehicles?.rwi ?? 0,
   };
 
   // Fungsi style dinamis untuk setiap poligon di GeoJSON
@@ -503,13 +503,13 @@ export default function HeatmapMap({ areaVehicles }) {
   };
 
   return (
-    <div style={{ height: '500px', width: '100%' }}>
+    <div className="traffic-map-layer">
       <MapContainer
         center={[-6.105, 106.742]}
         zoom={14}
         style={{ height: '100%', width: '100%' }}
       >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
         <GeoJSON
           data={geojsonData}
@@ -522,7 +522,14 @@ export default function HeatmapMap({ areaVehicles }) {
             key={area}
             position={AREA_CONFIG[area].center}
             icon={createLabel(area, data[area])}
-          />
+          >
+            <Popup className="traffic-popup">
+              <div className="popup-title">{area}</div>
+              <div className="popup-row"><span>Vehicle In</span><strong>{data[area].toLocaleString('id-ID')}</strong></div>
+              {area === 'BGM' && <div className="popup-row"><span>CP BGM</span><strong>{(traffic?.checkpoints?.bgm || 0).toLocaleString('id-ID')}</strong></div>}
+              <div className="popup-row"><span>Status</span><strong style={{ color: traffic?.stage?.color }}>{traffic?.stage?.label || '–'}</strong></div>
+            </Popup>
+          </Marker>
         ))}
       </MapContainer>
     </div>
