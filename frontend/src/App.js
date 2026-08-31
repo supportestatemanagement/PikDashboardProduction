@@ -25,7 +25,7 @@ export default function App() {
     return "dashboard";
   });
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth <= 768 : false);
 
   // SIMPAN STATE KE LOCAL STORAGE SAAT ADA PERUBAHAN
@@ -45,11 +45,7 @@ export default function App() {
     const handleResize = () => {
       const mobile = window.innerWidth <= 768;
       setIsMobile(mobile);
-      if (mobile) {
-        setIsSidebarOpen(false);
-      } else {
-        setIsSidebarOpen(true);
-      }
+      if (mobile) setIsSidebarOpen(false);
     };
 
     window.addEventListener("resize", handleResize);
