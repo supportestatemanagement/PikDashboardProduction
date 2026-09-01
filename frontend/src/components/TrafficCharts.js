@@ -20,7 +20,7 @@ export default function TrafficCharts({ hourly, maximized, onMaximize }) {
 
   return <section className={`glass-panel hourly-chart-panel ${minimized ? "panel-minimized" : ""} ${maximized ? "panel-maximized" : ""}`}>
     <div className="panel-heading chart-heading">
-      <div className="chart-title-row"><div><span>KEPADATAN KENDARAAN PER JAM</span></div>
+      <div className="chart-title-row"><div><span>HOURLY CHECKPOINT TRAFFIC</span></div>
         <PanelControls minimized={minimized} maximized={maximized} onMinimize={() => { setMinimized(!minimized); if (!minimized && maximized) onMaximize(); }} onMaximize={onMaximize} />
       </div>
       {!minimized && <div className="chart-legend">{CHECKPOINTS.map((item) => <button className={active.includes(item.key) ? "active" : ""} key={item.key} onClick={() => toggle(item.key)}><i style={{ background: item.color }} />{item.label.replace("CP ", "")}</button>)}</div>}

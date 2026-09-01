@@ -98,9 +98,9 @@ export default function App() {
         style={{
           marginLeft: isMobile ? "0px" : (isSidebarOpen ? "260px" : "0px"),
           paddingTop: "60px",
-          paddingLeft: activeTab === "dashboard" ? "0" : "20px",
-          paddingRight: activeTab === "dashboard" ? "0" : "20px",
-          paddingBottom: activeTab === "dashboard" ? "0" : "20px",
+          paddingLeft: activeTab === "dashboard" ? "0" : (isMobile ? "10px" : "20px"),
+          paddingRight: activeTab === "dashboard" ? "0" : (isMobile ? "10px" : "20px"),
+          paddingBottom: activeTab === "dashboard" ? "0" : (isMobile ? "10px" : "20px"),
           transition: "margin-left 0.3s ease",
           boxSizing: "border-box",
           minHeight: "100vh"

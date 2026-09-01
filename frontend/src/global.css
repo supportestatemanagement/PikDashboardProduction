@@ -312,6 +312,8 @@ body {
   .hourly-chart-panel { overflow: hidden; }
   .hourly-svg { min-width: 0; }
   .panel-maximized { top: 72px !important; width: calc(100vw - 20px) !important; max-height: calc(100vh - 82px); }
+  .header-mode { display: none; }
+  .page-content { overflow-x: hidden; }
 }
 
 /* Compact overlay rules must remain after responsive command-center rules. */
@@ -427,3 +429,19 @@ body {
 .hourly-chart-panel.panel-maximized .hourly-svg { display: block; width: 100%; height: min(58vh, 540px); margin-top: 8px; }
 .hourly-chart-panel.panel-maximized .hourly-svg text.x-label { font-size: 10px; text-anchor: middle; }
 .hourly-chart-panel.panel-maximized .hourly-svg text.data-label { font-size: 9px; }
+
+@media (max-width: 768px) {
+  .traffic-overlay { width: min(210px, calc(100vw - 70px)); right: 6px; top: 8px; gap: 4px; }
+  .glass-panel { font-size: 8px; }
+  .traffic-summary-panel, .checkpoint-panel, .hourly-chart-panel { padding-left: 6px; padding-right: 6px; }
+  .panel-controls { gap: 2px; }
+  .panel-controls button { width: 17px; height: 16px; }
+  .leaflet-control-zoom a { width: 28px !important; height: 28px !important; line-height: 28px !important; font-size: 18px !important; }
+  .hourly-chart-panel.panel-maximized { width: calc(100vw - 16px) !important; }
+  .panel-maximized { top: calc(50% + 22px) !important; width: calc(100vw - 16px) !important; max-height: calc(100vh - 76px); padding: 16px 14px 18px !important; }
+}
+
+@media (max-width: 390px) {
+  .traffic-overlay { width: min(196px, calc(100vw - 62px)); }
+  .panel-titlebar > div > span, .chart-title-row > div:first-child > span { font-size: 7px; letter-spacing: .45px; }
+}

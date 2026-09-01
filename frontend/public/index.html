@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#0f2057" />
     <meta
       name="description"
-      content="Web site created using create-react-app"
+      content="911 Command Center Agung Sedayu Group"
     />
-    <link rel="icon" href="%PUBLIC_URL%/911cclogo.png" />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/911cclogo.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="%PUBLIC_URL%/favicon-64.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
@@ -28,7 +28,19 @@
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
+    <div id="root">
+      <div class="app-boot-splash" role="status" aria-label="Memuat 911 Command Center">
+        <img src="%PUBLIC_URL%/logo512.png" alt="911 Command Center" />
+        <div>911 COMMAND CENTER</div>
+        <span></span>
+      </div>
+    </div>
+    <style>
+      .app-boot-splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #0f2057; color: #fff; font: 700 14px Arial, sans-serif; letter-spacing: 1.5px; }
+      .app-boot-splash img { width: min(34vw, 164px); height: min(34vw, 164px); object-fit: contain; border-radius: 24%; box-shadow: 0 18px 45px rgba(0,0,0,.24); }
+      .app-boot-splash span { width: 28px; height: 28px; border: 3px solid rgba(255,255,255,.22); border-top-color: #fff; border-radius: 50%; animation: boot-spin .8s linear infinite; }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+    </style>
     <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.

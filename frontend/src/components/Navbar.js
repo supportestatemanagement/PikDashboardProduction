@@ -83,12 +83,12 @@ export default function Navbar({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: isMobile ? "0 10px" : "0 20px",
+        padding: isMobile ? "0 7px" : "0 20px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         zIndex: 1100
       }}>
         {/* HAMBURGER BUTTON & LOGO */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "5px" : "12px", minWidth: 0 }}>
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             style={{
@@ -96,28 +96,28 @@ export default function Navbar({
               border: "none",
               color: "white",
               cursor: "pointer",
-              padding: "6px",
+              padding: isMobile ? "3px" : "6px",
               display: "flex",
               alignItems: "center",
               borderRadius: "4px"
             }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width={isMobile ? "20" : "24"} height={isMobile ? "20" : "24"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="3" y1="12" x2="21" y2="12"></line>
               <line x1="3" y1="6" x2="21" y2="6"></line>
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
           </button>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "5px" : "10px", minWidth: 0 }}>
             <img 
               src="/911cclogo.png" 
               alt="911 Logo" 
-              style={{ width: "34px", height: "34px", objectFit: "contain" }} 
+              style={{ width: isMobile ? "29px" : "34px", height: isMobile ? "29px" : "34px", objectFit: "contain", flexShrink: 0 }} 
             />
             <div>
-              <div style={{ color: "white", fontSize: isMobile ? "12px" : "15px", fontWeight: "700", lineHeight: "1.2" }}>
-                911 COMMAND CENTER
+              <div style={{ color: "white", fontSize: isMobile ? "10px" : "15px", fontWeight: "700", lineHeight: "1.1", whiteSpace: "nowrap" }}>
+                {isMobile ? "911 CC" : "911 COMMAND CENTER"}
               </div>
               {!isMobile && (
                 <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "10px" }}>
@@ -129,7 +129,7 @@ export default function Navbar({
         </div>
 
         {/* HEADER RIGHT (LIVE TIME, DATE FILTER, LOGOUT) */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "4px" : "12px", flexShrink: 0 }}>
 
           {/* RENTANG TANGGAL DATERANGE UNTUK CALL CENTER */}
           {(activeTab === "dashboard" || activeTab === "callcenter" || activeTab === "perparkiran") && dateRange && (
@@ -143,13 +143,14 @@ export default function Navbar({
                   setIsOpen(!isOpen);
                 }} 
                 style={{ 
-                  padding: "5px 9px", 
+                  padding: isMobile ? "4px 6px" : "5px 9px", 
                   background: "rgba(255,255,255,0.2)", 
                   borderRadius: "6px", 
                   cursor: "pointer", 
                   fontWeight: 600, 
                   color: "white",
-                  fontSize: "10px",
+                  fontSize: isMobile ? "8px" : "10px",
+                  whiteSpace: "nowrap",
                   display: "flex",
                   alignItems: "center",
                   gap: "6px"
@@ -215,7 +216,7 @@ export default function Navbar({
               alignItems: "center", 
               gap: "6px", 
               background: "rgba(255,255,255,0.15)", 
-              padding: "6px 12px", 
+              padding: isMobile ? "5px 7px" : "6px 12px", 
               borderRadius: "6px", 
               color: "white", 
               fontSize: "12px" 
