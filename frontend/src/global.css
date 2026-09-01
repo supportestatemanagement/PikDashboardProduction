@@ -402,3 +402,28 @@ body {
 .hourly-chart-panel.panel-maximized .hourly-svg text.x-label { font-size: 7px; text-anchor: middle; }
 .hourly-svg text.data-label { fill: #fff !important; opacity: .95; }
 .hourly-chart-panel.panel-maximized .hourly-svg text.data-label { font-size: 8px; stroke-width: 2.2px; }
+
+/* Precision alignment for compact and maximized traffic panels */
+.traffic-summary-panel, .checkpoint-panel, .hourly-chart-panel { box-sizing: border-box; }
+.panel-titlebar, .chart-title-row { min-height: 22px; align-items: center; }
+.panel-titlebar > div, .chart-title-row > div:first-child { min-width: 0; }
+.panel-titlebar > div > span, .chart-title-row > div:first-child > span { display: block; white-space: nowrap; font-size: 8px; line-height: 12px; font-weight: 700; letter-spacing: .65px; }
+.glass-panel.panel-minimized .panel-titlebar,
+.glass-panel.panel-minimized .chart-title-row { height: 24px; min-height: 24px; }
+.glass-panel.panel-minimized .panel-titlebar > div > span,
+.glass-panel.panel-minimized .chart-title-row > div:first-child > span { font-size: 8px; line-height: 12px; letter-spacing: .65px; }
+.traffic-overview-stack { padding-top: 1px; }
+.checkpoint-list { padding-top: 1px; }
+.hourly-chart-panel:not(.panel-maximized) .hourly-svg { display: block; margin: 1px 0 0; }
+
+.panel-maximized { top: calc(50% + 24px) !important; }
+.panel-maximized .panel-heading { margin-bottom: 18px; }
+.panel-maximized .panel-titlebar, .panel-maximized .chart-title-row { min-height: 32px; }
+.panel-maximized .panel-titlebar > div > span,
+.panel-maximized .chart-title-row > div:first-child > span { font-size: 12px; line-height: 16px; letter-spacing: .9px; }
+.panel-maximized .traffic-overview-stack,
+.panel-maximized .checkpoint-list { padding-top: 2px; }
+.hourly-chart-panel.panel-maximized { width: min(1500px, calc(100vw - 72px)) !important; }
+.hourly-chart-panel.panel-maximized .hourly-svg { display: block; width: 100%; height: min(58vh, 540px); margin-top: 8px; }
+.hourly-chart-panel.panel-maximized .hourly-svg text.x-label { font-size: 10px; text-anchor: middle; }
+.hourly-chart-panel.panel-maximized .hourly-svg text.data-label { font-size: 9px; }

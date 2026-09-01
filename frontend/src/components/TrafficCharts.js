@@ -3,13 +3,16 @@ import { CHECKPOINTS } from "../config/trafficConfig";
 import { formatInteger } from "../services/trafficService";
 import PanelControls from "./PanelControls";
 
-const W = 520, H = 240, PAD = { top: 22, right: 10, bottom: 48, left: 42 };
+const W = 1200, H = 380, PAD = { top: 36, right: 28, bottom: 62, left: 66 };
+const HOUR_ORDER = [...Array.from({ length: 23 }, (_, index) => `${String(index + 1).padStart(2, "0")}:00`), "00:00"];
 
 export default function TrafficCharts({ hourly, maximized, onMaximize }) {
   const [active, setActive] = useState(["bgm", "linggi"]);
   const [minimized, setMinimized] = useState(false);
+  const rowsByTime = new Map(hourly.map((row) => [String(row.time).slice(0, 5), row]));
+  const orderedHourly = HOUR_ORDER.map((time) => rowsByTime.get(time) || { time });
   const selected = CHECKPOINTS.filter((item) => active.includes(item.key));
-  const values = selected.flatMap((item) => hourly.map((row) => Number(row[item.column]) || 0));
+  const values = selected.flatMap((item) => orderedHourly.map((row) => Number(row[item.column]) || 0));
   const max = Math.max(1, ...values);
   const x = (index) => PAD.left + (index / 23) * (W - PAD.left - PAD.right);
   const y = (value) => PAD.top + (1 - value / max) * (H - PAD.top - PAD.bottom);
@@ -24,14 +27,14 @@ export default function TrafficCharts({ hourly, maximized, onMaximize }) {
     </div>
     {!minimized && <svg className="hourly-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Grafik checkpoint per jam">
       {[0, .25, .5, .75, 1].map((ratio) => { const gridY = y(max * ratio); return <g key={ratio}><line x1={PAD.left} y1={gridY} x2={W - PAD.right} y2={gridY} /><text x={PAD.left - 7} y={gridY + 4}>{formatInteger(max * ratio)}</text></g>; })}
-      {hourly.map((row, index) => <text className="x-label" key={row.time} x={x(index)} y={H - 10} transform={maximized ? undefined : `rotate(-58 ${x(index)} ${H - 10})`}>{row.time}</text>)}
+      {orderedHourly.map((row, index) => <text className="x-label" key={row.time} x={x(index)} y={H - 12} transform={maximized ? undefined : `rotate(-58 ${x(index)} ${H - 12})`}>{row.time}</text>)}
       {selected.map((item, seriesIndex) => {
-        const points = hourly.map((row, index) => `${x(index)},${y(Number(row[item.column]) || 0)}`).join(" ");
+        const points = orderedHourly.map((row, index) => `${x(index)},${y(Number(row[item.column]) || 0)}`).join(" ");
         const area = `${PAD.left},${H - PAD.bottom} ${points} ${x(23)},${H - PAD.bottom}`;
         return <g key={item.key}>
           <polygon points={area} fill={item.color} opacity=".06" />
           <polyline points={points} stroke={item.color} />
-          {hourly.map((row, index) => {
+          {orderedHourly.map((row, index) => {
             const value = Number(row[item.column]) || 0;
             const pointY = y(value);
             return <g key={`${item.key}-${row.time}`}>
