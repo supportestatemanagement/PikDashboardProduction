@@ -4,7 +4,6 @@ import "./global.css";
 import Login from "./components/Login";
 import Navbar from "./components/Navbar";
 import TrafficDashboard from "./components/TrafficDashboard";
-import CctvGrid from "./components/CctvGrid";
 import CallCenterDashboard from "./components/CallCenterDashboard";
 import CctvDashboard from "./components/CctvDashboard";
 import PerparkiranDashboard from "./components/PerparkiranDashboard";
@@ -20,7 +19,8 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("cc_activeTab") || "dashboard";
+      const savedTab = localStorage.getItem("cc_activeTab");
+      return savedTab === "traffic" ? "dashboard" : (savedTab || "dashboard");
     }
     return "dashboard";
   });
@@ -110,10 +110,6 @@ export default function App() {
           <TrafficDashboard dateRange={dateRange} />
         </div>
         
-        <div style={{ display: activeTab === "traffic" ? "block" : "none" }}>
-          <CctvGrid />
-        </div>
-
         <div style={{ display: activeTab === "callcenter" ? "block" : "none" }}>
           <CallCenterDashboard
             dateRange={dateRange} 
