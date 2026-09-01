@@ -8,6 +8,7 @@ export default function TrafficDashboard({ dateRange }) {
   const [traffic, setTraffic] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [maximizedPanel, setMaximizedPanel] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -28,12 +29,11 @@ export default function TrafficDashboard({ dateRange }) {
     <main className="traffic-command-center">
       <HeatmapMap traffic={traffic} />
       <div className="traffic-overlay" aria-busy={loading}>
-        <SummaryCards traffic={traffic} />
-        <TrafficCharts hourly={traffic?.hourly || []} />
+        <SummaryCards traffic={traffic} maximizedPanel={maximizedPanel} onMaximize={setMaximizedPanel} />
+        <TrafficCharts hourly={traffic?.hourly || []} maximized={maximizedPanel === "hourly"} onMaximize={() => setMaximizedPanel(maximizedPanel === "hourly" ? null : "hourly")} />
       </div>
       {loading && <div className="traffic-loading"><span /> Memuat data traffic…</div>}
       {error && <div className="traffic-error">Data traffic tidak dapat dimuat: {error}</div>}
     </main>
   );
 }
-

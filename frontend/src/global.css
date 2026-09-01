@@ -313,3 +313,34 @@ body {
   .hourly-svg { min-width: 0; }
   .panel-maximized { top: 72px !important; width: calc(100vw - 20px) !important; max-height: calc(100vh - 82px); }
 }
+
+/* Compact overlay rules must remain after responsive command-center rules. */
+.traffic-overlay { top: 12px; right: 10px; bottom: 10px; width: 232px; gap: 5px; }
+.glass-panel { border-radius: 9px; font-size: 9px; box-shadow: 0 10px 26px rgba(0,0,0,.26); }
+.traffic-summary-panel, .checkpoint-panel { padding: 5px 7px; }
+.hourly-chart-panel { padding: 5px 7px 2px; }
+.panel-eyebrow, .panel-heading > span, .panel-heading > div > span, .chart-title-row > div > span { font-size: 8px; line-height: 1.2; letter-spacing: .7px; }
+.panel-heading { gap: 5px; margin-bottom: 4px; }
+.panel-heading small { font-size: 7px; line-height: 1.15; }
+.traffic-overview-stack { gap: 3px; }
+.traffic-metric, .stage-block { padding: 4px 6px; border-radius: 6px; }
+.traffic-metric span, .stage-block span { font-size: 8px; line-height: 1.15; }
+.traffic-metric strong { font-size: 15px; }
+.traffic-metric.primary strong { font-size: 17px; }
+.stage-block strong { font-size: 14px; line-height: 1.1; }
+.stage-block small { font-size: 7px; }
+.checkpoint-row { padding: 2px 1px; }
+.checkpoint-row span { gap: 5px; font-size: 8px; line-height: 1.15; }
+.checkpoint-row strong { font-size: 13px; }
+.chart-legend { gap: 2px; margin-top: 3px; }
+.chart-legend button { gap: 3px; padding: 1px 4px; font-size: 7px; border-radius: 8px; }
+.hourly-svg { height: 96px; }
+.hourly-svg text.x-label { font-size: 5px; text-anchor: end; }
+.hourly-svg text.data-label { font-size: 5px; font-weight: 600; text-anchor: middle; paint-order: stroke; stroke: rgba(7,18,28,.9); stroke-width: 1.6px; }
+.hourly-svg .data-point { stroke: rgba(7,18,28,.85); stroke-width: .7px; }
+.panel-controls button { width: 18px; height: 17px; border-radius: 4px; }
+.maximize-icon { width: 8px; height: 8px; border-width: 1.3px; }
+.panel-maximized { top: 50% !important; left: 50% !important; right: auto !important; bottom: auto !important; width: min(920px, calc(100vw - 80px)) !important; max-height: calc(100vh - 100px); transform: translate(-50%, -50%); }
+.traffic-summary-panel.panel-maximized, .checkpoint-panel.panel-maximized { width: min(520px, calc(100vw - 80px)) !important; }
+.panel-maximized .hourly-svg { height: min(58vh, 500px); }
+.panel-maximized .hourly-svg text.data-label { font-size: 7px; }
