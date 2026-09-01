@@ -2,7 +2,7 @@ import React from 'react';
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { getTrafficStage } from '../services/trafficService';
+import { getAreaTrafficStage } from '../services/trafficService';
 
 const geojsonData = {
   type: "FeatureCollection",
@@ -483,7 +483,7 @@ export default function HeatmapMap({ traffic }) {
     RWI: traffic?.vehicles?.rwi ?? 0,
   };
   const areaStages = Object.fromEntries(
-    Object.entries(data).map(([area, value]) => [area, getTrafficStage(value)])
+    Object.entries(data).map(([area, value]) => [area, getAreaTrafficStage(area, value)])
   );
 
   // Fungsi style dinamis untuk setiap poligon di GeoJSON
@@ -494,7 +494,7 @@ export default function HeatmapMap({ traffic }) {
     return {
       color: '#111827',
       weight: 2,
-      fillColor: (areaStages[areaName] || getTrafficStage(value)).color,
+      fillColor: (areaStages[areaName] || getAreaTrafficStage(areaName, value)).color,
       fillOpacity: 0.5,
     };
   };

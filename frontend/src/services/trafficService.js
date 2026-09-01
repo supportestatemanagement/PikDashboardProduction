@@ -1,4 +1,4 @@
-import { CHECKPOINTS, TRAFFIC_STAGE_CONFIG } from "../config/trafficConfig";
+import { AREA_TRAFFIC_STAGE_CONFIG, CHECKPOINTS, TRAFFIC_STAGE_CONFIG } from "../config/trafficConfig";
 
 const API_URL = process.env.REACT_APP_API_URL || "";
 
@@ -13,6 +13,11 @@ export const toApiDate = (date) => {
 
 export function getTrafficStage(total) {
   return TRAFFIC_STAGE_CONFIG.find((item) => total <= item.max) || TRAFFIC_STAGE_CONFIG.at(-1);
+}
+
+export function getAreaTrafficStage(area, total) {
+  const config = AREA_TRAFFIC_STAGE_CONFIG[String(area).toUpperCase()] || TRAFFIC_STAGE_CONFIG;
+  return config.find((item) => total <= item.max) || config.at(-1);
 }
 
 export function mapTrafficDashboard(payload) {

@@ -43,10 +43,10 @@ export default function Login({ onLogin }) {
     <section className="login-shell">
       <aside className="login-brand-panel">
         <img src="/logo512.png" alt="Logo 911 Command Center" />
-        <div><span>SMART CITY OPERATIONS</span><h1>911 Command Center</h1><p>Traffic monitoring and integrated city operation dashboard.</p></div>
+        <div><span>SMART CITY OPERATIONS</span><h1>Command Center PIK</h1><p>Traffic monitoring and integrated city operation dashboard.</p></div>
       </aside>
       <div className="login-form-panel">
-        <div className="login-mobile-brand"><img src="/logo192.png" alt="" /><div><strong>911 COMMAND CENTER</strong><span>Agung Sedayu Group</span></div></div>
+        <div className="login-mobile-brand"><img src="/logo192.png" alt="" /><div><strong>COMMAND CENTER PIK</strong><span>Agung Sedayu Group</span></div></div>
         <div className="login-heading"><span>SECURE ACCESS</span><h2>Selamat datang</h2><p>Masuk menggunakan akun Command Center Anda.</p></div>
         <form onSubmit={handleSubmit}>
           <label htmlFor="login-username">Username</label>
