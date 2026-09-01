@@ -142,9 +142,11 @@ def get_traffic_dashboard():
                 # CheckpointHour already contains final hourly calculations.
                 hourly_by_time[time_key][column] += integer_value(record_value(row, column))
 
+        # Operational sheet order: 01:00 through 23:00, with midnight/24:00 last.
+        hour_order = list(range(1, 24)) + [0]
         hourly = [
             {"time": f"{hour:02d}:00", **hourly_by_time[f"{hour:02d}:00"]}
-            for hour in range(24)
+            for hour in hour_order
         ]
         return jsonify({
             "status": "success",

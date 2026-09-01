@@ -359,3 +359,46 @@ body {
 .close-icon::before, .close-icon::after { content: ""; position: absolute; left: 4px; top: -1px; width: 1.4px; height: 11px; border-radius: 1px; background: currentColor; }
 .close-icon::before { transform: rotate(45deg); }
 .close-icon::after { transform: rotate(-45deg); }
+
+/* Symmetric collapsed panels and focused modal presentation */
+.glass-panel.panel-minimized { width: 100%; height: 38px; min-height: 38px; padding: 6px 7px; display: flex; align-items: center; }
+.glass-panel.panel-minimized .panel-heading { width: 100%; min-height: 24px; margin: 0; align-items: center; }
+.glass-panel.panel-minimized .panel-heading small { display: none; }
+.glass-panel.panel-minimized .panel-titlebar > div,
+.glass-panel.panel-minimized .chart-title-row > div:first-child { display: flex; align-items: center; }
+.glass-panel.panel-minimized .chart-heading,
+.glass-panel.panel-minimized .chart-title-row { width: 100%; margin: 0; }
+
+.traffic-modal-backdrop { z-index: 1200; background: rgba(1, 6, 12, .76); backdrop-filter: blur(3px); }
+.traffic-overlay.modal-open { z-index: 1300; }
+.traffic-overlay.modal-open > .glass-panel:not(.panel-maximized) { visibility: hidden; opacity: 0; pointer-events: none; }
+.panel-maximized { z-index: 1400 !important; padding: 22px 24px 24px !important; border-radius: 14px; }
+.panel-maximized .panel-heading { min-height: 30px; margin-bottom: 16px; padding-right: 38px; align-items: flex-start; }
+.panel-maximized .panel-heading > div > span,
+.panel-maximized .chart-title-row > div > span { font-size: 12px; line-height: 1.35; letter-spacing: 1px; }
+.panel-maximized .panel-heading small { font-size: 10px; line-height: 1.35; margin-top: 3px; }
+.panel-maximized .panel-controls { top: 15px; right: 15px; }
+.panel-maximized .panel-controls button { width: 28px; height: 28px; }
+.panel-maximized .close-icon { width: 12px; height: 12px; }
+.panel-maximized .close-icon::before,
+.panel-maximized .close-icon::after { left: 5px; top: -1px; height: 14px; width: 1.6px; }
+.panel-maximized .traffic-overview-stack { gap: 11px; }
+.panel-maximized .traffic-metric,
+.panel-maximized .stage-block { padding: 16px 18px; border-radius: 10px; }
+.panel-maximized .traffic-metric span,
+.panel-maximized .stage-block span { font-size: 11px; margin-bottom: 4px; }
+.panel-maximized .traffic-metric strong { font-size: 25px; }
+.panel-maximized .stage-block strong { font-size: 23px; }
+.panel-maximized .stage-block small { font-size: 10px; margin-top: 4px; }
+.checkpoint-panel.panel-maximized .checkpoint-list { gap: 0; }
+.checkpoint-panel.panel-maximized .checkpoint-row { padding: 9px 4px; }
+.checkpoint-panel.panel-maximized .checkpoint-row span { font-size: 12px; gap: 9px; }
+.checkpoint-panel.panel-maximized .checkpoint-row strong { font-size: 20px; }
+.hourly-chart-panel.panel-maximized { width: min(1280px, calc(100vw - 70px)) !important; }
+.hourly-chart-panel.panel-maximized .chart-heading { margin-bottom: 12px; }
+.hourly-chart-panel.panel-maximized .chart-legend { gap: 7px; margin-top: 8px; }
+.hourly-chart-panel.panel-maximized .chart-legend button { padding: 4px 8px; font-size: 10px; }
+.hourly-chart-panel.panel-maximized .hourly-svg { height: min(60vh, 520px); }
+.hourly-chart-panel.panel-maximized .hourly-svg text.x-label { font-size: 7px; text-anchor: middle; }
+.hourly-svg text.data-label { fill: #fff !important; opacity: .95; }
+.hourly-chart-panel.panel-maximized .hourly-svg text.data-label { font-size: 8px; stroke-width: 2.2px; }

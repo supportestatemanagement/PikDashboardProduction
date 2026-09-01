@@ -24,7 +24,7 @@ export default function TrafficCharts({ hourly, maximized, onMaximize }) {
     </div>
     {!minimized && <svg className="hourly-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Grafik checkpoint per jam">
       {[0, .25, .5, .75, 1].map((ratio) => { const gridY = y(max * ratio); return <g key={ratio}><line x1={PAD.left} y1={gridY} x2={W - PAD.right} y2={gridY} /><text x={PAD.left - 7} y={gridY + 4}>{formatInteger(max * ratio)}</text></g>; })}
-      {hourly.map((row, index) => <text className="x-label" key={row.time} x={x(index)} y={H - 10} transform={`rotate(-58 ${x(index)} ${H - 10})`}>{row.time}</text>)}
+      {hourly.map((row, index) => <text className="x-label" key={row.time} x={x(index)} y={H - 10} transform={maximized ? undefined : `rotate(-58 ${x(index)} ${H - 10})`}>{row.time}</text>)}
       {selected.map((item, seriesIndex) => {
         const points = hourly.map((row, index) => `${x(index)},${y(Number(row[item.column]) || 0)}`).join(" ");
         const area = `${PAD.left},${H - PAD.bottom} ${points} ${x(23)},${H - PAD.bottom}`;
@@ -36,7 +36,7 @@ export default function TrafficCharts({ hourly, maximized, onMaximize }) {
             const pointY = y(value);
             return <g key={`${item.key}-${row.time}`}>
               <circle className="data-point" cx={x(index)} cy={pointY} r="1.8" fill={item.color} />
-              <text className="data-label" x={x(index)} y={pointY + (seriesIndex % 2 === 0 ? -5 : 9)} fill={item.color}>{formatInteger(value)}</text>
+              <text className="data-label" x={x(index)} y={pointY + (seriesIndex % 2 === 0 ? -5 : 9)}>{formatInteger(value)}</text>
             </g>;
           })}
         </g>;
