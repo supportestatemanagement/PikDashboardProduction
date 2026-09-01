@@ -117,7 +117,7 @@ export default function Navbar({
             />
             <div>
               <div style={{ color: "white", fontSize: isMobile ? "10px" : "15px", fontWeight: "700", lineHeight: "1.1", whiteSpace: "nowrap" }}>
-                {isMobile ? "911 CC" : "911 COMMAND CENTER"}
+                {isMobile ? "911 COMMAND CENTER" : "911 COMMAND CENTER"}
               </div>
               {!isMobile && (
                 <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "10px" }}>
