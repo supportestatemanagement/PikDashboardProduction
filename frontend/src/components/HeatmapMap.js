@@ -2,6 +2,7 @@ import React from 'react';
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { getTrafficStage } from '../services/trafficService';
 
 const geojsonData = {
   type: "FeatureCollection",
@@ -448,13 +449,6 @@ const AREA_CONFIG = {
   RWI: { center: [-6.086914979546606, 106.73540363586415, ] }
 };
 
-// WARNA HEATMAP
-const getColor = (value) => {
-  if (value > 700) return '#EF4444'; // Merah
-  if (value > 300) return '#F59E0B'; // Oranye
-  return '#10B981'; // Hijau
-};
-
 // TEMPLATE LABEL
 const createLabel = (name, count) => {
   return L.divIcon({
@@ -488,6 +482,9 @@ export default function HeatmapMap({ traffic }) {
     GI: traffic?.vehicles?.gi ?? 0,
     RWI: traffic?.vehicles?.rwi ?? 0,
   };
+  const areaStages = Object.fromEntries(
+    Object.entries(data).map(([area, value]) => [area, getTrafficStage(value)])
+  );
 
   // Fungsi style dinamis untuk setiap poligon di GeoJSON
   const styleGeoJson = (feature) => {
@@ -497,7 +494,7 @@ export default function HeatmapMap({ traffic }) {
     return {
       color: '#111827',
       weight: 2,
-      fillColor: getColor(value), // Menggunakan warna heatmap
+      fillColor: (areaStages[areaName] || getTrafficStage(value)).color,
       fillOpacity: 0.5,
     };
   };
@@ -512,6 +509,7 @@ export default function HeatmapMap({ traffic }) {
         <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
         <GeoJSON
+          key={Object.values(areaStages).map((stage) => stage.stage).join('-')}
           data={geojsonData}
           style={styleGeoJson}
         />
@@ -527,7 +525,7 @@ export default function HeatmapMap({ traffic }) {
               <div className="popup-title">{area}</div>
               <div className="popup-row"><span>Vehicle In</span><strong>{data[area].toLocaleString('id-ID')}</strong></div>
               {area === 'BGM' && <div className="popup-row"><span>CP BGM</span><strong>{(traffic?.checkpoints?.bgm || 0).toLocaleString('id-ID')}</strong></div>}
-              <div className="popup-row"><span>Status</span><strong style={{ color: traffic?.stage?.color }}>{traffic?.stage?.label || '–'}</strong></div>
+              <div className="popup-row"><span>Status</span><strong style={{ color: areaStages[area].color }}>STAGE {areaStages[area].stage} · {areaStages[area].label}</strong></div>
             </Popup>
           </Marker>
         ))}

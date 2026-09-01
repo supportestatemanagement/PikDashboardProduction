@@ -19,7 +19,7 @@ test("maps final worksheet columns and applies the PIK1 formula", () => {
 });
 
 test("uses the centralized existing stage thresholds", () => {
-  expect(getTrafficStage(799).stage).toBe(1);
-  expect(getTrafficStage(800).stage).toBe(2);
-  expect(getTrafficStage(2000).stage).toBe(5);
+  expect(getTrafficStage(20000).stage).toBe(1);
+  expect(getTrafficStage(20001).stage).toBe(2);
+  expect(getTrafficStage(50001).stage).toBe(5);
 });
