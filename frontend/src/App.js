@@ -97,7 +97,7 @@ export default function App() {
         className="page-content"
         style={{
           marginLeft: isMobile ? "0px" : (isSidebarOpen ? "260px" : "0px"),
-          paddingTop: "70px",
+          paddingTop: "60px",
           paddingLeft: activeTab === "dashboard" ? "0" : "20px",
           paddingRight: activeTab === "dashboard" ? "0" : "20px",
           paddingBottom: activeTab === "dashboard" ? "0" : "20px",

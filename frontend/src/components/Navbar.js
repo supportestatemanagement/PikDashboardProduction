@@ -143,13 +143,13 @@ export default function Navbar({
                   setIsOpen(!isOpen);
                 }} 
                 style={{ 
-                  padding: "6px 12px", 
+                  padding: "5px 9px", 
                   background: "rgba(255,255,255,0.2)", 
                   borderRadius: "6px", 
                   cursor: "pointer", 
                   fontWeight: 600, 
                   color: "white",
-                  fontSize: "11px",
+                  fontSize: "10px",
                   display: "flex",
                   alignItems: "center",
                   gap: "6px"
@@ -167,20 +167,20 @@ export default function Navbar({
                   top: "45px", 
                   right: "0", 
                   background: "white", 
-                  padding: "20px", 
+                  padding: "12px", 
                   zIndex: 1200, 
-                  borderRadius: "12px", 
+                  borderRadius: "9px", 
                   boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)", 
-                  width: isMobile || isTrafficDashboard ? "290px" : "500px",
+                  width: isMobile || isTrafficDashboard ? "250px" : "440px",
                   border: "1px solid #E2E8F0",
                   color: "#1E293B"
                 }}>
-                  <div style={{ marginBottom: "15px" }}>
+                  <div style={{ marginBottom: "10px" }}>
                     <label style={{ fontSize: "11px", fontWeight: 700, color: "#64748B", display: "block", marginBottom: "5px" }}>Pilih Preset:</label>
                     <select 
                       value={preset} 
                       onChange={(e) => handlePresetChange(e.target.value)} 
-                      style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #E2E8F0", outline: "none", fontSize: "12px" }}
+                      style={{ width: "100%", padding: "6px", borderRadius: "6px", border: "1px solid #E2E8F0", outline: "none", fontSize: "10px" }}
                     >
                       <option value="Hari ini">Hari ini</option>
                       <option value="Kemarin">Kemarin</option>
@@ -194,9 +194,9 @@ export default function Navbar({
                     {!isTrafficDashboard && <CalendarPart title="Akhir" selectedDate={tempEnd} setSelectedDate={setTempEnd} />}
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
-                    <button onClick={() => setIsOpen(false)} style={{ padding: "8px 16px", borderRadius: "6px", border: "none", background: "#94A3B8", color: "white", fontWeight: 700, fontSize: "12px", cursor: "pointer" }}>Batal</button>
-                    <button onClick={handleApply} style={{ padding: "8px 16px", borderRadius: "6px", border: "none", background: "#3B82F6", color: "white", fontWeight: 700, fontSize: "12px", cursor: "pointer" }}>Terapkan</button>
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "7px", marginTop: "12px" }}>
+                    <button onClick={() => setIsOpen(false)} style={{ padding: "6px 11px", borderRadius: "5px", border: "none", background: "#94A3B8", color: "white", fontWeight: 700, fontSize: "10px", cursor: "pointer" }}>Batal</button>
+                    <button onClick={handleApply} style={{ padding: "6px 11px", borderRadius: "5px", border: "none", background: "#3B82F6", color: "white", fontWeight: 700, fontSize: "10px", cursor: "pointer" }}>Terapkan</button>
                   </div>
                 </div>
               )}
