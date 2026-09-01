@@ -31,7 +31,7 @@ export default function SummaryCards({ traffic, maximizedPanel, onMaximize }) {
     </section>
 
     <section className={`glass-panel checkpoint-panel ${checkpoint.minimized ? "panel-minimized" : ""} ${checkpoint.maximized ? "panel-maximized" : ""}`}>
-      <PanelHeader title="CHECKPOINT" source="AllCheckpoint" state={checkpoint} onMinimize={() => { updatePanel("checkpoint", { minimized: !checkpoint.minimized }); if (!checkpoint.minimized) onMaximize(null); }} onMaximize={() => onMaximize(checkpoint.maximized ? null : "checkpoint")} />
+      <PanelHeader title="CHECKPOINT" state={checkpoint} onMinimize={() => { updatePanel("checkpoint", { minimized: !checkpoint.minimized }); if (!checkpoint.minimized) onMaximize(null); }} onMaximize={() => onMaximize(checkpoint.maximized ? null : "checkpoint")} />
       {!checkpoint.minimized && <div className="checkpoint-list">{CHECKPOINTS.map((item) => <div className="checkpoint-row" key={item.key}><span><i style={{ background: item.color }} />{item.label}</span><strong>{formatInteger(checkpoints[item.key])}</strong></div>)}</div>}
     </section>
   </>;
