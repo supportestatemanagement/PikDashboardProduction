@@ -344,3 +344,18 @@ body {
 .traffic-summary-panel.panel-maximized, .checkpoint-panel.panel-maximized { width: min(520px, calc(100vw - 80px)) !important; }
 .panel-maximized .hourly-svg { height: min(58vh, 500px); }
 .panel-maximized .hourly-svg text.data-label { font-size: 7px; }
+
+.traffic-modal-backdrop { position: fixed; inset: 60px 0 0; z-index: 390; border: 0; background: rgba(2, 8, 15, .66); backdrop-filter: blur(2px); cursor: default; animation: modal-backdrop-in .22s ease both; }
+.traffic-overlay.modal-open > .glass-panel:not(.panel-maximized) { opacity: 0; pointer-events: none; }
+@keyframes modal-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+.panel-maximized { animation: panel-maximize-in .24s ease both !important; transform: translate(-50%, -50%) !important; }
+@keyframes panel-maximize-in {
+  from { opacity: 0; transform: translate(-50%, -47%) scale(.97); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.panel-maximized .panel-controls { position: absolute; top: 10px; right: 10px; }
+.panel-maximized .panel-heading { padding-right: 28px; }
+.close-icon { position: relative; display: block; width: 9px; height: 9px; }
+.close-icon::before, .close-icon::after { content: ""; position: absolute; left: 4px; top: -1px; width: 1.4px; height: 11px; border-radius: 1px; background: currentColor; }
+.close-icon::before { transform: rotate(45deg); }
+.close-icon::after { transform: rotate(-45deg); }

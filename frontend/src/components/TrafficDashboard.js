@@ -28,7 +28,8 @@ export default function TrafficDashboard({ dateRange }) {
   return (
     <main className="traffic-command-center">
       <HeatmapMap traffic={traffic} />
-      <div className="traffic-overlay" aria-busy={loading}>
+      {maximizedPanel && <button className="traffic-modal-backdrop" aria-label="Tutup panel yang diperbesar" onClick={() => setMaximizedPanel(null)} />}
+      <div className={`traffic-overlay ${maximizedPanel ? "modal-open" : ""}`} aria-busy={loading}>
         <SummaryCards traffic={traffic} maximizedPanel={maximizedPanel} onMaximize={setMaximizedPanel} />
         <TrafficCharts hourly={traffic?.hourly || []} maximized={maximizedPanel === "hourly"} onMaximize={() => setMaximizedPanel(maximizedPanel === "hourly" ? null : "hourly")} />
       </div>
