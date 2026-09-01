@@ -1,8 +1,8 @@
 export const TRAFFIC_STAGE_CONFIG = [
-  { stage: 1, max: 799, label: "Lancar", color: "#22c55e" },
-  { stage: 2, max: 1199, label: "Ramai Lancar", color: "#eab308" },
-  { stage: 3, max: 1599, label: "Padat", color: "#f97316" },
-  { stage: 4, max: 1999, label: "Sangat Padat", color: "#ef4444" },
+  { stage: 1, max: 20000, label: "Lancar", color: "#22c55e" },
+  { stage: 2, max: 30000, label: "Ramai Lancar", color: "#eab308" },
+  { stage: 3, max: 40000, label: "Padat", color: "#f97316" },
+  { stage: 4, max: 50000, label: "Sangat Padat", color: "#ef4444" },
   { stage: 5, max: Infinity, label: "Kritis", color: "#dc2626" },
 ];
 
