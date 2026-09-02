@@ -32,6 +32,7 @@ export default function Navbar({
   const [tempEnd, setTempEnd] = useState(dateRange?.end || new Date());
   const [preset, setPreset] = useState("Hari ini");
   const isTrafficDashboard = activeTab === "dashboard";
+  const isSingleDateDashboard = isTrafficDashboard || activeTab === "pump";
   const todayKey = new Date().toDateString();
   const isLiveRange = dateRange?.start?.toDateString() === todayKey && dateRange?.end?.toDateString() === todayKey;
 
@@ -48,7 +49,7 @@ export default function Navbar({
 
   const handleApply = () => {
     if (onDateChange) {
-      onDateChange(isTrafficDashboard
+      onDateChange(isSingleDateDashboard
         ? { start: tempStart, end: tempStart }
         : { start: tempStart, end: tempEnd });
     }
@@ -181,7 +182,7 @@ export default function Navbar({
                   gap: "6px"
                 }}
               >
-                <span>📅 {isTrafficDashboard
+                <span>📅 {isSingleDateDashboard
                   ? formatDate(dateRange.start)
                   : `${formatDate(dateRange.start)} - ${formatDate(dateRange.end)}`}</span>
                 <span style={{ fontSize: "8px" }}>▼</span>
@@ -197,11 +198,11 @@ export default function Navbar({
                   zIndex: 1200, 
                   borderRadius: "9px", 
                   boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)", 
-                  width: isMobile || isTrafficDashboard ? "250px" : "440px",
+                  width: isMobile || isSingleDateDashboard ? "250px" : "440px",
                   border: "1px solid #E2E8F0",
                   color: "#1E293B"
                 }}>
-                  <div style={{ marginBottom: "10px" }}>
+                  {!isSingleDateDashboard && <div style={{ marginBottom: "10px" }}>
                     <label style={{ fontSize: "11px", fontWeight: 700, color: "#64748B", display: "block", marginBottom: "5px" }}>Pilih Preset:</label>
                     <select 
                       value={preset} 
@@ -212,17 +213,12 @@ export default function Navbar({
                       <option value="Kemarin">Kemarin</option>
                       {!isTrafficDashboard && <option value="Bulan ini">Bulan ini</option>}
                       {!isTrafficDashboard && <option value="7 hari terakhir">7 hari terakhir</option>}
-                      {activeTab === "pump" && <option value="Bulan lalu">Bulan lalu</option>}
-                      {activeTab === "pump" && <option value="3 bulan terakhir">3 bulan terakhir</option>}
-                      {activeTab === "pump" && <option value="6 bulan terakhir">6 bulan terakhir</option>}
-                      {activeTab === "pump" && <option value="Tahun ini">Tahun ini</option>}
-                      {activeTab === "pump" && <option value="1 tahun terakhir">1 tahun terakhir</option>}
                     </select>
-                  </div>
+                  </div>}
 
                   <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "15px" }}>
-                    <CalendarPart title={isTrafficDashboard ? "Pilih Tanggal" : "Mulai"} selectedDate={tempStart} setSelectedDate={setTempStart} />
-                    {!isTrafficDashboard && <CalendarPart title="Akhir" selectedDate={tempEnd} setSelectedDate={setTempEnd} />}
+                    <CalendarPart title={isSingleDateDashboard ? "Pilih Tanggal" : "Mulai"} selectedDate={tempStart} setSelectedDate={setTempStart} />
+                    {!isSingleDateDashboard && <CalendarPart title="Akhir" selectedDate={tempEnd} setSelectedDate={setTempEnd} />}
                   </div>
 
                   <div style={{ display: "flex", justifyContent: "flex-end", gap: "7px", marginTop: "12px" }}>

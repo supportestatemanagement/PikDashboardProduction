@@ -216,6 +216,41 @@ body {
   .bottom-row { grid-template-columns: 1fr; }
 }
 
+/* Pump & Weather dashboard - dark operational layout */
+.pw-dashboard { min-height: calc(100vh - 60px); margin: 0 -20px -20px; padding: 18px 24px 28px; box-sizing: border-box; background: #07111f; color: #f8fafc; }
+.pw-loading,.pw-error { position: fixed; top: 68px; left: 50%; z-index: 1200; transform: translateX(-50%); padding: 7px 14px; border: 1px solid #1e4f68; border-radius: 7px; background: #0b1a2b; color: #67e8f9; font-size: 10px; box-shadow: 0 8px 25px #0008; }
+.pw-error { border-color: #7f1d1d; color: #fecaca; }
+.pw-current-row { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 10px; margin-bottom: 12px; }
+.pw-current-row article,.pw-panel { border: 1px solid #24364d; border-radius: 10px; background: #101c2e; box-shadow: 0 5px 18px rgba(0,0,0,.18); }
+.pw-current-row article { min-width: 0; min-height: 87px; padding: 13px 14px; display: flex; flex-direction: column; justify-content: center; }
+.pw-current-row span { color: #8292aa; font-size: 9px; font-weight: 800; letter-spacing: .7px; }
+.pw-current-row strong { margin: 7px 0 3px; overflow: hidden; color: #f8fafc; font: 700 25px 'Rajdhani',sans-serif; white-space: nowrap; text-overflow: ellipsis; }
+.pw-current-row small { color: #35d6bd; font-size: 9px; }
+.pw-main-grid { display: grid; grid-template-columns: minmax(320px,.9fr) minmax(560px,1.8fr) minmax(290px,.8fr); gap: 12px; align-items: stretch; }
+.pw-panel { min-width: 0; padding: 16px; color: #dbeafe; }
+.pw-panel-head { min-height: 35px; margin-bottom: 13px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.pw-panel-head h2 { margin: 0 0 4px; color: #35d6bd; font-size: 11px; font-weight: 800; letter-spacing: 1px; }
+.pw-panel-head small { display: block; color: #718198; font-size: 8px; }
+.pw-date-filter { flex-shrink: 0; padding: 4px 6px; display: flex; align-items: center; gap: 3px; border: 1px solid #2b3b51; border-radius: 6px; background: #0a1524; transition: border-color .2s,box-shadow .2s; }
+.pw-date-filter input { width: 102px; border: 0; outline: 0; color-scheme: dark; background: transparent; color: #b8c6d9; font-size: 8px; }
+.pw-date-filter span { color: #617087; font-size: 8px; }
+.pw-date-filter.is-active,.pw-panel.is-filtered { border-color: #2dd4bf; box-shadow: 0 0 0 1px rgba(45,212,191,.28),0 0 22px rgba(45,212,191,.14); }
+.pw-peak-table .head,.pw-peak-table button { width: 100%; display: grid; grid-template-columns: .8fr 1.25fr .65fr .8fr; gap: 8px; align-items: center; }
+.pw-peak-table .head { padding: 0 6px 7px; color: #617087; font-size: 7px; letter-spacing: .45px; }
+.pw-peak-table .head span:last-child { text-align: right; }
+.pw-peak-table button { min-height: 42px; padding: 7px 6px; border: 0; border-top: 1px solid #223147; background: transparent; color: #b8c6d9; font-size: 9px; text-align: left; }
+.pw-peak-table button b { color: #f8fafc; font-size: 10px; }.pw-peak-table button time { color: #8da0b9; }.pw-peak-table button strong { color: #35d6bd; font: 700 17px 'Rajdhani',sans-serif; text-align: right; }
+.pw-series-switches { margin: -3px 0 8px; display: flex; flex-wrap: wrap; gap: 5px; }
+.pw-series-switches button { padding: 4px 8px; display: flex; align-items: center; gap: 5px; border: 1px solid #304158; border-radius: 12px; background: transparent; color: #687990; font-size: 9px; cursor: pointer; opacity: .55; }
+.pw-series-switches button.active { background: #17253a; color: #fff; opacity: 1; }.pw-series-switches i { width: 7px; height: 7px; border-radius: 50%; }
+.pw-chart-scroll { width: 100%; overflow-x: auto; overflow-y: hidden; }.pw-chart { width: 100%; min-width: 700px; height: 270px; overflow: visible; }
+.pw-chart line { stroke: #26364a; stroke-width: 1; }.pw-chart polyline { fill: none; stroke-width: 2.5; stroke-linejoin: miter; stroke-linecap: square; }.pw-chart circle { stroke: #101c2e; stroke-width: 1.5; }
+.pw-chart text { fill: #fff; font-family: Arial,sans-serif; }.pw-chart .y-label { font-size: 10px; }.pw-chart .x-label { font-size: 11px; font-weight: 600; }.pw-chart .data-label { font-size: 9px; font-weight: 700; paint-order: stroke; stroke: #07111f; stroke-width: 3px; }
+.pw-status-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }.pw-status-grid > div { min-height: 54px; padding: 9px 10px; display: grid; grid-template-columns: 1fr auto; align-items: center; border: 1px solid #24364d; border-radius: 7px; background: #0b1727; }
+.pw-status-grid span { color: #a6b4c8; font-size: 9px; }.pw-status-grid strong { color: #f8fafc; font: 700 22px 'Rajdhani',sans-serif; }.pw-status-grid small { grid-column: 1 / 3; color: #617087; font-size: 7px; }
+@media (max-width: 1250px) { .pw-current-row { grid-template-columns: repeat(4,1fr); }.pw-main-grid { grid-template-columns: 1fr 1.5fr; }.pw-status-panel { grid-column: 1 / 3; }.pw-status-grid { grid-template-columns: repeat(7,1fr); } }
+@media (max-width: 768px) { .pw-dashboard { margin: 0 -10px -10px; padding: 10px; }.pw-current-row { grid-template-columns: repeat(2,1fr); gap: 7px; }.pw-current-row article { min-height: 72px; padding: 10px; }.pw-current-row strong { font-size: 21px; }.pw-main-grid { grid-template-columns: 1fr; }.pw-status-panel { grid-column: auto; }.pw-panel { padding: 11px; }.pw-panel-head { flex-direction: column; }.pw-date-filter { width: 100%; box-sizing: border-box; }.pw-date-filter input { width: 100%; }.pw-status-grid { grid-template-columns: repeat(2,1fr); }.pw-chart { width: 820px; height: 245px; }.pw-peak-table .head,.pw-peak-table button { grid-template-columns: .65fr 1.25fr .55fr .75fr; gap: 4px; }.pw-peak-table button { font-size: 8px; } }
+
 /* SMART CITY TRAFFIC COMMAND CENTER */
 .traffic-active { height: 100vh; min-height: 0; background: #071018; overflow: hidden; }
 .traffic-dashboard-body { height: 100vh; overflow: hidden !important; }
@@ -609,3 +644,7 @@ body {
   .traffic-overlay { width: min(196px, calc(100vw - 62px)); }
   .panel-titlebar > div > span, .chart-title-row > div:first-child > span { font-size: 7px; letter-spacing: .45px; }
 }
+
+/* Keep the Pump & Weather surface edge-to-edge inside its page. */
+.pump-dashboard.pw-dashboard { margin: 0 -20px -20px; padding: 18px 24px 28px; border-radius: 0; overflow: visible; background: #07111f; box-shadow: none; }
+@media (max-width: 768px) { .pump-dashboard.pw-dashboard { margin: 0 -10px -10px; padding: 10px; } }

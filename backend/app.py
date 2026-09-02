@@ -157,7 +157,8 @@ def load_pump_records():
             continue
         seen_timestamps.add(timestamp)
         records.append(parsed)
-    return sorted(records, key=lambda item: (item["date"], item["time"]))
+    # Preserve worksheet row order: the final row for a date is the latest update.
+    return records
 
 
 @app.route('/api/pump-peak-events', methods=['GET'])
@@ -191,20 +192,23 @@ def get_pump_peak_events():
         pump_sea = sorted((event for event in filtered_events if event["station"] != "TWA"), key=lambda event: event["level"], reverse=True)[:limit]
         twa_events = sorted((event for event in filtered_events if event["station"] == "TWA"), key=lambda event: event["level"], reverse=True)[:limit]
 
-        peak_by_station = []
-        status_stations = (station_filter,) if station_filter in ("PS1", "PS2", "PS3", "PS4") else ("PS1", "PS2", "PS3", "PS4")
-        for station in status_stations:
-            peak_by_station.extend(sorted((event for event in events if event["station"] == station), key=lambda event: event["level"], reverse=True)[:limit])
+        station_peaks = []
+        for station in ("PS1", "PS2", "PS3", "PS4", "TWA", "SEA"):
+            station_events = [event for event in events if event["station"] == station]
+            if station_events:
+                station_peaks.append(max(station_events, key=lambda event: event["level"]))
+
         status_summary = defaultdict(int)
-        for event in peak_by_station:
-            if event.get("status"):
-                status_summary[event["status"]] += 1
+        for row in records:
+            for values in row["stations"].values():
+                if values.get("status"):
+                    status_summary[values["status"]] += 1
 
         range_days = (end_date - start_date).days + 1
         chart_mode = "monthly" if range_days >= 62 else "observations"
         chart_map = {}
         if station_filter == "ALL":
-            chart_stations = ("PS1", "PS2", "PS3", "PS4", "SEA")
+            chart_stations = ("PS1", "PS2", "PS3", "PS4", "TWA", "SEA")
         elif station_filter == "TWA":
             chart_stations = ("TWA",)
         else:
@@ -241,6 +245,7 @@ def get_pump_peak_events():
         return jsonify({
             "status": "success", "range": {"startDate": start_date.isoformat(), "endDate": end_date.isoformat()},
             "station": station_filter, "pumpSeaEvents": pump_sea, "twaEvents": twa_events,
+            "stationPeaks": station_peaks,
             "statusSummary": dict(status_summary), "chartMode": chart_mode,
             "chart": [{"period": key, **values} for key, values in sorted(chart_map.items())],
             "analytics": {
