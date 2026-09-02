@@ -7,6 +7,7 @@ import TrafficDashboard from "./components/TrafficDashboard";
 import CallCenterDashboard from "./components/CallCenterDashboard";
 import CctvDashboard from "./components/CctvDashboard";
 import PerparkiranDashboard from "./components/PerparkiranDashboard";
+import PumpWeatherDashboard from "./components/PumpWeatherDashboard";
 
 export default function App() {
   // BACA DARI LOCAL STORAGE AGAR TIDAK LOGOUT SAAT REFRESH
@@ -126,6 +127,10 @@ export default function App() {
             dateRange={dateRange} 
             isSidebarOpen={isSidebarOpen}
           />
+        </div>
+
+        <div style={{ display: activeTab === "pump" ? "block" : "none" }}>
+          <PumpWeatherDashboard dateRange={dateRange} />
         </div>
 
       </div>

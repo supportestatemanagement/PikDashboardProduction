@@ -492,6 +492,62 @@ body {
   .login-form-panel footer { margin-top: 13px; }
 }
 
+/* Pump & Weather Monitoring */
+.pump-dashboard { padding: 2px; color: #172554; }
+.pump-dashboard > header { margin-bottom: 14px; display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+.pump-dashboard > header span, .pump-card-head span { color: #2563eb; font-size: 9px; font-weight: 800; letter-spacing: 1.2px; }
+.pump-dashboard h1 { margin: 3px 0 0; color: #0f2057; font-size: 22px; }
+.pump-filter { display: flex; align-items: center; gap: 8px; }
+.pump-filter label { color: #64748b; font-size: 10px; font-weight: 700; }
+.pump-filter select { padding: 7px 28px 7px 10px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; color: #1e3a8a; font-size: 10px; font-weight: 700; }
+.pump-message { margin-bottom: 10px; padding: 9px 12px; border-radius: 8px; background: #eff6ff; color: #1d4ed8; font-size: 10px; }
+.pump-message.error { background: #fef2f2; color: #b91c1c; }
+.pump-current-grid { display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.pump-current-grid article, .pump-card { border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; box-shadow: 0 4px 14px rgba(15,32,87,.06); }
+.pump-current-grid article { min-width: 0; padding: 11px 12px; display: flex; flex-direction: column; }
+.pump-current-grid span { color: #64748b; font-size: 8px; font-weight: 800; letter-spacing: .6px; }
+.pump-current-grid strong { margin: 5px 0 2px; color: #0f2057; font: 700 20px 'Rajdhani', sans-serif; }
+.pump-current-grid small { overflow: hidden; color: #94a3b8; font-size: 8px; white-space: nowrap; text-overflow: ellipsis; }
+.pump-main-grid { display: grid; grid-template-columns: minmax(270px,.8fr) minmax(420px,1.5fr) minmax(220px,.7fr); gap: 12px; align-items: start; }
+.pump-card { min-width: 0; padding: 14px; }
+.pump-card-head { margin-bottom: 12px; display: flex; justify-content: space-between; }
+.pump-card-head small { display: block; margin-top: 3px; color: #94a3b8; font-size: 8px; }
+.peak-group + .peak-group { margin-top: 13px; }
+.peak-group h3 { margin: 0 0 5px; color: #64748b; font-size: 8px; letter-spacing: .7px; }
+.peak-group > p { padding: 14px 0; color: #94a3b8; font-size: 9px; text-align: center; }
+.peak-group > button { width: 100%; padding: 7px 2px; display: grid; grid-template-columns: 17px 1fr auto; gap: 6px; align-items: center; border: 0; border-bottom: 1px solid #f1f5f9; background: transparent; color: #334155; text-align: left; cursor: pointer; }
+.peak-group > button:hover { background: #f8fafc; }
+.peak-group button > b { color: #94a3b8; font-size: 9px; }
+.peak-group button > span { display: flex; flex-direction: column; }
+.peak-group button strong { color: #0f2057; font-size: 10px; }
+.peak-group button small { color: #94a3b8; font-size: 7px; }
+.peak-group button em { color: #0f2057; font: 700 15px 'Rajdhani', sans-serif; font-style: normal; }
+.peak-group button i { grid-column: 2 / 4; color: #2563eb; font-size: 7px; font-style: normal; }
+.pump-chart { width: 100%; height: 190px; overflow: visible; }
+.pump-chart line { stroke: #eef2f7; }
+.pump-chart polyline { fill: none; stroke-width: 2; }
+.pump-chart text { fill: #94a3b8; font-size: 7px; }
+.pump-series.s0 { stroke: #2563eb; }.pump-series.s1 { stroke: #0ea5e9; }.pump-series.s2 { stroke: #14b8a6; }.pump-series.s3 { stroke: #f59e0b; }.pump-series.s4 { stroke: #64748b; }.pump-series.s5 { stroke: #7c3aed; }
+.status-summary { display: grid; grid-template-columns: 55px 1fr 22px; gap: 7px; align-items: center; margin: 10px 0; color: #475569; font-size: 9px; }
+.status-summary > div { height: 5px; overflow: hidden; border-radius: 3px; background: #eef2f7; }
+.status-summary i { display: block; height: 100%; border-radius: inherit; background: #2563eb; }
+.status-summary strong { text-align: right; color: #0f2057; }
+.peak-modal-backdrop { position: fixed; inset: 60px 0 0; z-index: 1500; display: grid; place-items: center; padding: 16px; background: rgba(2,8,23,.66); backdrop-filter: blur(3px); }
+.peak-detail { width: min(330px,100%); padding: 20px; position: relative; border-radius: 12px; background: #fff; box-shadow: 0 25px 70px rgba(0,0,0,.35); }
+.peak-detail > button { position: absolute; top: 9px; right: 10px; border: 0; background: transparent; color: #64748b; font-size: 23px; cursor: pointer; }
+.peak-detail h2 { margin: 0 0 14px; color: #0f2057; }
+.peak-detail > div { padding: 7px 0; display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; font-size: 10px; }
+.peak-detail span { color: #64748b; }.peak-detail strong { color: #0f2057; }
+.pump-secondary-grid { margin-top: 12px; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; align-items: start; }
+.range-table > div, .timeline-list > div, .tds-list > div { min-height: 27px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 8px; }
+.range-table b { width: 30px; color: #0f2057; }.range-table strong, .tds-list strong { color: #0f2057; }
+.occurrence-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+.occurrence-grid > div { padding: 8px 5px; display: flex; flex-direction: column; align-items: center; border-radius: 7px; background: #f8fafc; }
+.occurrence-grid span, .occurrence-grid small { color: #94a3b8; font-size: 7px; }.occurrence-grid strong { margin: 3px; color: #0f2057; font: 700 18px 'Rajdhani', sans-serif; }
+.timeline-list time { flex: 0 0 40px; color: #2563eb; font-weight: 700; }.timeline-list span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+@media (max-width: 1100px) { .pump-current-grid { grid-template-columns: repeat(4,1fr); }.pump-main-grid { grid-template-columns: 1fr 1fr; }.status-card { grid-column: 1 / 3; }.pump-secondary-grid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 680px) { .pump-dashboard > header { align-items: start; }.pump-dashboard h1 { font-size: 17px; }.pump-current-grid { grid-template-columns: repeat(2,1fr); }.pump-main-grid,.pump-secondary-grid { grid-template-columns: 1fr; }.status-card { grid-column: auto; }.pump-card { padding: 11px; }.pump-chart { height: 160px; }.peak-modal-backdrop { inset: 60px 0 0; } }
+
 @media (max-width: 768px) {
   .traffic-overlay { width: min(210px, calc(100vw - 70px)); right: 6px; top: 8px; gap: 4px; }
   .glass-panel { font-size: 8px; }

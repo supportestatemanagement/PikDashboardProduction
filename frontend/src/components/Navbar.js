@@ -6,6 +6,7 @@ function MenuIcon({ type }) {
   if (type === "car") return <svg {...common}><path d="m5 11 1.5-4h11l1.5 4" /><path d="M3 13a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5H3Z" /><circle cx="7" cy="16" r="1" /><circle cx="17" cy="16" r="1" /><path d="M5 18v2M19 18v2" /></svg>;
   if (type === "call") return <svg {...common}><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c1 .4 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z" /></svg>;
   if (type === "camera") return <svg {...common}><path d="M3 7h13v10H3z" /><path d="m16 10 5-3v10l-5-3z" /><path d="M7 17v3M4 20h6" /><circle cx="7" cy="11" r="1.5" /></svg>;
+  if (type === "water") return <svg {...common}><path d="M12 2s6 6.5 6 12a6 6 0 0 1-12 0c0-5.5 6-12 6-12Z" /><path d="M9 15a3 3 0 0 0 3 2" /></svg>;
   return <svg {...common}><rect x="4" y="3" width="16" height="18" rx="3" /><path d="M9 17V7h4a3 3 0 0 1 0 6H9M9 13h4" /></svg>;
 }
 
@@ -63,6 +64,22 @@ export default function Navbar({
     switch (type) {
       case "Kemarin":
         s.setDate(today.getDate() - 1); e.setDate(today.getDate() - 1);
+        break;
+      case "Bulan lalu":
+        s = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        e = new Date(today.getFullYear(), today.getMonth(), 0);
+        break;
+      case "3 bulan terakhir":
+        s = new Date(today.getFullYear(), today.getMonth() - 2, 1);
+        break;
+      case "6 bulan terakhir":
+        s = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+        break;
+      case "Tahun ini":
+        s = new Date(today.getFullYear(), 0, 1);
+        break;
+      case "1 tahun terakhir":
+        s.setFullYear(today.getFullYear() - 1);
         break;
       case "Bulan ini":
         s = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -140,7 +157,7 @@ export default function Navbar({
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "4px" : "12px", flexShrink: 0 }}>
 
           {/* RENTANG TANGGAL DATERANGE UNTUK CALL CENTER */}
-          {(activeTab === "dashboard" || activeTab === "callcenter" || activeTab === "perparkiran") && dateRange && (
+          {(activeTab === "dashboard" || activeTab === "callcenter" || activeTab === "perparkiran" || activeTab === "pump") && dateRange && (
             <div style={{ position: "relative" }}>
               <div 
                 onClick={() => {
@@ -195,6 +212,11 @@ export default function Navbar({
                       <option value="Kemarin">Kemarin</option>
                       {!isTrafficDashboard && <option value="Bulan ini">Bulan ini</option>}
                       {!isTrafficDashboard && <option value="7 hari terakhir">7 hari terakhir</option>}
+                      {activeTab === "pump" && <option value="Bulan lalu">Bulan lalu</option>}
+                      {activeTab === "pump" && <option value="3 bulan terakhir">3 bulan terakhir</option>}
+                      {activeTab === "pump" && <option value="6 bulan terakhir">6 bulan terakhir</option>}
+                      {activeTab === "pump" && <option value="Tahun ini">Tahun ini</option>}
+                      {activeTab === "pump" && <option value="1 tahun terakhir">1 tahun terakhir</option>}
                     </select>
                   </div>
 
@@ -290,6 +312,7 @@ export default function Navbar({
               { id: "dashboard", label: "Traffic", icon: "car" },
               { id: "callcenter", label: "Call Center", icon: "call" },
               { id: "cctv", label: "CCTV", icon: "camera" },
+              { id: "pump", label: "Pump & Weather", icon: "water" },
               { id: "perparkiran", label: "Parking", icon: "parking" },
             ].map(tab => {
               const isActive = activeTab === tab.id;

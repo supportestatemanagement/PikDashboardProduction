@@ -48,6 +48,7 @@ cc_spreadsheet = client.open("Master Data Dashboard")
 cc_sheet = cc_spreadsheet.worksheet("CallCenter")
 cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
 perparkiran_sheet = cc_spreadsheet.worksheet("Perparkiran")
+pump_station_sheet = cc_spreadsheet.worksheet("PumpStation")
 
 TRAFFIC_SHEETS = {
     "summary": spreadsheet.worksheet("AllCheckpoint"),
@@ -97,6 +98,164 @@ def record_value(record, column):
         if normalized_column_key(key) == wanted:
             return value
     return None
+
+
+def numeric_level(value):
+    text = str(value or "").strip().replace(" ", "").replace(",", ".")
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
+def normalize_pump_status(value):
+    text = str(value or "").strip()
+    if not text:
+        return None
+    normalized = text.lower().replace("stand by", "standby").replace("stby", "standby")
+    if normalized == "standby":
+        return "Standby"
+    match = re.search(r"run\s*(\d+)", normalized)
+    return f"Run {match.group(1)}" if match else text.title()
+
+
+def parse_pump_record(row):
+    date_value = record_value(row, "TANGGAL")
+    date_parsed = parse_sheet_date(date_value)
+    if not date_parsed:
+        return None
+    time_value = str(record_value(row, "JAM") or "").strip()
+    time_match = re.search(r"(\d{1,2}):(\d{2})", time_value)
+    if not time_match:
+        return None
+    time_key = f"{int(time_match.group(1)):02d}:{time_match.group(2)}"
+    result = {
+        "date": date_parsed.isoformat(), "time": time_key,
+        "weather": record_value(row, "CUACA") or None,
+        "tds": numeric_level(record_value(row, "TDS")),
+        "twa": numeric_level(record_value(row, "LEVEL TWA")),
+        "sea": numeric_level(record_value(row, "LAUT")),
+        "stations": {},
+    }
+    for station in ("PS1", "PS2", "PS3", "PS4"):
+        result["stations"][station] = {
+            "level": numeric_level(record_value(row, f"LEVEL {station}")),
+            "status": normalize_pump_status(record_value(row, f"STATUS {station}")),
+        }
+    return result
+
+
+def load_pump_records():
+    records = []
+    seen_timestamps = set()
+    for row in pump_station_sheet.get_all_records():
+        parsed = parse_pump_record(row)
+        if not parsed:
+            continue
+        timestamp = (parsed["date"], parsed["time"])
+        if timestamp in seen_timestamps:
+            continue
+        seen_timestamps.add(timestamp)
+        records.append(parsed)
+    return sorted(records, key=lambda item: (item["date"], item["time"]))
+
+
+@app.route('/api/pump-peak-events', methods=['GET'])
+def get_pump_peak_events():
+    try:
+        today = datetime.date.today()
+        start_date = datetime.datetime.strptime(request.args.get("startDate", today.isoformat()), "%Y-%m-%d").date()
+        end_date = datetime.datetime.strptime(request.args.get("endDate", today.isoformat()), "%Y-%m-%d").date()
+        station_filter = request.args.get("station", "ALL").strip().upper().replace("SEA LEVEL", "SEA")
+        limit = min(max(int(request.args.get("limit", 5)), 1), 50)
+        if start_date > end_date:
+            return jsonify({"status": "error", "message": "startDate must be before endDate"}), 400
+
+        records = [row for row in load_pump_records() if start_date <= datetime.date.fromisoformat(row["date"]) <= end_date]
+        events = []
+        for row in records:
+            context = {key: row[key] for key in ("weather", "sea", "twa", "tds") if row.get(key) is not None}
+            for station, values in row["stations"].items():
+                if values["level"] is not None:
+                    events.append({"station": station, "level": values["level"], "status": values["status"], "date": row["date"], "time": row["time"], **context})
+            if row["sea"] is not None:
+                events.append({"station": "SEA", "level": row["sea"], "date": row["date"], "time": row["time"], **context})
+            if row["twa"] is not None:
+                events.append({"station": "TWA", "level": row["twa"], "date": row["date"], "time": row["time"], **context})
+
+        unique_events = {}
+        for event in events:
+            unique_events[(event["station"], event["date"], event["time"])] = event
+        events = list(unique_events.values())
+        filtered_events = events if station_filter == "ALL" else [event for event in events if event["station"] == station_filter]
+        pump_sea = sorted((event for event in filtered_events if event["station"] != "TWA"), key=lambda event: event["level"], reverse=True)[:limit]
+        twa_events = sorted((event for event in filtered_events if event["station"] == "TWA"), key=lambda event: event["level"], reverse=True)[:limit]
+
+        peak_by_station = []
+        status_stations = (station_filter,) if station_filter in ("PS1", "PS2", "PS3", "PS4") else ("PS1", "PS2", "PS3", "PS4")
+        for station in status_stations:
+            peak_by_station.extend(sorted((event for event in events if event["station"] == station), key=lambda event: event["level"], reverse=True)[:limit])
+        status_summary = defaultdict(int)
+        for event in peak_by_station:
+            if event.get("status"):
+                status_summary[event["status"]] += 1
+
+        range_days = (end_date - start_date).days + 1
+        chart_mode = "monthly" if range_days >= 62 else "observations"
+        chart_map = {}
+        if station_filter == "ALL":
+            chart_stations = ("PS1", "PS2", "PS3", "PS4", "SEA")
+        elif station_filter == "TWA":
+            chart_stations = ("TWA",)
+        else:
+            chart_stations = (station_filter,)
+        for event in events:
+            if event["station"] not in chart_stations:
+                continue
+            bucket = event["date"][:7] if chart_mode == "monthly" else f'{event["date"]} {event["time"]}'
+            chart_map.setdefault(bucket, {})
+            current = chart_map[bucket].get(event["station"])
+            chart_map[bucket][event["station"]] = event["level"] if current is None else max(current, event["level"])
+
+        latest = records[-1] if records else None
+        level_range = {}
+        for station in ("PS1", "PS2", "PS3", "PS4", "SEA", "TWA"):
+            values = [event["level"] for event in events if event["station"] == station]
+            if values:
+                level_range[station] = {"highest": max(values), "lowest": min(values)}
+        run_occurrences = defaultdict(int)
+        for row in records:
+            for values in row["stations"].values():
+                if values.get("status", "").startswith("Run"):
+                    run_occurrences[values["status"]] += 1
+        expected_values = len(records) * 6
+        actual_values = sum(1 for row in records for value in [row["twa"], row["sea"], *[item["level"] for item in row["stations"].values()]] if value is not None)
+        latest_payload = None
+        if latest:
+            latest_payload = {
+                "date": latest["date"], "time": latest["time"], "weather": latest["weather"],
+                "tds": latest["tds"], "twa": latest["twa"], "sea": latest["sea"],
+                "stations": latest["stations"],
+            }
+
+        return jsonify({
+            "status": "success", "range": {"startDate": start_date.isoformat(), "endDate": end_date.isoformat()},
+            "station": station_filter, "pumpSeaEvents": pump_sea, "twaEvents": twa_events,
+            "statusSummary": dict(status_summary), "chartMode": chart_mode,
+            "chart": [{"period": key, **values} for key, values in sorted(chart_map.items())],
+            "analytics": {
+                "latest": latest_payload, "levelRange": level_range,
+                "runOccurrences": dict(run_occurrences),
+                "statusTimeline": records[-24:],
+                "tdsTrend": [{"date": row["date"], "time": row["time"], "value": row["tds"]} for row in records if row["tds"] is not None],
+                "completeness": round((actual_values / expected_values * 100), 1) if expected_values else 0,
+            },
+            "meta": {"recordCount": len(records), "twaSeparated": True, "sources": ["PumpStation"]},
+        })
+    except ValueError:
+        return jsonify({"status": "error", "message": "Invalid date or limit parameter"}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 def filter_records_by_date(records, start_date, end_date):
