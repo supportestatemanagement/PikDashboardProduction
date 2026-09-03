@@ -35,7 +35,7 @@ function DateRangeFilter({ start, end, onStart, onEnd, active }) {
   return <div className={`pw-date-filter${active ? " is-active" : ""}`}>
     <input aria-label="Tanggal awal" type="date" value={start} onChange={(e) => onStart(e.target.value)} />
     <span>—</span>
-    <input aria-label="Tanggal akhir" type="date" value={end} min={start} onChange={(e) => onEnd(e.target.value)} />
+    <input aria-label="Tanggal akhir" type="date" value={end} onChange={(e) => onEnd(e.target.value)} />
   </div>;
 }
 
@@ -53,7 +53,7 @@ function PeakPanel({ data, filter, setFilter, navbarKey }) {
   const active = filter.start !== navbarKey || filter.end !== navbarKey;
   const peaks = new Map((data?.stationPeaks || []).map((event) => [event.station, event]));
   return <article className={`pw-panel pw-peak-panel${active ? " is-filtered" : ""}`}>
-    <div className="pw-panel-head"><div><h2>PEAK LEVEL EVENTS</h2><small>Nilai tertinggi setiap station</small></div><DateRangeFilter {...filter} active={active} onStart={(start) => setFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => setFilter((old) => ({ ...old, end }))} /></div>
+    <div className="pw-panel-head"><div><h2>PEAK LEVEL EVENTS</h2><small>Nilai tertinggi setiap station</small></div><DateRangeFilter {...filter} active={active} onStart={(start) => start && setFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => end && setFilter((old) => ({ ...old, start: old.start > end ? end : old.start, end }))} /></div>
     <div className="pw-peak-table"><div className="head"><span>STATION</span><span>TANGGAL</span><span>JAM</span><span>PEAK LEVEL</span></div>{SERIES.map(({ key, label }) => { const event = peaks.get(key); return <button key={key} disabled={!event}><b>{label}</b><span>{event ? niceDate(event.date) : "-"}</span><time>{event?.time || "-"}</time><strong>{fmt(event?.level)}</strong></button>; })}</div>
   </article>;
 }
@@ -81,7 +81,7 @@ function TrendChart({ rows }) {
 
 function StatusPanel({ data, filter, setFilter, navbarKey }) {
   const active = filter.start !== navbarKey || filter.end !== navbarKey;
-  return <article className={`pw-panel pw-status-panel${active ? " is-filtered" : ""}`}><div className="pw-panel-head"><div><h2>PEAK EVENTS BY STATUS</h2><small>Jumlah status PS1-PS4</small></div><DateRangeFilter {...filter} active={active} onStart={(start) => setFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => setFilter((old) => ({ ...old, end }))} /></div><div className="pw-status-grid">{STATUS_KEYS.map((status) => <div key={status}><span>{status}</span><strong>{data?.statusSummary?.[status] || 0}</strong><small>occurrences</small></div>)}</div></article>;
+  return <article className={`pw-panel pw-status-panel${active ? " is-filtered" : ""}`}><div className="pw-panel-head"><div><h2>PEAK EVENTS BY STATUS</h2><small>Jumlah status PS1-PS4</small></div><DateRangeFilter {...filter} active={active} onStart={(start) => start && setFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => end && setFilter((old) => ({ ...old, start: old.start > end ? end : old.start, end }))} /></div><div className="pw-status-grid">{STATUS_KEYS.map((status) => <div key={status}><span>{status}</span><strong>{data?.statusSummary?.[status] || 0}</strong><small>occurrences</small></div>)}</div></article>;
 }
 
 export default function PumpWeatherDashboard({ dateRange }) {

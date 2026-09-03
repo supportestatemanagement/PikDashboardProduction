@@ -148,7 +148,14 @@ def parse_pump_record(row):
 def load_pump_records():
     records = []
     seen_timestamps = set()
-    for row in pump_station_sheet.get_all_records():
+    # Read formatted cell text so decimal commas (for example -1,97) are not
+    # numericised by gspread into -197 before numeric_level parses them.
+    values = pump_station_sheet.get_all_values()
+    if not values:
+        return records
+    headers = values[0]
+    for cells in values[1:]:
+        row = dict(zip(headers, cells + [""] * max(0, len(headers) - len(cells))))
         parsed = parse_pump_record(row)
         if not parsed:
             continue
