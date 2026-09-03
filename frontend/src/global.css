@@ -231,8 +231,8 @@ body {
 .pw-panel-head { min-height: 35px; margin-bottom: 13px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .pw-panel-head h2 { margin: 0 0 4px; color: #35d6bd; font-size: 11px; font-weight: 800; letter-spacing: 1px; }
 .pw-panel-head small { display: block; color: #718198; font-size: 8px; }
-.pw-date-filter { flex: 0 1 auto; min-width: 0; padding: 3px 4px; display: flex; align-items: center; gap: 2px; border: 1px solid #2b3b51; border-radius: 6px; background: #0a1524; transition: border-color .2s,box-shadow .2s; }
-.pw-date-filter input { width: 79px; min-width: 0; padding: 1px 0; border: 0; outline: 0; color-scheme: dark; background: transparent; color: #b8c6d9; font-size: 7px; }
+.pw-date-filter { flex: 0 1 auto; min-width: 0; height: 25px; box-sizing: border-box; padding: 0 5px; display: flex; align-items: center; gap: 2px; border: 1px solid #2b3b51; border-radius: 6px; background: #0a1524; transition: border-color .2s,box-shadow .2s; }
+.pw-date-filter input { width: 79px; min-width: 0; height: 23px; box-sizing: border-box; padding: 0; border: 0; outline: 0; color-scheme: dark; background: transparent; color: #b8c6d9; font-size: 8px; }
 .pw-date-filter span { color: #617087; font-size: 8px; }
 .pw-date-filter.is-active,.pw-panel.is-filtered { border-color: #2dd4bf; box-shadow: 0 0 0 1px rgba(45,212,191,.28),0 0 22px rgba(45,212,191,.14); }
 .pw-peak-table .head,.pw-peak-table button { width: 100%; display: grid; grid-template-columns: .8fr 1.25fr .65fr .8fr; gap: 8px; align-items: center; }

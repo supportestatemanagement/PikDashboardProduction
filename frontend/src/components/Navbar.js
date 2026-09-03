@@ -169,13 +169,15 @@ export default function Navbar({
                   setIsOpen(!isOpen);
                 }} 
                 style={{ 
-                  padding: isMobile ? "4px 6px" : "5px 9px", 
+                  minHeight: "32px",
+                  boxSizing: "border-box",
+                  padding: "6px 12px", 
                   background: "rgba(255,255,255,0.2)", 
                   borderRadius: "6px", 
                   cursor: "pointer", 
                   fontWeight: 600, 
                   color: "white",
-                  fontSize: isMobile ? "8px" : "10px",
+                  fontSize: isMobile ? "8px" : "12px",
                   whiteSpace: "nowrap",
                   display: "flex",
                   alignItems: "center",
@@ -242,7 +244,9 @@ export default function Navbar({
               alignItems: "center", 
               gap: "6px", 
               background: "rgba(255,255,255,0.15)", 
-              padding: isMobile ? "5px 7px" : "6px 12px", 
+              minHeight: "32px",
+              boxSizing: "border-box",
+              padding: "6px 12px", 
               borderRadius: "6px", 
               color: "white", 
               fontSize: "12px" 
@@ -258,6 +262,8 @@ export default function Navbar({
               background: "rgba(255,255,255,0.2)",
               border: "none",
               color: "white",
+              minHeight: "32px",
+              boxSizing: "border-box",
               padding: "6px 12px",
               borderRadius: "6px",
               cursor: "pointer",
