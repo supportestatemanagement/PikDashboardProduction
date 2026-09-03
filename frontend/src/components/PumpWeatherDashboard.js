@@ -53,7 +53,7 @@ function PeakPanel({ data, filter, setFilter, navbarKey }) {
   const active = filter.start !== navbarKey || filter.end !== navbarKey;
   const peaks = new Map((data?.stationPeaks || []).map((event) => [event.station, event]));
   return <article className={`pw-panel pw-peak-panel${active ? " is-filtered" : ""}`}>
-    <div className="pw-panel-head"><div><h2>PEAK LEVEL EVENTS</h2><small>Nilai tertinggi setiap station</small></div><DateRangeFilter {...filter} active={active} onStart={(start) => start && setFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => end && setFilter((old) => ({ ...old, start: old.start > end ? end : old.start, end }))} /></div>
+    <div className="pw-panel-head"><div><h2>PEAK LEVEL BY STATION</h2><small>Nilai level tertinggi pada periode aktif</small></div><DateRangeFilter {...filter} active={active} onStart={(start) => start && setFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => end && setFilter((old) => ({ ...old, start: old.start > end ? end : old.start, end }))} /></div>
     <div className="pw-peak-table"><div className="head"><span>STATION</span><span>TANGGAL</span><span>JAM</span><span>PEAK LEVEL</span></div>{SERIES.map(({ key, label }) => { const event = peaks.get(key); return <button key={key} disabled={!event}><b>{label}</b><span>{event ? niceDate(event.date) : "-"}</span><time>{event?.time || "-"}</time><strong>{fmt(event?.level)}</strong></button>; })}</div>
   </article>;
 }
@@ -81,15 +81,19 @@ function TrendChart({ rows }) {
 
 function StatusPanel({ data, filter, setFilter, navbarKey }) {
   const [pump, setPump] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const active = filter.start !== navbarKey || filter.end !== navbarKey;
-  const events = useMemo(() => (data?.pumpStatusEvents || []).filter((event) => pump === "ALL" || event.station === pump).slice().reverse(), [data?.pumpStatusEvents, pump]);
+  const events = useMemo(() => (data?.pumpStatusEvents || []).filter((event) =>
+    (pump === "ALL" || event.station === pump) &&
+    (statusFilter === "ALL" || event.status === statusFilter)
+  ).slice().reverse(), [data?.pumpStatusEvents, pump, statusFilter]);
   const runTotals = useMemo(() => Object.fromEntries(RUN_STATUS_KEYS.map((status) => [status, events.filter((event) => event.status === status).length])), [events]);
   const setStart = (start) => start && setFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }));
   const setEnd = (end) => end && setFilter((old) => ({ ...old, start: old.start > end ? end : old.start, end }));
   return <article className={`pw-panel pw-status-panel${active ? " is-filtered" : ""}`}>
-    <div className="pw-panel-head"><div><h2>PEAK EVENTS BY STATUS</h2><small>Log status operasional PS1-PS4</small></div><div className="pw-status-filters"><select aria-label="Filter pompa" value={pump} onChange={(e) => setPump(e.target.value)}><option value="ALL">All Pumps</option>{["PS1", "PS2", "PS3", "PS4"].map((key) => <option key={key}>{key}</option>)}</select><DateRangeFilter {...filter} active={active} onStart={setStart} onEnd={setEnd} /></div></div>
+    <div className="pw-panel-head"><div><h2>PUMP STATUS LOG</h2><small>Riwayat status operasional PS1-PS4</small></div><div className="pw-status-filters"><select aria-label="Filter pompa" value={pump} onChange={(e) => setPump(e.target.value)}><option value="ALL">All Pumps</option>{["PS1", "PS2", "PS3", "PS4"].map((key) => <option key={key}>{key}</option>)}</select><select aria-label="Filter status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}><option value="ALL">All Status</option><option value="Standby">Standby</option>{RUN_STATUS_KEYS.map((key) => <option key={key}>{key}</option>)}</select><DateRangeFilter {...filter} active={active} onStart={setStart} onEnd={setEnd} /></div></div>
     <div className="pw-status-log"><div className="head"><span>POMPA</span><span>STATUS</span><span>TANGGAL</span><span>JAM</span></div>{events.length ? events.map((event, index) => <div className="row" key={`${event.station}-${event.date}-${event.time}-${index}`}><b>{event.station}</b><strong className={event.status === "Standby" ? "standby" : "running"}>{event.status}</strong><span>{niceDate(event.date)}</span><time>{event.time}</time></div>) : <p>Tidak ada status pada periode ini.</p>}</div>
-    <div className="pw-run-summary"><h3>TOTAL PUMP RUN</h3><div>{RUN_STATUS_KEYS.map((status) => <span key={status}><small>{status}</small><strong>{runTotals[status]}</strong></span>)}</div></div>
+    <div className="pw-run-summary"><h3>RUN OCCURRENCES</h3><div>{RUN_STATUS_KEYS.map((status) => <span key={status}><small>{status}</small><strong>{runTotals[status]}</strong></span>)}</div></div>
   </article>;
 }
 
