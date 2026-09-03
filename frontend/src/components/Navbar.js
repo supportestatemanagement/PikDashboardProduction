@@ -33,6 +33,13 @@ export default function Navbar({
   const [preset, setPreset] = useState("Hari ini");
   const isTrafficDashboard = activeTab === "dashboard";
   const isSingleDateDashboard = isTrafficDashboard || activeTab === "pump";
+  const dashboardSubtitle = {
+    dashboard: "Traffic Dashboard",
+    callcenter: "Call Center Dashboard",
+    cctv: "CCTV Dashboard",
+    perparkiran: "Parking Dashboard",
+    pump: "Pump & Weather Dashboard",
+  }[activeTab] || "Dashboard";
   const todayKey = new Date().toDateString();
   const isLiveRange = dateRange?.start?.toDateString() === todayKey && dateRange?.end?.toDateString() === todayKey;
 
@@ -147,7 +154,7 @@ export default function Navbar({
               </div>
               {!isMobile && (
                 <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "10px" }}>
-                  Agung Sedayu Group
+                  {dashboardSubtitle}
                 </div>
               )}
             </div>

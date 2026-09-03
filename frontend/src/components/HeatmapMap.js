@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getAreaTrafficStage } from '../services/trafficService';
@@ -449,6 +449,27 @@ const AREA_CONFIG = {
   RWI: { center: [-6.086914979546606, 106.73540363586415, ] }
 };
 
+function MapSizeController({ isActive }) {
+  const map = useMap();
+
+  React.useEffect(() => {
+    if (!isActive) return undefined;
+    const refreshSize = () => map.invalidateSize({ animate: false, pan: false });
+    const frame = window.requestAnimationFrame(refreshSize);
+    const shortTimer = window.setTimeout(refreshSize, 120);
+    const layoutTimer = window.setTimeout(refreshSize, 360);
+    window.addEventListener('resize', refreshSize);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(shortTimer);
+      window.clearTimeout(layoutTimer);
+      window.removeEventListener('resize', refreshSize);
+    };
+  }, [isActive, map]);
+
+  return null;
+}
+
 // TEMPLATE LABEL
 const createLabel = (name, count) => {
   return L.divIcon({
@@ -475,7 +496,7 @@ const createLabel = (name, count) => {
   });
 };
 
-export default function HeatmapMap({ traffic }) {
+export default function HeatmapMap({ traffic, isActive = true }) {
   // Ambil data kendaraan dari props, berikan default jika kosong
   const data = {
     BGM: traffic?.vehicles?.bgm ?? 0,
@@ -506,6 +527,7 @@ export default function HeatmapMap({ traffic }) {
         zoom={13}
         style={{ height: '100%', width: '100%' }}
       >
+        <MapSizeController isActive={isActive} />
         <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
         <GeoJSON

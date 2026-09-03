@@ -108,7 +108,7 @@ export default function App() {
         }}
       >
         <div style={{ display: activeTab === "dashboard" ? "block" : "none" }}>
-          <TrafficDashboard dateRange={dateRange} />
+          <TrafficDashboard dateRange={dateRange} isActive={activeTab === "dashboard"} />
         </div>
         
         <div style={{ display: activeTab === "callcenter" ? "block" : "none" }}>
