@@ -206,10 +206,17 @@ def get_pump_peak_events():
                 station_peaks.append(max(station_events, key=lambda event: event["level"]))
 
         status_summary = defaultdict(int)
+        pump_status_events = []
         for row in records:
-            for values in row["stations"].values():
+            for pump_name, values in row["stations"].items():
                 if values.get("status"):
                     status_summary[values["status"]] += 1
+                    pump_status_events.append({
+                        "station": pump_name,
+                        "status": values["status"],
+                        "date": row["date"],
+                        "time": row["time"],
+                    })
 
         range_days = (end_date - start_date).days + 1
         chart_mode = "monthly" if range_days >= 62 else "observations"
@@ -253,7 +260,8 @@ def get_pump_peak_events():
             "status": "success", "range": {"startDate": start_date.isoformat(), "endDate": end_date.isoformat()},
             "station": station_filter, "pumpSeaEvents": pump_sea, "twaEvents": twa_events,
             "stationPeaks": station_peaks,
-            "statusSummary": dict(status_summary), "chartMode": chart_mode,
+            "statusSummary": dict(status_summary), "pumpStatusEvents": pump_status_events,
+            "chartMode": chart_mode,
             "chart": [{"period": key, **values} for key, values in sorted(chart_map.items())],
             "analytics": {
                 "latest": latest_payload, "levelRange": level_range,
