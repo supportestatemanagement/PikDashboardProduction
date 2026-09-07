@@ -40,26 +40,16 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
     const day = parseInt(parts[0], 10);
     let monthStr = parts[1].toLowerCase();
     let month = mMap[monthStr] !== undefined ? mMap[monthStr] : 0;
-    const year = parts.length > 2 ? parseInt(parts[2], 10) : 2026; 
+    // Preserve the legacy default for rows without a year.
+    const yearText = parts.length > 2 ? parts[2] : "2026";
+    const year = yearText.length === 2 ? 2000 + Number(yearText) : Number(yearText);
     
     return new Date(year, month, day);
   };
 
   const getSortValue = (dateStr) => {
-    if (!dateStr || dateStr === "N/A") return 0;
-    const parts = String(dateStr).trim().split(/[- /]/);
-    if (parts.length < 2) return 0;
-    
-    const mMap = { 
-      jan:"01", feb:"02", mar:"03", apr:"04", mei:"05", may:"05", jun:"06", jul:"07", 
-      agu:"08", aug:"08", sep:"09", okt:"10", oct:"10", nov:"11", des:"12", dec:"12" 
-    };
-    
-    const day = parts[0].padStart(2, '0');
-    const month = mMap[parts[1].toLowerCase()] || "00";
-    const year = parts.length > 2 ? parts[2] : "2026";
-    
-    return parseInt(`${year}${month}${day}`, 10);
+    const date = parseSheetDate(dateStr);
+    return date ? date.getTime() : 0;
   };
 
   // --- FILTERING DATA ---

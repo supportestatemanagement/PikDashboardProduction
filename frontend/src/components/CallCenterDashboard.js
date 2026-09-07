@@ -37,24 +37,8 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
   }, []);
 
   const getSortValue = (dateStr) => {
-    if (!dateStr || dateStr === "N/A") return 0;
-    const parts = String(dateStr).trim().split(/[- /]/);
-    if (parts.length < 3) return 0;
-
-    if (parts[0].length === 4) {
-      return parseInt(parts[0] + parts[1].padStart(2, '0') + parts[2].padStart(2, '0'), 10);
-    }
-    
-    const mMap = { 
-      jan:"01", feb:"02", mar:"03", apr:"04", mei:"05", may:"05", jun:"06", jul:"07", 
-      agu:"08", aug:"08", sep:"09", okt:"10", oct:"10", nov:"11", des:"12", dec:"12" 
-    };
-    
-    const day = parts[0].padStart(2, '0');
-    const month = mMap[parts[1].toLowerCase()] || "00";
-    const year = parts[2];
-    
-    return parseInt(`${year}${month}${day}`, 10);
+    const date = parseSheetDate(dateStr);
+    return date ? date.getTime() : 0;
   };
 
   const parseSheetDate = (dateStr) => {
@@ -72,7 +56,8 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
     };
     
     const day = parseInt(parts[0], 10);
-    const year = parseInt(parts[2], 10);
+    // Sheet years such as "26" represent 2026, not JavaScript's default 1926.
+    const year = parts[2].length === 2 ? 2000 + Number(parts[2]) : Number(parts[2]);
     
     let monthStr = parts[1].toLowerCase();
     let month = mMap[monthStr] !== undefined ? mMap[monthStr] : (parseInt(parts[1], 10) - 1);

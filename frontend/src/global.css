@@ -234,6 +234,8 @@ body {
 .pw-date-filter { flex: 0 1 auto; min-width: 0; height: 25px; box-sizing: border-box; padding: 0 5px; display: flex; align-items: center; gap: 2px; border: 1px solid #2b3b51; border-radius: 6px; background: #0a1524; transition: border-color .2s,box-shadow .2s; }
 .pw-date-filter input { width: 79px; min-width: 0; height: 23px; box-sizing: border-box; padding: 0; border: 0; outline: 0; color-scheme: dark; background: transparent; color: #b8c6d9; font-size: 8px; }
 .pw-date-filter span { color: #617087; font-size: 8px; }
+.pw-range-controls { min-width: 0; display: flex; align-items: center; gap: 5px; }
+.pw-range-controls > select { flex: 0 0 auto; width: 72px; height: 25px; padding: 0 6px; border: 1px solid #2b3b51; border-radius: 6px; outline: 0; color-scheme: dark; background: #0a1524; color: #dbeafe; font-size: 8px; }
 .pw-date-filter.is-active,.pw-panel.is-filtered { border-color: #2dd4bf; box-shadow: 0 0 0 1px rgba(45,212,191,.28),0 0 22px rgba(45,212,191,.14); }
 .pw-peak-table .head,.pw-peak-table button { width: 100%; display: grid; grid-template-columns: .8fr 1.25fr .65fr .8fr; gap: 8px; align-items: center; }
 .pw-peak-table .head { padding: 0 6px 7px; color: #617087; font-size: 7px; letter-spacing: .45px; }
@@ -259,6 +261,10 @@ body {
 .pw-status-log > p { padding: 18px 4px; color: #718198; font-size: 9px; text-align: center; }
 .pw-run-summary { margin-top: 12px; padding-top: 10px; border-top: 1px solid #2b3b51; }.pw-run-summary h3 { margin: 0 0 7px; color: #718198; font-size: 7px; letter-spacing: .7px; }.pw-run-summary > div { display: grid; grid-template-columns: repeat(6,1fr); gap: 4px; }.pw-run-summary span { padding: 5px 2px; display: flex; flex-direction: column; align-items: center; border: 1px solid #24364d; border-radius: 6px; background: #0b1727; }.pw-run-summary small { color: #8292aa; font-size: 6px; }.pw-run-summary strong { margin-top: 2px; color: #35d6bd; font: 700 15px 'Rajdhani',sans-serif; }
 @media (max-width: 1250px) { .pw-current-row { grid-template-columns: repeat(4,1fr); }.pw-main-grid { grid-template-columns: 1fr 1.5fr; }.pw-status-panel { grid-column: 1 / 3; }.pw-status-grid { grid-template-columns: repeat(7,1fr); } }
+.pw-dashboard.sidebar-open .pw-current-row { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.pw-dashboard.sidebar-open .pw-main-grid { grid-template-columns: minmax(275px,.8fr) minmax(400px,1.2fr); }
+.pw-dashboard.sidebar-open .pw-status-panel { grid-column: 1 / 3; }
+.pw-dashboard.sidebar-open .pw-peak-panel .pw-panel-head { flex-direction: column; }
 @media (max-width: 768px) { .pw-dashboard { margin: 0 -10px -10px; padding: 10px; }.pw-current-row { grid-template-columns: repeat(2,1fr); gap: 7px; }.pw-current-row article { min-height: 72px; padding: 10px; }.pw-current-row strong { font-size: 21px; }.pw-main-grid { grid-template-columns: 1fr; }.pw-status-panel { grid-column: auto; }.pw-panel { padding: 11px; }.pw-panel-head { flex-direction: column; }.pw-date-filter { width: 100%; box-sizing: border-box; }.pw-date-filter input { width: 100%; }.pw-status-filters { align-items: stretch; flex-direction: column; }.pw-status-filters > select { width: 100%; }.pw-status-grid { grid-template-columns: repeat(2,1fr); }.pw-chart { width: 820px; height: 245px; }.pw-peak-table .head,.pw-peak-table button { grid-template-columns: .65fr 1.25fr .55fr .75fr; gap: 4px; }.pw-peak-table button { font-size: 8px; } }
 
 /* SMART CITY TRAFFIC COMMAND CENTER */

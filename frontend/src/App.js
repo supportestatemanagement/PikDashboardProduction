@@ -130,7 +130,7 @@ export default function App() {
         </div>
 
         <div style={{ display: activeTab === "pump" ? "block" : "none" }}>
-          <PumpWeatherDashboard dateRange={dateRange} />
+          <PumpWeatherDashboard dateRange={dateRange} isSidebarOpen={isSidebarOpen} />
         </div>
 
       </div>
