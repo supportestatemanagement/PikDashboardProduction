@@ -172,6 +172,12 @@ export default function Navbar({
                   if (!isOpen) {
                     setTempStart(dateRange.start);
                     setTempEnd(dateRange.end);
+                    const today = new Date();
+                    const yearStart = new Date(today.getFullYear(), 0, 1);
+                    setPreset(dateRange.end.toDateString() === today.toDateString()
+                      ? (dateRange.start.toDateString() === yearStart.toDateString() ? "Tahun ini"
+                        : dateRange.start.toDateString() === today.toDateString() ? "Hari ini" : "")
+                      : "");
                   }
                   setIsOpen(!isOpen);
                 }} 
@@ -218,6 +224,8 @@ export default function Navbar({
                       onChange={(e) => handlePresetChange(e.target.value)} 
                       style={{ width: "100%", padding: "6px", borderRadius: "6px", border: "1px solid #E2E8F0", outline: "none", fontSize: "10px" }}
                     >
+                      <option value="" disabled>Rentang khusus</option>
+                      {!isSingleDateDashboard && <option value="Tahun ini">Tahun ini</option>}
                       <option value="Hari ini">Hari ini</option>
                       <option value="Kemarin">Kemarin</option>
                       {!isTrafficDashboard && <option value="Bulan ini">Bulan ini</option>}

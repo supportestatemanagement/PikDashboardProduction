@@ -9,6 +9,14 @@ import CctvDashboard from "./components/CctvDashboard";
 import PerparkiranDashboard from "./components/PerparkiranDashboard";
 import PumpWeatherDashboard from "./components/PumpWeatherDashboard";
 
+const currentYearRange = () => {
+  const today = new Date();
+  return {
+    start: new Date(today.getFullYear(), 0, 1),
+    end: new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  };
+};
+
 export default function App() {
   // BACA DARI LOCAL STORAGE AGAR TIDAK LOGOUT SAAT REFRESH
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -68,6 +76,13 @@ export default function App() {
     };
   });
 
+  const [callCenterDateRange, setCallCenterDateRange] = useState(currentYearRange);
+  const [parkingDateRange, setParkingDateRange] = useState(currentYearRange);
+  const activeDateRange = activeTab === "callcenter" ? callCenterDateRange
+    : activeTab === "perparkiran" ? parkingDateRange : dateRange;
+  const setActiveDateRange = activeTab === "callcenter" ? setCallCenterDateRange
+    : activeTab === "perparkiran" ? setParkingDateRange : setDateRange;
+
   const handleLogout = () => {
     setIsLoggedIn(false);
     setActiveTab("dashboard");
@@ -87,8 +102,8 @@ export default function App() {
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         onLogout={handleLogout}
-        dateRange={dateRange}
-        onDateChange={setDateRange}
+        dateRange={activeDateRange}
+        onDateChange={setActiveDateRange}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         isMobile={isMobile}
@@ -113,7 +128,7 @@ export default function App() {
         
         <div style={{ display: activeTab === "callcenter" ? "block" : "none" }}>
           <CallCenterDashboard
-            dateRange={dateRange} 
+            dateRange={callCenterDateRange} 
             isSidebarOpen={isSidebarOpen}
           />
         </div>
@@ -124,7 +139,7 @@ export default function App() {
 
         <div style={{ display: activeTab === "perparkiran" ? "block" : "none" }}>
           <PerparkiranDashboard 
-            dateRange={dateRange} 
+            dateRange={parkingDateRange} 
             isSidebarOpen={isSidebarOpen}
           />
         </div>
