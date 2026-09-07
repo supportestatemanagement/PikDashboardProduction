@@ -22,6 +22,12 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 
 
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    response = jsonify({"status": "ok"})
+    response.headers['Cache-Control'] = 'no-store'
+    return response
+
 # ================= INISIALISASI RAPIDOCR =================
 print("Memuat Model RapidOCR...")
 engine = RapidOCR()
