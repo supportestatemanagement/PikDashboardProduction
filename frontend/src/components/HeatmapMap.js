@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getAreaTrafficStage } from '../services/trafficService';
@@ -456,10 +456,23 @@ const areaBounds = L.geoJSON(geojsonData).getBounds();
 
 function MapSizeController({ isActive }) {
   const map = useMap();
+  const initialized = React.useRef(false);
 
   React.useEffect(() => {
     if (!isActive) return undefined;
-    const refreshSize = () => map.invalidateSize({ animate: false, pan: false });
+    const refreshSize = () => {
+      map.invalidateSize({ animate: false, pan: false });
+      if (!initialized.current && map.getSize().x > 0 && map.getSize().y > 0) {
+        const overlay = map.getContainer().parentElement.parentElement.querySelector('.traffic-overlay');
+        const panelWidth = overlay ? overlay.getBoundingClientRect().width + 24 : 24;
+        map.fitBounds(areaBounds, {
+          paddingTopLeft: [24, 24],
+          paddingBottomRight: [map.getSize().x > 700 ? panelWidth : 24, 24],
+          animate: false,
+        });
+        initialized.current = true;
+      }
+    };
     const frame = window.requestAnimationFrame(refreshSize);
     const shortTimer = window.setTimeout(refreshSize, 120);
     const layoutTimer = window.setTimeout(refreshSize, 360);
@@ -476,7 +489,9 @@ function MapSizeController({ isActive }) {
 }
 
 // TEMPLATE LABEL
-const createLabel = (name, count) => {
+const createLabel = (name, count, zoom) => {
+  const titleSize = Math.max(10, Math.min(22, 14 + (zoom - 12) * 4));
+  const countSize = Math.max(9, Math.min(16, titleSize - 3));
   return L.divIcon({
     className: 'custom-label',
     html: `
@@ -488,18 +503,28 @@ const createLabel = (name, count) => {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0px 3px 6px rgba(0,0,0,0.6);
+        text-shadow: 0 1px 3px #000, 0 0 4px #000;
       ">
-        <div style="font-size: 26px; font-weight: 800;">${name}</div>
-        <div style="font-size: 16px; font-weight: 600;">
+        <div style="font-size: ${titleSize}px; font-weight: 800;">${name}</div>
+        <div style="font-size: ${countSize}px; font-weight: 600;">
           ${(count || 0).toLocaleString('id-ID')}
         </div>
       </div>
     `,
-    iconSize: [140, 60],
-    iconAnchor: [70, 30],
+    iconSize: [80, 40],
+    iconAnchor: [40, 20],
   });
 };
+
+function AreaMarker({ area, count, children }) {
+  const map = useMapEvents({ zoomend: () => setZoom(map.getZoom()) });
+  const [zoom, setZoom] = React.useState(() => map.getZoom());
+  return (
+    <Marker position={AREA_CONFIG[area].center} icon={createLabel(area, count, zoom)}>
+      {children}
+    </Marker>
+  );
+}
 
 export default function HeatmapMap({ traffic, isActive = true }) {
   // Ambil data kendaraan dari props, berikan default jika kosong
@@ -519,10 +544,11 @@ export default function HeatmapMap({ traffic, isActive = true }) {
     const value = data[areaName] || 0;
 
     return {
-      color: '#111827',
-      weight: 2,
+      color: (areaStages[areaName] || getAreaTrafficStage(areaName, value)).color,
+      weight: 2.5,
+      opacity: 1,
       fillColor: (areaStages[areaName] || getAreaTrafficStage(areaName, value)).color,
-      fillOpacity: 0.5,
+      fillOpacity: 0.3,
     };
   };
 
@@ -531,6 +557,8 @@ export default function HeatmapMap({ traffic, isActive = true }) {
       <MapContainer
         bounds={areaBounds}
         boundsOptions={{ padding: [30, 30] }}
+        zoomSnap={0.25}
+        zoomDelta={0.5}
         style={{ height: '100%', width: '100%' }}
       >
         <MapSizeController isActive={isActive} />
@@ -544,10 +572,10 @@ export default function HeatmapMap({ traffic, isActive = true }) {
 
         {/* Render semua label berdasarkan AREA_CONFIG */}
         {Object.keys(AREA_CONFIG).map((area) => (
-          <Marker
+          <AreaMarker
             key={area}
-            position={AREA_CONFIG[area].center}
-            icon={createLabel(area, data[area])}
+            area={area}
+            count={data[area]}
           >
             <Popup className="traffic-popup">
               <div className="popup-title">{area}</div>
@@ -555,7 +583,7 @@ export default function HeatmapMap({ traffic, isActive = true }) {
               {area === 'BGM' && <div className="popup-row"><span>CP BGM</span><strong>{(traffic?.checkpoints?.bgm || 0).toLocaleString('id-ID')}</strong></div>}
               <div className="popup-row"><span>Status</span><strong style={{ color: areaStages[area].color }}>STAGE {areaStages[area].stage} · {areaStages[area].label}</strong></div>
             </Popup>
-          </Marker>
+          </AreaMarker>
         ))}
       </MapContainer>
     </div>

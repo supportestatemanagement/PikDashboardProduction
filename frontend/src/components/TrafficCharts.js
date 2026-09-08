@@ -7,7 +7,7 @@ const W = 1200, H = 380, PAD = { top: 36, right: 28, bottom: 62, left: 66 };
 const HOUR_ORDER = [...Array.from({ length: 23 }, (_, index) => `${String(index + 1).padStart(2, "0")}:00`), "00:00"];
 
 export default function TrafficCharts({ hourly, maximized, onMaximize }) {
-  const [active, setActive] = useState(["bgm", "linggi"]);
+  const [active, setActive] = useState(() => CHECKPOINTS.map(({ key }) => key));
   const [minimized, setMinimized] = useState(false);
   const rowsByTime = new Map(hourly.map((row) => [String(row.time).slice(0, 5), row]));
   const orderedHourly = HOUR_ORDER.map((time) => rowsByTime.get(time) || { time });
