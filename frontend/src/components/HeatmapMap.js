@@ -452,7 +452,11 @@ const AREA_CONFIG = {
   RWI: { center: [-6.086914979546606, 106.73540363586415, ] }
 };
 
-const areaBounds = L.geoJSON(geojsonData).getBounds();
+// Focus the opening view on the PIK2 label and PIK1 areas, as in the dashboard reference.
+const initialViewBounds = L.latLngBounds([
+  [-6.125, 106.612],
+  [-6.033, 106.780],
+]);
 
 function MapSizeController({ isActive }) {
   const map = useMap();
@@ -465,9 +469,9 @@ function MapSizeController({ isActive }) {
       if (!initialized.current && map.getSize().x > 0 && map.getSize().y > 0) {
         const overlay = map.getContainer().parentElement.parentElement.querySelector('.traffic-overlay');
         const panelWidth = overlay ? overlay.getBoundingClientRect().width + 24 : 24;
-        map.fitBounds(areaBounds, {
-          paddingTopLeft: [24, 24],
-          paddingBottomRight: [map.getSize().x > 700 ? panelWidth : 24, 24],
+        map.fitBounds(initialViewBounds, {
+          paddingTopLeft: [12, 8],
+          paddingBottomRight: [map.getSize().x > 700 ? panelWidth : 12, 8],
           animate: false,
         });
         initialized.current = true;
@@ -490,8 +494,8 @@ function MapSizeController({ isActive }) {
 
 // TEMPLATE LABEL
 const createLabel = (name, count, zoom) => {
-  const titleSize = Math.max(10, Math.min(22, 14 + (zoom - 12) * 4));
-  const countSize = Math.max(9, Math.min(16, titleSize - 3));
+  const titleSize = Math.max(10, Math.min(19, 12 + (zoom - 12) * 3));
+  const countSize = Math.max(9, Math.min(14, titleSize - 3));
   return L.divIcon({
     className: 'custom-label',
     html: `
@@ -555,8 +559,8 @@ export default function HeatmapMap({ traffic, isActive = true }) {
   return (
     <div className="traffic-map-layer">
       <MapContainer
-        bounds={areaBounds}
-        boundsOptions={{ padding: [30, 30] }}
+        bounds={initialViewBounds}
+        boundsOptions={{ padding: [12, 8] }}
         zoomSnap={0.25}
         zoomDelta={0.5}
         style={{ height: '100%', width: '100%' }}
