@@ -3,10 +3,12 @@ import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap } from 'react-l
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getAreaTrafficStage } from '../services/trafficService';
+import pik2Boundary from '../config/pik2Boundary.json';
 
 const geojsonData = {
   type: "FeatureCollection",
   features: [
+    pik2Boundary,
     {
       type: "Feature",
       properties: { name: "BGM" },
@@ -444,10 +446,13 @@ const geojsonData = {
 };
 
 const AREA_CONFIG = {
+  PIK2: { center: [-6.051, 106.694] },
   BGM: { center: [-6.1100, 106.7427] },
   GI:  { center: [-6.0870558085485555, 106.74827513773329] },
   RWI: { center: [-6.086914979546606, 106.73540363586415, ] }
 };
+
+const areaBounds = L.geoJSON(geojsonData).getBounds();
 
 function MapSizeController({ isActive }) {
   const map = useMap();
@@ -502,6 +507,7 @@ export default function HeatmapMap({ traffic, isActive = true }) {
     BGM: traffic?.vehicles?.bgm ?? 0,
     GI: traffic?.vehicles?.gi ?? 0,
     RWI: traffic?.vehicles?.rwi ?? 0,
+    PIK2: traffic?.vehicles?.pik2 ?? 0,
   };
   const areaStages = Object.fromEntries(
     Object.entries(data).map(([area, value]) => [area, getAreaTrafficStage(area, value)])
@@ -523,8 +529,8 @@ export default function HeatmapMap({ traffic, isActive = true }) {
   return (
     <div className="traffic-map-layer">
       <MapContainer
-        center={[-6.105, 106.742]}
-        zoom={13}
+        bounds={areaBounds}
+        boundsOptions={{ padding: [30, 30] }}
         style={{ height: '100%', width: '100%' }}
       >
         <MapSizeController isActive={isActive} />
