@@ -344,6 +344,15 @@ body {
 .header-mode.historical { color: #cbd5e1; background: rgba(148,163,184,.12); border: 1px solid rgba(148,163,184,.2); }
 .header-mode.historical i { background: #94a3b8; }
 .custom-label { background: transparent; border: 0; }
+.checkpoint-map-marker { background: transparent; border: 0; }
+.checkpoint-pin { position: relative; width: 12px; height: 12px; color: var(--checkpoint-color); }
+.checkpoint-pin-dot { position: absolute; inset: 1px; border-radius: 50%; background: var(--checkpoint-color); border: 2px solid #f1f5f9; box-shadow: 0 0 0 3px color-mix(in srgb, var(--checkpoint-color) 25%, transparent), 0 2px 6px #0008; }
+.checkpoint-pin-callout { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; }
+.checkpoint-pin--left .checkpoint-pin-callout { left: auto; right: 11px; flex-direction: row-reverse; }
+.checkpoint-pin-line { width: 24px; height: 1px; background: var(--checkpoint-color); flex-shrink: 0; box-shadow: 0 1px 2px #0006; }
+.checkpoint-pin-label { display: flex; align-items: center; gap: 5px; white-space: nowrap; padding: 5px 7px; border: 1px solid var(--checkpoint-color); border-radius: 5px; background: rgba(8, 19, 31, .94); color: #f1f5f9; font: 600 10px/1.1 'Inter', sans-serif; box-shadow: 0 3px 9px #0005; }
+.checkpoint-pin-prefix { color: var(--checkpoint-color); font-size: 8px; font-weight: 800; letter-spacing: .5px; }
+.checkpoint-map-marker:hover .checkpoint-pin-label, .checkpoint-map-marker:focus .checkpoint-pin-label { background: #172b3c; box-shadow: 0 0 0 2px color-mix(in srgb, var(--checkpoint-color) 25%, transparent); }
 .traffic-popup .leaflet-popup-content-wrapper, .traffic-popup .leaflet-popup-tip { background: rgba(7,18,28,.94); color: #e2e8f0; }
 .traffic-popup .leaflet-popup-content { margin: 12px 14px; min-width: 170px; }
 .popup-title { font: 700 17px 'Rajdhani', sans-serif; color: #fff; margin-bottom: 7px; }

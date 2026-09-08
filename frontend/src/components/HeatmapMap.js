@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getAreaTrafficStage } from '../services/trafficService';
 import pik2Boundary from '../config/pik2Boundary.json';
+import { CHECKPOINTS, CHECKPOINT_ENTRANCES } from '../config/trafficConfig';
 
 const geojsonData = {
   type: "FeatureCollection",
@@ -530,6 +531,24 @@ function AreaMarker({ area, count, children }) {
   );
 }
 
+const checkpointMarkers = CHECKPOINT_ENTRANCES.map((entrance) => {
+  const checkpoint = CHECKPOINTS.find(({ key }) => key === entrance.key);
+  return {
+    ...entrance,
+    checkpoint,
+    icon: L.divIcon({
+      className: 'checkpoint-map-marker',
+      iconSize: [12, 12],
+      iconAnchor: [6, 6],
+      popupAnchor: [0, -10],
+      html: `<div class="checkpoint-pin checkpoint-pin--${entrance.side}" style="--checkpoint-color: ${checkpoint.color}">
+        <span class="checkpoint-pin-dot"></span>
+        <span class="checkpoint-pin-callout"><span class="checkpoint-pin-line"></span><span class="checkpoint-pin-label"><span class="checkpoint-pin-prefix">CP</span>${entrance.label}</span></span>
+      </div>`,
+    }),
+  };
+});
+
 export default function HeatmapMap({ traffic, isActive = true }) {
   // Ambil data kendaraan dari props, berikan default jika kosong
   const data = {
@@ -588,6 +607,25 @@ export default function HeatmapMap({ traffic, isActive = true }) {
               <div className="popup-row"><span>Status</span><strong style={{ color: areaStages[area].color }}>STAGE {areaStages[area].stage} · {areaStages[area].label}</strong></div>
             </Popup>
           </AreaMarker>
+        ))}
+        {checkpointMarkers.map((entrance) => (
+          <Marker
+            key={entrance.id}
+            position={entrance.position}
+            icon={entrance.icon}
+            title={`Titik masuk ${entrance.label}`}
+            alt={`Checkpoint ${entrance.label}`}
+            zIndexOffset={500}
+          >
+            <Popup className="traffic-popup">
+              <div className="popup-title" style={{ color: entrance.checkpoint.color }}>{entrance.label}</div>
+              <div className="popup-row"><span>Titik masuk checkpoint</span></div>
+              <div className="popup-row">
+                <span>{entrance.key === 'bgm' ? 'Total CP BGM (Marina + Toll)' : entrance.checkpoint.label}</span>
+                <strong>{(traffic?.checkpoints?.[entrance.key] ?? 0).toLocaleString('id-ID')}</strong>
+              </div>
+            </Popup>
+          </Marker>
         ))}
       </MapContainer>
     </div>

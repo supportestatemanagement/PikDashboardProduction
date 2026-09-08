@@ -41,3 +41,13 @@ export const CHECKPOINTS = [
   { key: "baruyungan", label: "CP Baruyungan", column: "CP-Baruyungan", color: "#fbbf24" },
   { key: "kataraja", label: "CP Toll Kataraja", column: "CP-TollKataraja", color: "#fb7185" },
 ];
+
+// Leaflet positions use [latitude, longitude]. Both BGM entrances share CP-BGM.
+export const CHECKPOINT_ENTRANCES = [
+  { id: "bgm-marina", key: "bgm", label: "BGM Marina", position: [-6.112819, 106.7506143], side: "right" },
+  { id: "bgm-toll", key: "bgm", label: "BGM Toll", position: [-6.1138235, 106.736195], side: "left" },
+  { id: "linggi", key: "linggi", label: "Linggi", position: [-6.0954297, 106.742163], side: "left" },
+  { id: "tataban", key: "tataban", label: "Tataban", position: [-6.0903949, 106.7429506], side: "right" },
+  { id: "baruyungan", key: "baruyungan", label: "Baruyungan", position: [-6.0852819, 106.7260539], side: "left" },
+  { id: "kataraja", key: "kataraja", label: "Toll Kataraja", position: [-6.0682757, 106.6953191], side: "left" },
+];
