@@ -227,13 +227,14 @@ export default function CctvDashboard() {
         .cctv-area { grid-area: 2 / 3 / 3 / 5; }
         .cctv-condition { grid-area: 1 / 1 / 2 / 3; }
         .cctv-distribution { grid-area: 3 / 1 / 4 / 7; }
-        .cctv-offline-areas { overflow-x: auto; border: 1px solid #E2E8F0; border-radius: 10px; }
+        .cctv-offline-areas { height: 100%; box-sizing: border-box; overflow: auto; border: 1px solid #E2E8F0; border-radius: 10px; }
         .cctv-offline-table { width: 100%; min-width: 640px; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
         .cctv-offline-table th { padding: 12px; background: #F1F5F9; color: #1E3A8A; font-size: 12px; font-weight: 800; text-align: left; border-bottom: 1px solid #E2E8F0; }
+        .cctv-offline-table th { position: sticky; top: 0; z-index: 1; }
         .cctv-offline-table th + th, .cctv-offline-table td + td { border-left: 1px solid #E2E8F0; }
         .cctv-offline-table td { padding: 0; vertical-align: top; }
         .cctv-offline-count { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 12px; background: #E2E8F0; font-size: 11px; white-space: nowrap; }
-        .cctv-offline-list { max-height: 190px; overflow-y: auto; font-size: 12px; line-height: 1.6; color: #475569; }
+        .cctv-offline-list { font-size: 12px; line-height: 1.6; color: #475569; }
         .cctv-offline-list ul { list-style: none; margin: 0; padding: 0; }
         .cctv-offline-list li { padding: 9px 12px; overflow-wrap: anywhere; border-bottom: 1px solid #F1F5F9; }
         .cctv-offline-list li:nth-child(even) { background: #F8FAFC; }
@@ -450,8 +451,8 @@ export default function CctvDashboard() {
           </div>
 
           <div className="animate-card cctv-offline" style={{ animationDelay: "0.3s" }}>
-            <ChartBox title="CCTV Offline" autoHeight>
-              <div className="cctv-offline-areas" role="region" aria-label="Daftar CCTV offline per area">
+            <ChartBox title="CCTV Offline">
+              <div className="cctv-offline-areas" tabIndex={0} role="region" aria-label="Daftar CCTV offline per area">
                 {loadError ? <p role="alert">Gagal memuat data CCTV offline.</p> : !offlineData ? <p role="status">Memuat data...</p> :
                   <table className="cctv-offline-table" aria-label="CCTV offline menurut area">
                     <thead><tr>{Object.entries(offlineData).map(([area, cameras]) => (
@@ -461,7 +462,7 @@ export default function CctvDashboard() {
                     ))}</tr></thead>
                     <tbody><tr>{Object.entries(offlineData).map(([area, cameras]) => (
                     <td key={area} aria-labelledby={`offline-area-${area}`}>
-                      <div className="cctv-offline-list" tabIndex={cameras.length ? 0 : undefined}>
+                      <div className="cctv-offline-list">
                         {cameras.length === 0 ? <p>Tidak ada CCTV offline.</p> : (
                           <ul>{cameras.map((camera, index) => (
                             <li key={index}>{String(camera["Nama Pada Layar (OSD)"] ?? "").trim() || "—"}</li>
@@ -616,15 +617,14 @@ function GroupedBarChartWithGrid({ data, maxDistCount }) {
 }
 
 // UPDATE: Standarisasi Judul pada fungsi ChartBox
-function ChartBox({ title, children, bgColor, textColor, headerRight, autoHeight = false }) {
+function ChartBox({ title, children, bgColor, textColor, headerRight }) {
   return (
     <div style={{ 
       background: bgColor || "white", 
       padding: "20px", 
       borderRadius: "12px", 
       boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)", 
-      height: autoHeight ? "auto" : "280px",
-      minHeight: autoHeight ? "280px" : undefined,
+      height: "280px",
       display: "flex", 
       flexDirection: "column",
       border: bgColor ? "none" : "1px solid #E2E8F0"
