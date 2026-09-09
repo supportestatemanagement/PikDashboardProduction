@@ -50,7 +50,15 @@ function CurrentCards({ latest }) {
     { key: "twa", label: "TWA LEVEL", value: fmt(latest?.twa), status: "Level terakhir" },
     { key: "sea", label: "SEA LEVEL", value: fmt(latest?.sea), status: "Level terakhir" },
   ];
-  return <section className="pw-current-row">{cards.map((card) => <article key={card.key}><span>{card.label}</span><strong>{card.value}</strong><small>{card.status}</small></article>)}</section>;
+  return <section className="pw-current-row">{cards.map((card) => {
+    const isPump = /^PS[1-4]$/.test(card.key);
+    const state = /^run\s*[1-9]\d*$/i.test(card.status) ? "on" : /^standby$/i.test(card.status) ? "off" : "unknown";
+    const label = state === "unknown" ? "N/A" : state.toUpperCase();
+    return <article key={card.key} className="pw-level-card">
+      <div className="pw-level-reading"><span>{card.label}</span><strong>{card.value}</strong><small>{card.status}</small></div>
+      {isPump && <span className={`pw-pump-indicator is-${state}`} aria-label={`${card.key} pump ${state}`} title={state === "unknown" ? "Pump status unavailable" : `Pump ${label}`}><i aria-hidden="true" />{label}</span>}
+    </article>;
+  })}</section>;
 }
 
 function PeakPanel({ data, filter, setFilter, navbarKey }) {
@@ -119,7 +127,7 @@ export function summarizePumpDays(events, station) {
 function StatusPanel({ data, station }) {
   const days = useMemo(() => summarizePumpDays(data?.pumpStatusEvents || [], station), [data?.pumpStatusEvents, station]);
   return <article className="pw-panel pw-status-panel">
-    <div className="pw-panel-head"><div><h2>{station}</h2></div></div>
+    <div className="pw-panel-head"><div><h2>{station}</h2><small>Daily Pump Run Count</small></div></div>
     <div className="pw-daily-log">{days.length ? days.map((day) => <div className="pw-daily-summary" key={day.date}>
       <div className="pw-daily-total"><time>{niceDate(day.date)}</time><strong>{fmt(day.total)}<small>x</small></strong></div>
     </div>) : <p>Tidak ada status pada periode ini.</p>}</div>
@@ -141,8 +149,8 @@ export default function PumpWeatherDashboard({ dateRange, isSidebarOpen = false 
     <WeatherPanel rows={base.data?.analytics?.weatherTimeline || []} />
     <CurrentCards latest={base.data?.analytics?.latest} />
     <section className="pw-main-grid"><PeakPanel data={peaks.data} filter={peakFilter} setFilter={setPeakFilter} navbarKey={navbarKey} /><TrendChart rows={base.data?.chart || []} /></section>
-    <section className="pw-status-section" aria-label="Status log pompa">
-      <div className="pw-panel pw-status-toolbar"><h2>Status Log</h2><DateRangeFilter {...statusFilter} active={statusFilter.start !== navbarKey || statusFilter.end !== navbarKey} onPreset={(months) => setStatusFilter(presetRange(navbarKey, months))} onStart={(start) => start && setStatusFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => end && setStatusFilter((old) => ({ ...old, start: old.start > end ? end : old.start, end }))} /></div>
+    <section className="pw-panel pw-status-section" aria-label="Status log pompa">
+      <div className="pw-status-toolbar"><h2>Status Log</h2><DateRangeFilter {...statusFilter} active={statusFilter.start !== navbarKey || statusFilter.end !== navbarKey} onPreset={(months) => setStatusFilter(presetRange(navbarKey, months))} onStart={(start) => start && setStatusFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => end && setStatusFilter((old) => ({ ...old, start: old.start > end ? end : old.start, end }))} /></div>
       <div className="pw-status-row">{["PS1", "PS2", "PS3", "PS4"].map((station) => <StatusPanel key={station} station={station} data={statuses.data} />)}</div>
     </section>
   </main>;

@@ -691,7 +691,14 @@ body {
 .pw-weather-hours time { font-size: 15px; font-weight: 700; color: #e0f2fe; }
 .pw-weather-icon { font-size: 42px; line-height: 1.3; }
 .pw-weather-hours strong { font-size: 12px; color: #fff; }
-.pw-status-section { margin-top: 14px; }
+.pw-status-section { margin-top: 14px; background: #0c1727; }
+.pw-status-section .pw-status-panel { background: #142237; border-color: #2a405a; box-shadow: 0 4px 12px #0003; }
+.pw-current-row .pw-level-card { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
+.pw-level-reading { display: flex; flex-direction: column; min-width: 0; }
+.pw-current-row .pw-pump-indicator { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex-shrink: 0; padding: 6px 8px; border: 1px solid #475569; border-radius: 6px; color: #cbd5e1; background: #33415533; font-size: 9px; letter-spacing: .4px; }
+.pw-pump-indicator i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pw-current-row .pw-pump-indicator.is-on { color: #4ade80; border-color: #22c55e55; background: #22c55e14; }
+.pw-current-row .pw-pump-indicator.is-off { color: #f87171; border-color: #ef444455; background: #ef444414; }
 .pw-status-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
 .pw-status-toolbar > h2 { margin: 0; color: #35d6bd; font-size: 11px; font-weight: 800; letter-spacing: 1px; }
 .pw-status-row { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
