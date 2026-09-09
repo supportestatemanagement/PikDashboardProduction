@@ -736,17 +736,18 @@ body {
 .pw-peak-table .head,.pw-peak-table button { grid-template-columns: .65fr 1.35fr .65fr .95fr .8fr; gap: 5px; box-sizing: border-box; }
 .pw-peak-table .head span:nth-last-child(2) { text-align: right; }
 /* Animate individual Pump Station panels and their content on tab changes. */
-.pump-page-transition.is-entering .pw-dashboard > section,
-.pump-page-transition.is-entering .pw-main-grid > article,
+.pump-page-transition.is-entering .pw-dashboard .pw-panel,
 .pump-page-transition.is-entering .pw-current-row > article,
 .pump-page-transition.is-entering .pw-status-row > article,
 .pump-page-transition.is-entering .pw-weather-hours > article {
-  animation: pump-panel-in 360ms cubic-bezier(.2,.7,.2,1) backwards;
+  transform-origin: center top;
+  animation: pump-panel-in 480ms cubic-bezier(.2,.7,.2,1) backwards;
   animation-delay: var(--pump-delay, 0ms);
 }
 .pump-page-transition .pw-weather-panel { --pump-delay: 0ms; }
 .pump-page-transition .pw-level-section { --pump-delay: 60ms; }
-.pump-page-transition .pw-main-grid { --pump-delay: 120ms; }
+.pump-page-transition .pw-peak-panel { --pump-delay: 120ms; }
+.pump-page-transition .pw-trend-panel { --pump-delay: 180ms; }
 .pump-page-transition .pw-status-section { --pump-delay: 180ms; }
 .pump-page-transition .pw-current-row > article:nth-child(2),
 .pump-page-transition .pw-weather-hours > article:nth-child(2),
@@ -761,9 +762,10 @@ body {
 .pump-page-transition.is-entering .pw-peak-table,
 .pump-page-transition.is-entering .pw-daily-total { animation: pump-panel-in 380ms ease-out 220ms backwards; }
 .pump-page-transition.is-exiting { pointer-events: none; }
-.pump-page-transition.is-exiting .pw-dashboard > section { animation: pump-panel-out 200ms ease-in both; }
-@keyframes pump-panel-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes pump-panel-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-8px); } }
+.pump-page-transition.is-exiting .pw-dashboard .pw-panel,
+.pump-page-transition.is-exiting .pw-current-row > article { transform-origin: center top; animation: pump-panel-out 200ms ease-in both; }
+@keyframes pump-panel-in { from { opacity: 0; transform: translateY(24px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes pump-panel-out { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-12px) scale(.98); } }
 @keyframes pump-chart-in { from { opacity: 0; clip-path: inset(0 100% 0 0); } to { opacity: 1; clip-path: inset(0); } }
 @media (prefers-reduced-motion: reduce) {
   .pump-page-transition.is-entering .pw-dashboard *,
