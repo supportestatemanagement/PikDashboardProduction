@@ -371,7 +371,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
                   return (
                     <g key={v}>
                       <line x1={padding.left} y1={y} x2={chartWidth - padding.right} y2={y} stroke="#F1F5F9" strokeWidth="1" />
-                      <text x={padding.left - 10} y={y + 4} textAnchor="end" fontSize="11" fill="#94A3B8" fontWeight="600">{v}</text>
+                      {v !== 0 && <text x={padding.left - 10} y={y + 4} textAnchor="end" fontSize="11" fill="#94A3B8" fontWeight="600">{v}</text>}
                     </g>
                   );
                 })}
@@ -401,7 +401,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
                       fontSize="10" 
                       fill="#64748B" 
                       fontWeight="700" 
-                      transform={`rotate(35, ${p.x}, ${chartHeight - padding.bottom + 15})`}
+                      textAnchor="middle"
                     >
                       {formatDate(p.date)} 
                     </text>

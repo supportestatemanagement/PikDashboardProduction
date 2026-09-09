@@ -5,6 +5,8 @@ export default function CctvDashboard() {
   const [trendData, setTrendData] = useState([]);
   const [totalCctv, setTotalCctv] = useState(0);
   const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [offlineData, setOfflineData] = useState(null);
+  const [loadError, setLoadError] = useState(false);
 
   // STATE UNTUK GRAFIK BARIS KE-2
   const [brandData, setBrandData] = useState([]);
@@ -36,6 +38,7 @@ export default function CctvDashboard() {
           const areaCounts = {};
           const locCounts = {};
           const distMap = {}; // Format: { Area: { Lokasi: count } }
+          const offlineByArea = { BGM: [], GI: [], RWI: [], PIK2: [] };
           let onCount = 0;
           let offCount = 0;
 
@@ -76,8 +79,10 @@ export default function CctvDashboard() {
             const condition = item["Kondisi"] ? String(item["Kondisi"]).trim().toUpperCase() : "";
             if (condition === "ON" || condition === "AKTIF" || condition === "NORMAL") {
               onCount++;
-            } else if (condition === "OFF" || condition === "MATI" || condition === "RUSAK") {
+            } else if (["OFF", "OFFLINE", "MATI", "RUSAK"].includes(condition)) {
               offCount++;
+              const areaKey = area.toUpperCase().replace(/\s+/g, "");
+              if (offlineByArea[areaKey]) offlineByArea[areaKey].push(item);
             }
           });
 
@@ -109,9 +114,15 @@ export default function CctvDashboard() {
 
           // Set State Kondisi
           setConditionData({ on: onCount, off: offCount });
+          setOfflineData(offlineByArea);
+        } else {
+          setLoadError(true);
         }
       })
-      .catch((err) => console.error("Error fetching CCTV data:", err));
+      .catch((err) => {
+        console.error("Error fetching CCTV data:", err);
+        setLoadError(true);
+      });
   }, []);
 
   // --- Kalkulasi Koordinat Dinamis untuk SVG Trend ---
@@ -176,7 +187,7 @@ export default function CctvDashboard() {
 
   // 3. Komponen Legend di pojok kanan atas
   const distributionLegend = (
-    <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center" }}>
       {locationData.slice(0, 5).map((loc, idx) => (
         <div key={idx} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
           <div style={{ width: "10px", height: "10px", borderRadius: "2px", backgroundColor: locColorMap[loc.label] }} />
@@ -199,6 +210,34 @@ export default function CctvDashboard() {
         .animate-card {
           animation: slideFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           opacity: 0; /* Awal tersembunyi sebelum animasi selesai */
+        }
+        .cctv-panel-container { container-type: inline-size; }
+        .cctv-panels { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 20px; }
+        .cctv-panels > div { min-width: 0; }
+        .cctv-locations { grid-area: 1 / 1 / 2 / 4; }
+        .cctv-offline { grid-area: 1 / 4 / 2 / 7; }
+        .cctv-brand { grid-area: 2 / 1 / 3 / 3; }
+        .cctv-area { grid-area: 2 / 3 / 3 / 5; }
+        .cctv-condition { grid-area: 2 / 5 / 3 / 7; }
+        .cctv-distribution { grid-area: 3 / 1 / 4 / 7; }
+        .cctv-offline-tables { overflow: auto; height: 100%; padding-right: 6px; }
+        .cctv-offline-tables table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; color: #475569; }
+        .cctv-offline-tables caption { text-align: left; font-weight: 800; color: #1E3A8A; padding: 10px 0; }
+        .cctv-offline-tables th, .cctv-offline-tables td { text-align: left; padding: 8px; border-bottom: 1px solid #E2E8F0; overflow-wrap: anywhere; vertical-align: top; }
+        .cctv-offline-tables th { background: #F1F5F9; }
+        @container (min-width: 1700px) {
+          .cctv-locations { grid-area: 1 / 1 / 2 / 3; }
+          .cctv-offline { grid-area: 1 / 3 / 2 / 5; }
+          .cctv-distribution { grid-area: 1 / 5 / 2 / 7; }
+        }
+        @container (max-width: 700px) {
+          .cctv-panels { display: flex; flex-direction: column; }
+          .cctv-locations { order: 0; }
+          .cctv-offline { order: 1; }
+          .cctv-brand { order: 2; }
+          .cctv-area { order: 3; }
+          .cctv-condition { order: 4; }
+          .cctv-distribution { order: 5; }
         }
       `}</style>
 
@@ -249,7 +288,7 @@ export default function CctvDashboard() {
                   return (
                     <g key={ratio}>
                       <line x1={padding.left} y1={y} x2={chartWidth - padding.right} y2={y} stroke="#F1F5F9" strokeWidth="1" />
-                      <text x={padding.left - 10} y={y + 4} textAnchor="end" fontSize="11" fill="#94A3B8" fontWeight="600">{val}</text>
+                      {val !== 0 && <text x={padding.left - 10} y={y + 4} textAnchor="end" fontSize="11" fill="#94A3B8" fontWeight="600">{val}</text>}
                     </g>
                   );
                 })}
@@ -280,7 +319,7 @@ export default function CctvDashboard() {
                           fontSize="10" 
                           fill="#64748B" 
                           fontWeight="700" 
-                          transform={`rotate(35, ${p.x}, ${chartHeight - padding.bottom + 15})`}
+                          textAnchor="middle"
                         >
                           {p.year}
                         </text>
@@ -345,11 +384,11 @@ export default function CctvDashboard() {
           </div>
         </div>
 
-        {/* BARIS 2: ISSUES, AREA, & STATUS - Diubah ke auto-fit untuk responsivitas */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "20px" }}>
+        <div className="cctv-panel-container">
+        <div className="cctv-panels">
           
           {/* Card 3: Animasi dengan delay 0.2s */}
-          <div className="animate-card" style={{ animationDelay: "0.2s" }}>
+          <div className="animate-card cctv-brand" style={{ animationDelay: "0.2s" }}>
             <ChartBox title="Total CCTV by Brand">
               <div style={{ display: "flex", flexDirection: "column", gap: "18px", height: "100%", justifyContent: "center" }}>
                 {brandData.length === 0 && <div style={{ fontSize: "12px", color: "#94A3B8", textAlign: "center" }}>Memuat data...</div>}
@@ -367,7 +406,7 @@ export default function CctvDashboard() {
           </div>
 
           {/* Card 4: Animasi dengan delay 0.3s */}
-          <div className="animate-card" style={{ animationDelay: "0.3s" }}>
+          <div className="animate-card cctv-area" style={{ animationDelay: "0.3s" }}>
             <ChartBox title="Total CCTV per Area">
               <div style={{ width: "100%", height: "100%" }}>
                 <BarChartWithGrid data={areaChartData} />
@@ -376,7 +415,7 @@ export default function CctvDashboard() {
           </div>
 
           {/* Card 5: Animasi dengan delay 0.4s */}
-          <div className="animate-card" style={{ animationDelay: "0.4s" }}>
+          <div className="animate-card cctv-condition" style={{ animationDelay: "0.4s" }}>
             <ChartBox title="Total CCTV by Condition">
               <div style={{ width: "100%", height: "100%" }}>
                 <BarChartWithGrid data={conditionChartData} />
@@ -384,13 +423,8 @@ export default function CctvDashboard() {
             </ChartBox>
           </div>
 
-        </div>
-
-        {/* BARIS 3: LOCATIONS & DISTRIBUTION - Diubah ke auto-fit untuk responsivitas */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
-          
           {/* Card 6: Animasi dengan delay 0.5s */}
-          <div className="animate-card" style={{ animationDelay: "0.5s" }}>
+          <div className="animate-card cctv-locations" style={{ animationDelay: "0.2s" }}>
             <ChartBox title="Total CCTV by Locations">
               <div style={{ display: "flex", flexDirection: "column", gap: "14px", height: "100%", justifyContent: "center" }}>
                 {locationData.length === 0 && <div style={{ fontSize: "12px", color: "#94A3B8", textAlign: "center" }}>Memuat data...</div>}
@@ -407,15 +441,42 @@ export default function CctvDashboard() {
             </ChartBox>
           </div>
 
-          {/* Card 7: Animasi dengan delay 0.6s */}
-          <div className="animate-card" style={{ animationDelay: "0.6s" }}>
-            <ChartBox title="CCTV Distribution by Area and Locations" headerRight={distributionLegend}>
-              <div style={{ width: "100%", height: "100%" }}>
-                <GroupedBarChartWithGrid data={groupedDistData} maxDistCount={maxDistCount} />
+          <div className="animate-card cctv-offline" style={{ animationDelay: "0.3s" }}>
+            <ChartBox title="CCTV Offline">
+              <div className="cctv-offline-tables" tabIndex={0} role="region" aria-label="Daftar CCTV offline per area">
+                {loadError ? <p role="alert">Gagal memuat data CCTV offline.</p> : !offlineData ? <p role="status">Memuat data...</p> :
+                  Object.entries(offlineData).map(([area, cameras]) => (
+                    <table key={area}>
+                      <caption>{area} ({cameras.length})</caption>
+                      <colgroup><col style={{ width: "45%" }} /><col style={{ width: "25%" }} /><col style={{ width: "30%" }} /></colgroup>
+                      <thead><tr><th scope="col">Nama Pada Layar (OSD)</th><th scope="col">Sub Area</th><th scope="col">Lokasi</th></tr></thead>
+                      <tbody>
+                        {cameras.length === 0 ? <tr><td colSpan={3}>Tidak ada CCTV offline.</td></tr> : cameras.map((camera, index) => (
+                          <tr key={index}>
+                            <td>{String(camera["Nama Pada Layar (OSD)"] ?? "").trim() || "—"}</td>
+                            <td>{String(camera["Sub Area"] ?? "").trim() || "—"}</td>
+                            <td>{String(camera["Lokasi"] ?? "").trim() || "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ))}
               </div>
             </ChartBox>
           </div>
 
+          {/* Distribusi di baris kedua hanya jika ruang mencukupi. */}
+          <div className="animate-card cctv-distribution" style={{ animationDelay: "0.6s" }}>
+            <ChartBox title="CCTV Distribution by Area and Locations" headerRight={distributionLegend}>
+              <div style={{ width: "100%", height: "100%", overflowX: "auto" }}>
+                <div style={{ minWidth: Math.max(300, 35 + groupedDistData.reduce((width, group) => width + group.vals.length * 43 + 24, 0)), paddingBottom: "30px" }}>
+                <GroupedBarChartWithGrid data={groupedDistData} maxDistCount={maxDistCount} />
+                </div>
+              </div>
+            </ChartBox>
+          </div>
+
+        </div>
         </div>
       </div>
     </>
@@ -558,7 +619,7 @@ function ChartBox({ title, children, bgColor, textColor, headerRight }) {
       border: bgColor ? "none" : "1px solid #E2E8F0"
     }}>
       {/* Wrapper untuk Title yang ukurannya telah disamakan dengan Yearly CCTV Installations */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "15px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "15px" }}>
         <div style={{ 
           fontSize: "14px", 
           fontWeight: "800", 
@@ -569,7 +630,7 @@ function ChartBox({ title, children, bgColor, textColor, headerRight }) {
         {/* Tempat Legend di Render */}
         {headerRight && <div>{headerRight}</div>}
       </div>
-      <div style={{ flex: 1, color: textColor || "inherit" }}>{children}</div>
+      <div style={{ flex: 1, minHeight: 0, minWidth: 0, color: textColor || "inherit" }}>{children}</div>
     </div>
   );
 }
