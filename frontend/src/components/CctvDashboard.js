@@ -214,30 +214,28 @@ export default function CctvDashboard() {
         .cctv-panel-container { container-type: inline-size; }
         .cctv-panels { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 20px; }
         .cctv-panels > div { min-width: 0; }
-        .cctv-locations { grid-area: 1 / 1 / 2 / 4; }
-        .cctv-offline { grid-area: 1 / 4 / 2 / 7; }
+        .cctv-locations { grid-area: 2 / 5 / 3 / 7; }
+        .cctv-offline { grid-area: 1 / 3 / 2 / 7; }
         .cctv-brand { grid-area: 2 / 1 / 3 / 3; }
         .cctv-area { grid-area: 2 / 3 / 3 / 5; }
-        .cctv-condition { grid-area: 2 / 5 / 3 / 7; }
+        .cctv-condition { grid-area: 1 / 1 / 2 / 3; }
         .cctv-distribution { grid-area: 3 / 1 / 4 / 7; }
-        .cctv-offline-tables { overflow: auto; height: 100%; padding-right: 6px; }
+        .cctv-offline-tables { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
         .cctv-offline-tables table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; color: #475569; }
         .cctv-offline-tables caption { text-align: left; font-weight: 800; color: #1E3A8A; padding: 10px 0; }
         .cctv-offline-tables th, .cctv-offline-tables td { text-align: left; padding: 8px; border-bottom: 1px solid #E2E8F0; overflow-wrap: anywhere; vertical-align: top; }
         .cctv-offline-tables th { background: #F1F5F9; }
-        @container (min-width: 1700px) {
-          .cctv-locations { grid-area: 1 / 1 / 2 / 3; }
-          .cctv-offline { grid-area: 1 / 3 / 2 / 5; }
-          .cctv-distribution { grid-area: 1 / 5 / 2 / 7; }
-        }
         @container (max-width: 700px) {
           .cctv-panels { display: flex; flex-direction: column; }
-          .cctv-locations { order: 0; }
+          .cctv-condition { order: 0; }
           .cctv-offline { order: 1; }
           .cctv-brand { order: 2; }
           .cctv-area { order: 3; }
-          .cctv-condition { order: 4; }
+          .cctv-locations { order: 4; }
           .cctv-distribution { order: 5; }
+        }
+        @container (max-width: 480px) {
+          .cctv-offline-tables { grid-template-columns: minmax(0, 1fr); }
         }
       `}</style>
 
@@ -442,8 +440,8 @@ export default function CctvDashboard() {
           </div>
 
           <div className="animate-card cctv-offline" style={{ animationDelay: "0.3s" }}>
-            <ChartBox title="CCTV Offline">
-              <div className="cctv-offline-tables" tabIndex={0} role="region" aria-label="Daftar CCTV offline per area">
+            <ChartBox title="CCTV Offline" autoHeight>
+              <div className="cctv-offline-tables" role="region" aria-label="Daftar CCTV offline per area">
                 {loadError ? <p role="alert">Gagal memuat data CCTV offline.</p> : !offlineData ? <p role="status">Memuat data...</p> :
                   Object.entries(offlineData).map(([area, cameras]) => (
                     <table key={area}>
@@ -465,7 +463,7 @@ export default function CctvDashboard() {
             </ChartBox>
           </div>
 
-          {/* Distribusi di baris kedua hanya jika ruang mencukupi. */}
+          {/* Distribusi di baris keempat agar panel offline mendapat dua kolom. */}
           <div className="animate-card cctv-distribution" style={{ animationDelay: "0.6s" }}>
             <ChartBox title="CCTV Distribution by Area and Locations" headerRight={distributionLegend}>
               <div style={{ width: "100%", height: "100%", overflowX: "auto" }}>
@@ -606,14 +604,15 @@ function GroupedBarChartWithGrid({ data, maxDistCount }) {
 }
 
 // UPDATE: Standarisasi Judul pada fungsi ChartBox
-function ChartBox({ title, children, bgColor, textColor, headerRight }) {
+function ChartBox({ title, children, bgColor, textColor, headerRight, autoHeight = false }) {
   return (
     <div style={{ 
       background: bgColor || "white", 
       padding: "20px", 
       borderRadius: "12px", 
       boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)", 
-      height: "280px", 
+      height: autoHeight ? "auto" : "280px",
+      minHeight: autoHeight ? "280px" : undefined,
       display: "flex", 
       flexDirection: "column",
       border: bgColor ? "none" : "1px solid #E2E8F0"
