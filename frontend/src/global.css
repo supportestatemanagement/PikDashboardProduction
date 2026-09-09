@@ -224,7 +224,7 @@ body {
 .pw-dashboard { min-height: calc(100vh - 60px); margin: 0 -20px -20px; padding: 18px 24px 28px; box-sizing: border-box; background: #07111f; color: #f8fafc; }
 .pw-loading,.pw-error { position: fixed; top: 68px; left: 50%; z-index: 1200; transform: translateX(-50%); padding: 7px 14px; border: 1px solid #1e4f68; border-radius: 7px; background: #0b1a2b; color: #67e8f9; font-size: 10px; box-shadow: 0 8px 25px #0008; }
 .pw-error { border-color: #7f1d1d; color: #fecaca; }
-.pw-current-row { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 10px; margin-bottom: 12px; }
+.pw-current-row { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 10px; margin-bottom: 12px; }
 .pw-current-row article,.pw-panel { border: 1px solid #24364d; border-radius: 10px; background: #101c2e; box-shadow: 0 5px 18px rgba(0,0,0,.18); }
 .pw-current-row article { min-width: 0; min-height: 87px; padding: 13px 14px; display: flex; flex-direction: column; justify-content: center; }
 .pw-current-row span { color: #8292aa; font-size: 9px; font-weight: 800; letter-spacing: .7px; }
@@ -677,3 +677,41 @@ body {
 /* Keep the Pump & Weather surface edge-to-edge inside its page. */
 .pump-dashboard.pw-dashboard { margin: 0 -20px -20px; padding: 18px 24px 28px; border-radius: 0; overflow: visible; background: #07111f; box-shadow: none; }
 @media (max-width: 768px) { .pump-dashboard.pw-dashboard { margin: 0 -10px -10px; padding: 10px; } }
+/* Pump station overview: weather, levels, analytics, daily station logs. */
+.pw-dashboard .pw-current-row,.pw-dashboard.sidebar-open .pw-current-row { grid-template-columns: repeat(6,minmax(0,1fr)); }
+.pw-dashboard .pw-main-grid,.pw-dashboard.sidebar-open .pw-main-grid { grid-template-columns: minmax(0,1fr) minmax(0,2fr); }
+.pw-peak-panel .pw-panel-head { flex-wrap: wrap; }
+.pw-dashboard .pw-chart-scroll { overflow: hidden; }
+.pw-dashboard .pw-chart { display: block; width: 100%; min-width: 0; height: auto; }
+.pw-weather-panel { margin-bottom: 12px; background: linear-gradient(120deg,#234d79,#132c4b); }
+.pw-weather-panel .pw-panel-head h2 { color: #e0f2fe; }
+.pw-weather-panel .pw-panel-head small { color: #b6d4ee; }
+.pw-weather-hours { display: grid; grid-template-columns: repeat(auto-fit,minmax(105px,1fr)); gap: 8px 0; }
+.pw-weather-hours article { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 12px 10px; border-left: 1px solid #ffffff26; text-align: center; }
+.pw-weather-hours time { font-size: 15px; font-weight: 700; color: #e0f2fe; }
+.pw-weather-icon { font-size: 42px; line-height: 1.3; }
+.pw-weather-hours strong { font-size: 12px; color: #fff; }
+.pw-status-section { margin-top: 14px; }
+.pw-status-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+.pw-status-toolbar > span { font-size: 10px; color: #94a3b8; }
+.pw-status-row { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+.pw-dashboard .pw-status-panel,.pw-dashboard.sidebar-open .pw-status-panel { grid-column: auto; }
+.pw-daily-log { max-height: 360px; overflow-y: auto; }
+.pw-daily-log > p,.pw-weather-panel > p { font-size: 12px; color: #94a3b8; }
+.pw-daily-summary + .pw-daily-summary { margin-top: 16px; padding-top: 12px; border-top: 1px solid #24364d; }
+.pw-daily-total { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; }
+.pw-daily-total time { font-size: 11px; color: #b8c6d9; }
+.pw-daily-total strong { font-size: 30px; color: #35d6bd; }
+.pw-daily-total small { font-size: 14px; margin-left: 3px; }
+.pw-run-breakdown > div { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-top: 1px solid #223147; font-size: 10px; }
+.pw-run-breakdown span { color: #94a3b8; }
+.pw-run-breakdown b { color: #dbeafe; }
+@media (max-width: 1000px) {
+  .pw-status-row { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 768px) {
+  .pw-dashboard .pw-current-row,.pw-dashboard.sidebar-open .pw-current-row { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .pw-dashboard .pw-main-grid,.pw-dashboard.sidebar-open .pw-main-grid { grid-template-columns: minmax(0,1fr); }
+  .pw-status-row { grid-template-columns: minmax(0,1fr); }
+  .pw-status-toolbar .pw-range-controls { flex-wrap: wrap; }
+}

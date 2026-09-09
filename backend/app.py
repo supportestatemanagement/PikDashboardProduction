@@ -267,6 +267,7 @@ def get_pump_peak_events():
                 "latest": latest_payload, "levelRange": level_range,
                 "runOccurrences": dict(run_occurrences),
                 "statusTimeline": records[-24:],
+                "weatherTimeline": [{"date": row["date"], "time": row["time"], "weather": row["weather"]} for row in records],
                 "tdsTrend": [{"date": row["date"], "time": row["time"], "value": row["tds"]} for row in records if row["tds"] is not None],
                 "completeness": round((actual_values / expected_values * 100), 1) if expected_values else 0,
             },
