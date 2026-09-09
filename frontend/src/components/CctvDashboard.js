@@ -1,6 +1,13 @@
 "use client";
 import React, { useState, useEffect } from "react";
 
+const offlineAreaNames = {
+  BGM: "Bukit Golf Mediterania",
+  GI: "Golf Island",
+  RWI: "Riverwalk Island",
+  PIK2: "PIK 2",
+};
+
 export default function CctvDashboard() {
   const [trendData, setTrendData] = useState([]);
   const [totalCctv, setTotalCctv] = useState(0);
@@ -220,11 +227,13 @@ export default function CctvDashboard() {
         .cctv-area { grid-area: 2 / 3 / 3 / 5; }
         .cctv-condition { grid-area: 1 / 1 / 2 / 3; }
         .cctv-distribution { grid-area: 3 / 1 / 4 / 7; }
-        .cctv-offline-tables { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
-        .cctv-offline-tables table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; color: #475569; }
-        .cctv-offline-tables caption { text-align: left; font-weight: 800; color: #1E3A8A; padding: 10px 0; }
-        .cctv-offline-tables th, .cctv-offline-tables td { text-align: left; padding: 8px; border-bottom: 1px solid #E2E8F0; overflow-wrap: anywhere; vertical-align: top; }
-        .cctv-offline-tables th { background: #F1F5F9; }
+        .cctv-offline-areas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+        .cctv-offline-areas section { min-width: 0; }
+        .cctv-offline-areas h3 { margin: 0 0 10px; font-size: 12px; font-weight: 800; color: #1E3A8A; }
+        .cctv-offline-list { max-height: 160px; overflow-y: auto; font-size: 12px; line-height: 1.6; color: #475569; }
+        .cctv-offline-list ul { margin: 0; padding-left: 20px; padding-right: 8px; }
+        .cctv-offline-list li { padding-bottom: 4px; overflow-wrap: anywhere; }
+        .cctv-offline-list p { margin: 0; }
         @container (max-width: 700px) {
           .cctv-panels { display: flex; flex-direction: column; }
           .cctv-condition { order: 0; }
@@ -235,7 +244,7 @@ export default function CctvDashboard() {
           .cctv-distribution { order: 5; }
         }
         @container (max-width: 480px) {
-          .cctv-offline-tables { grid-template-columns: minmax(0, 1fr); }
+          .cctv-offline-areas { grid-template-columns: minmax(0, 1fr); }
         }
       `}</style>
 
@@ -441,23 +450,19 @@ export default function CctvDashboard() {
 
           <div className="animate-card cctv-offline" style={{ animationDelay: "0.3s" }}>
             <ChartBox title="CCTV Offline" autoHeight>
-              <div className="cctv-offline-tables" role="region" aria-label="Daftar CCTV offline per area">
+              <div className="cctv-offline-areas" role="region" aria-label="Daftar CCTV offline per area">
                 {loadError ? <p role="alert">Gagal memuat data CCTV offline.</p> : !offlineData ? <p role="status">Memuat data...</p> :
                   Object.entries(offlineData).map(([area, cameras]) => (
-                    <table key={area}>
-                      <caption>{area} ({cameras.length})</caption>
-                      <colgroup><col style={{ width: "45%" }} /><col style={{ width: "25%" }} /><col style={{ width: "30%" }} /></colgroup>
-                      <thead><tr><th scope="col">Nama Pada Layar (OSD)</th><th scope="col">Sub Area</th><th scope="col">Lokasi</th></tr></thead>
-                      <tbody>
-                        {cameras.length === 0 ? <tr><td colSpan={3}>Tidak ada CCTV offline.</td></tr> : cameras.map((camera, index) => (
-                          <tr key={index}>
-                            <td>{String(camera["Nama Pada Layar (OSD)"] ?? "").trim() || "—"}</td>
-                            <td>{String(camera["Sub Area"] ?? "").trim() || "—"}</td>
-                            <td>{String(camera["Lokasi"] ?? "").trim() || "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <section key={area} aria-labelledby={`offline-area-${area}`}>
+                      <h3 id={`offline-area-${area}`}>{offlineAreaNames[area]} ({cameras.length})</h3>
+                      <div className="cctv-offline-list" tabIndex={cameras.length ? 0 : undefined}>
+                        {cameras.length === 0 ? <p>Tidak ada CCTV offline.</p> : (
+                          <ul>{cameras.map((camera, index) => (
+                            <li key={index}>{String(camera["Nama Pada Layar (OSD)"] ?? "").trim() || "—"}</li>
+                          ))}</ul>
+                        )}
+                      </div>
+                    </section>
                   ))}
               </div>
             </ChartBox>
