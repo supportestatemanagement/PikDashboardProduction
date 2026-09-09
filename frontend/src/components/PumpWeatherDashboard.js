@@ -112,7 +112,7 @@ function WeatherPanel({ rows }) {
     return "-";
   };
   return <section className="pw-panel pw-weather-panel" aria-label="Cuaca per jam">
-    <div className="pw-panel-head"><div><h2>Today's Weather</h2></div></div>
+    <div className="pw-panel-head"><div><h2>TODAY'S WEATHER</h2></div></div>
     {ordered.length ? <div className="pw-weather-hours">{ordered.map((row) => <article key={`${row.date}-${row.time}`}>
       <time>{row.time}</time><span className="pw-weather-icon" aria-hidden="true">{icon(row.weather)}</span><strong>{row.weather || "Belum ada data"}</strong>
     </article>)}</div> : <p>Belum ada data cuaca pada tanggal ini.</p>}
@@ -155,12 +155,12 @@ export default function PumpWeatherDashboard({ dateRange, isSidebarOpen = false 
     {(base.error || peaks.error || statuses.error) && <div className="pw-error">{base.error || peaks.error || statuses.error}</div>}
     <WeatherPanel rows={base.data?.analytics?.weatherTimeline || []} />
     <section className="pw-panel pw-level-section" aria-label="Water levels">
-      <div className="pw-status-toolbar"><h2>Water Levels</h2><span className="pw-active-date">Active Date: {niceDate(navbarKey)}</span></div>
+      <div className="pw-status-toolbar"><h2>WATER LEVELS</h2><span className="pw-active-date">{niceDate(navbarKey)}</span></div>
       <CurrentCards latest={base.data?.analytics?.latest} />
     </section>
     <section className="pw-main-grid"><PeakPanel data={peaks.data} filter={peakFilter} setFilter={setPeakFilter} navbarKey={navbarKey} /><TrendChart rows={base.data?.chart || []} /></section>
     <section className="pw-panel pw-status-section" aria-label="Pump Run Summary">
-      <div className="pw-status-toolbar"><h2>Pump Run Summary</h2><DateRangeFilter {...statusFilter} active={statusFilter.start !== navbarKey || statusFilter.end !== navbarKey} onPreset={(months) => setStatusFilter(presetRange(navbarKey, months))} onStart={(start) => start && setStatusFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => end && setStatusFilter((old) => ({ ...old, start: old.start > end ? end : old.start, end }))} /></div>
+      <div className="pw-status-toolbar"><h2>PUMP RUN SUMMARY</h2><DateRangeFilter {...statusFilter} active={statusFilter.start !== navbarKey || statusFilter.end !== navbarKey} onPreset={(months) => setStatusFilter(presetRange(navbarKey, months))} onStart={(start) => start && setStatusFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => end && setStatusFilter((old) => ({ ...old, start: old.start > end ? end : old.start, end }))} /></div>
       <div className="pw-status-row">{["PS1", "PS2", "PS3", "PS4"].map((station) => <StatusPanel key={station} station={station} data={statuses.data} filter={statusFilter} />)}</div>
     </section>
   </main>;
