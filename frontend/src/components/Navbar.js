@@ -28,6 +28,10 @@ export default function Navbar({
   
   const [time, setTime] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [isCallCenterOpen, setIsCallCenterOpen] = useState(activeTab === "callcenter" || activeTab === "perparkiran");
+  useEffect(() => {
+    if (activeTab === "callcenter" || activeTab === "perparkiran") setIsCallCenterOpen(true);
+  }, [activeTab]);
   const [tempStart, setTempStart] = useState(dateRange?.start || new Date());
   const [tempEnd, setTempEnd] = useState(dateRange?.end || new Date());
   const [preset, setPreset] = useState("Hari ini");
@@ -35,9 +39,9 @@ export default function Navbar({
   const isSingleDateDashboard = isTrafficDashboard || activeTab === "pump";
   const dashboardSubtitle = {
     dashboard: "Traffic Dashboard",
-    callcenter: "Call Center Dashboard",
+    callcenter: "Call Center / Emergency Complaints",
     cctv: "CCTV Dashboard",
-    perparkiran: "Parking Dashboard",
+    perparkiran: "Call Center / Parking Complaints",
     pump: "Pump & Weather Dashboard",
   }[activeTab] || "Dashboard";
   const todayKey = new Date().toDateString();
@@ -307,7 +311,8 @@ export default function Navbar({
         bottom: 0,
         width: isSidebarOpen ? "260px" : "0px",
         background: "linear-gradient(180deg, #1e3c72 0%, #2a5298 100%)",
-        overflow: "hidden",
+        overflowX: "hidden",
+        overflowY: "auto",
         transition: "width 0.3s ease",
         boxShadow: isSidebarOpen ? "4px 0 10px rgba(0,0,0,0.1)" : "none",
         zIndex: 1000
@@ -330,14 +335,22 @@ export default function Navbar({
               { id: "callcenter", label: "Call Center", icon: "call" },
               { id: "cctv", label: "CCTV", icon: "camera" },
               { id: "pump", label: "Pump & Weather", icon: "water" },
-              { id: "perparkiran", label: "Parking", icon: "parking" },
             ].map(tab => {
-              const isActive = activeTab === tab.id;
+              const isGroup = tab.id === "callcenter";
+              const isActive = activeTab === tab.id || (isGroup && activeTab === "perparkiran");
               return (
+                <div key={tab.id}>
                 <button
-                  key={tab.id}
+                  aria-expanded={isGroup ? isCallCenterOpen : undefined}
+                  aria-controls={isGroup ? "call-center-subtopics" : undefined}
+                  aria-current={!isGroup && isActive ? "page" : undefined}
                   onClick={() => {
+                    if (isGroup) {
+                      setIsCallCenterOpen(open => !open);
+                      return;
+                    }
                     setActiveTab(tab.id);
+                    setIsOpen(false);
                     if (isMobile) setIsSidebarOpen(false);
                   }}
                   style={{
@@ -371,7 +384,23 @@ export default function Navbar({
                 >
                   <span style={{ width: "22px", display: "grid", placeItems: "center", flexShrink: 0 }}><MenuIcon type={tab.icon} /></span>
                   {tab.label}
+                  {isGroup && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" style={{ marginLeft: "auto", transform: isCallCenterOpen ? "rotate(180deg)" : undefined }}><path d="m6 9 6 6 6-6" /></svg>}
                 </button>
+                {isGroup && (
+                  <div id="call-center-subtopics" hidden={!isCallCenterOpen} className="call-center-subtopics">
+                    {[
+                      { id: "callcenter", label: "Emergency Complaints" },
+                      { id: "perparkiran", label: "Parking Complaints" },
+                    ].map(subtopic => (
+                      <button key={subtopic.id} className="call-center-subtopic" aria-current={activeTab === subtopic.id ? "page" : undefined} onClick={() => {
+                        setActiveTab(subtopic.id);
+                        setIsOpen(false);
+                        if (isMobile) setIsSidebarOpen(false);
+                      }}>{subtopic.label}</button>
+                    ))}
+                  </div>
+                )}
+                </div>
               );
             })}
           </nav>
