@@ -229,11 +229,11 @@ export default function CctvDashboard() {
         .cctv-distribution { grid-area: 3 / 1 / 4 / 7; }
         .cctv-offline-areas { height: 100%; box-sizing: border-box; overflow: auto; border: 1px solid #E2E8F0; border-radius: 10px; }
         .cctv-offline-table { width: 100%; min-width: 640px; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
-        .cctv-offline-table th { padding: 12px; background: #F1F5F9; color: #1E3A8A; font-size: 12px; font-weight: 800; text-align: left; border-bottom: 1px solid #E2E8F0; }
+        .cctv-offline-table th { padding: 12px 10px; background: #F1F5F9; color: #1E3A8A; font-size: 11px; font-weight: 800; text-align: left; border-bottom: 1px solid #E2E8F0; }
         .cctv-offline-table th { position: sticky; top: 0; z-index: 1; }
         .cctv-offline-table th + th, .cctv-offline-table td + td { border-left: 1px solid #E2E8F0; }
         .cctv-offline-table td { padding: 0; vertical-align: top; }
-        .cctv-offline-count { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 12px; background: #E2E8F0; font-size: 11px; white-space: nowrap; }
+        .cctv-offline-count { display: inline-block; margin-left: 4px; padding: 1px 5px; border-radius: 12px; background: #E2E8F0; font-size: 10px; white-space: nowrap; }
         .cctv-offline-list { font-size: 12px; line-height: 1.6; color: #475569; }
         .cctv-offline-list ul { list-style: none; margin: 0; padding: 0; }
         .cctv-offline-list li { padding: 9px 12px; overflow-wrap: anywhere; border-bottom: 1px solid #F1F5F9; }
