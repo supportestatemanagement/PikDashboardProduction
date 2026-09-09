@@ -39,9 +39,9 @@ export default function Navbar({
   const isSingleDateDashboard = isTrafficDashboard || activeTab === "pump";
   const dashboardSubtitle = {
     dashboard: "Traffic Dashboard",
-    callcenter: "Call Center / Emergency",
+    callcenter: "Call Center Dashboard / Emergency",
     cctv: "CCTV Dashboard",
-    perparkiran: "Call Center / Parking",
+    perparkiran: "Call Center Dashboard / Parking",
     pump: "Pump & Weather Dashboard",
   }[activeTab] || "Dashboard";
   const todayKey = new Date().toDateString();
