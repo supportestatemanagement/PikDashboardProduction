@@ -6,7 +6,7 @@ function MenuIcon({ type }) {
   if (type === "car") return <svg {...common}><path d="m5 11 1.5-4h11l1.5 4" /><path d="M3 13a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5H3Z" /><circle cx="7" cy="16" r="1" /><circle cx="17" cy="16" r="1" /><path d="M5 18v2M19 18v2" /></svg>;
   if (type === "call") return <svg {...common}><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c1 .4 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z" /></svg>;
   if (type === "camera") return <svg {...common}><path d="M3 7h13v10H3z" /><path d="m16 10 5-3v10l-5-3z" /><path d="M7 17v3M4 20h6" /><circle cx="7" cy="11" r="1.5" /></svg>;
-  if (type === "water") return <svg {...common}><path d="M12 2s6 6.5 6 12a6 6 0 0 1-12 0c0-5.5 6-12 6-12Z" /><path d="M9 15a3 3 0 0 0 3 2" /></svg>;
+  if (type === "pump") return <svg {...common}><circle cx="9" cy="13" r="5" /><circle cx="9" cy="13" r="1.5" /><path d="M4 11H2v4h2M9 8V4h7v4h-4M14 10h6v7h-7M17 10v7M6 18v3M12 18v3M3 21h18" /></svg>;
   return <svg {...common}><rect x="4" y="3" width="16" height="18" rx="3" /><path d="M9 17V7h4a3 3 0 0 1 0 6H9M9 13h4" /></svg>;
 }
 
@@ -42,7 +42,7 @@ export default function Navbar({
     callcenter: "Call Center Dashboard / Emergency",
     cctv: "CCTV Dashboard",
     perparkiran: "Call Center Dashboard / Parking",
-    pump: "Pump & Weather Dashboard",
+    pump: "Pump Station",
   }[activeTab] || "Dashboard";
   const todayKey = new Date().toDateString();
   const isLiveRange = dateRange?.start?.toDateString() === todayKey && dateRange?.end?.toDateString() === todayKey;
@@ -334,7 +334,7 @@ export default function Navbar({
               { id: "dashboard", label: "Traffic", icon: "car" },
               { id: "callcenter", label: "Call Center", icon: "call" },
               { id: "cctv", label: "CCTV", icon: "camera" },
-              { id: "pump", label: "Pump & Weather", icon: "water" },
+              { id: "pump", label: "Pump Station", icon: "pump" },
             ].map(tab => {
               const isGroup = tab.id === "callcenter";
               const isActive = activeTab === tab.id || (isGroup && activeTab === "perparkiran");

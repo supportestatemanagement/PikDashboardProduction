@@ -12,9 +12,11 @@ const SERIES = [
 const iso = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 const asDate = (value) => { const [y, m, d] = value.split("-").map(Number); return new Date(y, m - 1, d); };
 const range = (start, end = start) => ({ start: asDate(start), end: asDate(end) });
+const todayRange = () => { const today = iso(new Date()); return { start: today, end: today }; };
 const yearToDate = () => { const today = iso(new Date()); return { start: `${today.slice(0, 4)}-01-01`, end: today }; };
 const rangeLabel = (start, end) => start === end ? niceDate(start) : `${niceDate(start)} - ${niceDate(end)}`;
 const presetRange = (anchor, months) => {
+  if (months === "today") return todayRange();
   if (months === "year") return yearToDate();
   const end = asDate(anchor);
   const start = new Date(end.getFullYear(), end.getMonth() - months, 1);
@@ -42,11 +44,11 @@ function usePumpData(dateRange) {
 
 function DateRangeFilter({ start, end, onStart, onEnd, onPreset, active }) {
   const currentYear = yearToDate();
-  const selected = start === currentYear.start && end === currentYear.end ? "year" : "";
+  const selected = start === currentYear.end && end === currentYear.end ? "today" : start === currentYear.start && end === currentYear.end ? "year" : "";
   return <details className={`pw-range-picker${active ? " is-active" : ""}`}>
     <summary>{rangeLabel(start, end)}<span aria-hidden="true">&#9662;</span></summary>
     <div className="pw-range-popover">
-      <label>Pilih Preset<select aria-label="Preset rentang tanggal" value={selected} onChange={(e) => onPreset(e.target.value === "year" ? "year" : Number(e.target.value))}><option value="" disabled>Rentang khusus</option><option value="year">Tahun ini</option><option value="3">3 bulan terakhir</option><option value="6">6 bulan terakhir</option><option value="12">1 tahun terakhir</option></select></label>
+      <label>Pilih Preset<select aria-label="Preset rentang tanggal" value={selected} onChange={(e) => onPreset(["year", "today"].includes(e.target.value) ? e.target.value : Number(e.target.value))}><option value="" disabled>Rentang khusus</option><option value="today">Hari ini</option><option value="year">Tahun ini</option><option value="3">3 bulan terakhir</option><option value="6">6 bulan terakhir</option><option value="12">1 tahun terakhir</option></select></label>
       <div className="pw-range-inputs"><label>Mulai<input aria-label="Tanggal awal" type="date" value={start} onChange={(e) => onStart(e.target.value)} /></label><label>Akhir<input aria-label="Tanggal akhir" type="date" value={end} onChange={(e) => onEnd(e.target.value)} /></label></div>
       <button type="button" onClick={(e) => { e.currentTarget.closest("details").open = false; }}>Selesai</button>
     </div>
@@ -55,16 +57,16 @@ function DateRangeFilter({ start, end, onStart, onEnd, onPreset, active }) {
 
 function CurrentCards({ latest }) {
   const cards = [
-    ...["PS1", "PS2", "PS3", "PS4"].map((key) => ({ key, label: `${key} LEVEL`, value: fmt(latest?.stations?.[key]?.level), status: latest?.stations?.[key]?.status || "-" })),
-    { key: "twa", label: "TWA LEVEL", value: fmt(latest?.twa), status: "Level terakhir" },
-    { key: "sea", label: "SEA LEVEL", value: fmt(latest?.sea), status: "Level terakhir" },
+    ...["PS1", "PS2", "PS3", "PS4"].map((key) => ({ key, label: key, value: fmt(latest?.stations?.[key]?.level), status: latest?.stations?.[key]?.status || "-" })),
+    { key: "twa", label: "TWA", value: fmt(latest?.twa), status: "Level terakhir" },
+    { key: "sea", label: "SEA", value: fmt(latest?.sea), status: "Level terakhir" },
   ];
   return <section className="pw-current-row">{cards.map((card) => {
     const isPump = /^PS[1-4]$/.test(card.key);
     const state = /^run\s*[1-9]\d*$/i.test(card.status) ? "on" : /^standby$/i.test(card.status) ? "off" : "unknown";
     const label = state === "unknown" ? "N/A" : state.toUpperCase();
     return <article key={card.key} className="pw-level-card">
-      <div className="pw-level-reading"><span>{card.label}</span><strong>{card.value}</strong><small>{card.status}</small></div>
+      <div className="pw-level-reading"><span>{card.label}</span><strong>{card.value}{card.value !== "-" && " M"}</strong><small>{card.status}</small></div>
       {isPump && <span className={`pw-pump-indicator is-${state}`} aria-label={`${card.key} pump ${state}`} title={state === "unknown" ? "Pump status unavailable" : `Pump ${label}`}><i aria-hidden="true" />{label}</span>}
     </article>;
   })}</section>;
@@ -112,7 +114,7 @@ function WeatherPanel({ rows }) {
     return "-";
   };
   return <section className="pw-panel pw-weather-panel" aria-label="Cuaca per jam">
-    <div className="pw-panel-head"><div><h2>TODAY'S WEATHER</h2></div></div>
+    <div className="pw-panel-head"><div><h2>WEATHER CONDITIONS</h2></div></div>
     {ordered.length ? <div className="pw-weather-hours">{ordered.map((row) => <article key={`${row.date}-${row.time}`}>
       <time>{row.time}</time><span className="pw-weather-icon" aria-hidden="true">{icon(row.weather)}</span><strong>{row.weather || "Belum ada data"}</strong>
     </article>)}</div> : <p>Belum ada data cuaca pada tanggal ini.</p>}
@@ -145,7 +147,7 @@ export function StatusPanel({ data, station, filter }) {
 export default function PumpWeatherDashboard({ dateRange, isSidebarOpen = false }) {
   const navbarKey = iso(dateRange.start);
   const [peakFilter, setPeakFilter] = useState(yearToDate);
-  const [statusFilter, setStatusFilter] = useState(yearToDate);
+  const [statusFilter, setStatusFilter] = useState(todayRange);
   const baseRange = useMemo(() => range(navbarKey), [navbarKey]);
   const peakRange = useMemo(() => range(peakFilter.start, peakFilter.end), [peakFilter.start, peakFilter.end]);
   const statusRange = useMemo(() => range(statusFilter.start, statusFilter.end), [statusFilter.start, statusFilter.end]);
@@ -155,7 +157,7 @@ export default function PumpWeatherDashboard({ dateRange, isSidebarOpen = false 
     {(base.error || peaks.error || statuses.error) && <div className="pw-error">{base.error || peaks.error || statuses.error}</div>}
     <WeatherPanel rows={base.data?.analytics?.weatherTimeline || []} />
     <section className="pw-panel pw-level-section" aria-label="Water levels">
-      <div className="pw-status-toolbar"><h2>WATER LEVELS</h2><span className="pw-active-date">{niceDate(navbarKey)}</span></div>
+      <div className="pw-status-toolbar"><h2>WATER LEVELS</h2><span className="pw-active-date">{niceDate(navbarKey)}{base.data?.analytics?.latest?.time ? ` | Last update: ${base.data.analytics.latest.time}` : " | No update available"}</span></div>
       <CurrentCards latest={base.data?.analytics?.latest} />
     </section>
     <section className="pw-main-grid"><PeakPanel data={peaks.data} filter={peakFilter} setFilter={setPeakFilter} navbarKey={navbarKey} /><TrendChart rows={base.data?.chart || []} /></section>
