@@ -146,7 +146,7 @@ export default function App() {
           />
         </div>
 
-        <div style={{ display: displayedTab === "cctv" ? "block" : "none" }}>
+        <div className={isSidebarOpen ? "cctv-sidebar-open" : undefined} style={{ display: displayedTab === "cctv" ? "block" : "none" }}>
           <CctvDashboard />
         </div>
 

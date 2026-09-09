@@ -771,3 +771,12 @@ body {
   .pump-page-transition.is-entering .pw-dashboard *,
   .pump-page-transition.is-exiting .pw-dashboard * { animation: none; }
 }
+/* Compact labels when the navigation sidebar reduces dashboard width. */
+.cctv-sidebar-open .cctv-offline-table { min-width: 0; }
+.cctv-sidebar-open .cctv-offline-table th { font-size: 9px; padding: 10px 7px; overflow-wrap: anywhere; }
+.cctv-sidebar-open .cctv-offline-count { font-size: 9px; margin-left: 2px; padding: 1px 3px; }
+.cctv-sidebar-open .cctv-offline-list { font-size: 10px; }
+.cctv-sidebar-open .cctv-offline-list p { padding: 10px 7px; overflow-wrap: anywhere; }
+.pw-dashboard.sidebar-open .pw-level-reading strong { font-size: 18px; }
+.pw-dashboard.sidebar-open .pw-current-row .pw-level-card { padding-left: 10px; padding-right: 10px; gap: 5px; }
+.pw-dashboard.sidebar-open .pw-current-row .pw-pump-indicator { padding: 5px 6px; font-size: 8px; gap: 4px; }
