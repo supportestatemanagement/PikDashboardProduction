@@ -693,7 +693,7 @@ body {
 .pw-weather-hours strong { font-size: 12px; color: #fff; }
 .pw-status-section { margin-top: 14px; }
 .pw-status-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
-.pw-status-toolbar > span { font-size: 10px; color: #94a3b8; }
+.pw-status-toolbar > h2 { margin: 0; color: #35d6bd; font-size: 11px; font-weight: 800; letter-spacing: 1px; }
 .pw-status-row { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
 .pw-dashboard .pw-status-panel,.pw-dashboard.sidebar-open .pw-status-panel { grid-column: auto; }
 .pw-daily-log { max-height: 360px; overflow-y: auto; }
@@ -703,9 +703,6 @@ body {
 .pw-daily-total time { font-size: 11px; color: #b8c6d9; }
 .pw-daily-total strong { font-size: 30px; color: #35d6bd; }
 .pw-daily-total small { font-size: 14px; margin-left: 3px; }
-.pw-run-breakdown > div { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-top: 1px solid #223147; font-size: 10px; }
-.pw-run-breakdown span { color: #94a3b8; }
-.pw-run-breakdown b { color: #dbeafe; }
 @media (max-width: 1000px) {
   .pw-status-row { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
