@@ -719,3 +719,17 @@ body {
   .pw-status-row { grid-template-columns: minmax(0,1fr); }
   .pw-status-toolbar .pw-range-controls { flex-wrap: wrap; }
 }
+.pw-weather-hours article:first-child { border-left: 0; }
+.pw-level-section { margin-bottom: 12px; background: #0c1727; }
+.pw-level-section .pw-current-row { margin-bottom: 0; }
+.pw-active-date,.pw-period-label { color: #b8c6d9; font-size: 11px; line-height: 1.6; }
+.pw-no-data { color: #94a3b8; font-size: 10px; }
+.pw-range-picker { position: relative; max-width: 100%; border: 1px solid #2b3b51; border-radius: 7px; background: #0a1524; color: #dbeafe; }
+.pw-range-picker.is-active { border-color: #2dd4bf; }
+.pw-range-picker summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 12px; font-size: 10px; cursor: pointer; list-style: none; }
+.pw-range-picker summary::-webkit-details-marker { display: none; }
+.pw-range-popover { position: absolute; right: 0; top: calc(100% + 8px); width: 290px; max-width: calc(100vw - 64px); box-sizing: border-box; padding: 14px; z-index: 50; background: #142237; border: 1px solid #30465f; border-radius: 9px; box-shadow: 0 12px 30px #0007; }
+.pw-range-popover label { display: flex; flex-direction: column; gap: 6px; font-size: 10px; color: #b8c6d9; min-width: 0; }
+.pw-range-popover select,.pw-range-popover input { min-width: 0; width: 100%; box-sizing: border-box; padding: 7px; border: 1px solid #30465f; border-radius: 5px; background: #0a1524; color: #e2e8f0; color-scheme: dark; font-size: 11px; }
+.pw-range-inputs { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-top: 12px; }
+.pw-range-popover button { display: block; margin: 12px 0 0 auto; border: 1px solid #2dd4bf66; border-radius: 5px; padding: 6px 12px; background: #134e4a; color: #ccfbf1; cursor: pointer; }

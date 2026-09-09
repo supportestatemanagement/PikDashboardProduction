@@ -1,4 +1,16 @@
-import { summarizePumpDays } from "./PumpWeatherDashboard";
+import { render, screen } from "@testing-library/react";
+import { StatusPanel, summarizePumpDays } from "./PumpWeatherDashboard";
+
+test("shows a single weighted total for the selected range", () => {
+  render(<StatusPanel station="PS1" filter={{ start: "2026-09-01", end: "2026-09-09" }} data={{ pumpStatusEvents: [
+    { station: "PS1", date: "2026-09-08", status: "Run 2" },
+    { station: "PS1", date: "2026-09-09", status: "Run 3" },
+    { station: "PS2", date: "2026-09-09", status: "Run 6" },
+  ] }} />);
+  expect(screen.getByText(/01 Sep 2026 - 09 Sep 2026/i)).toBeInTheDocument();
+  expect(screen.getByText("5")).toHaveTextContent("5x");
+  expect(screen.queryByText("08 Sep 2026")).not.toBeInTheDocument();
+});
 
 test("weights run observations and separates stations and days", () => {
   const event = (status, station = "PS1", date = "2026-09-09") => ({ status, station, date });
