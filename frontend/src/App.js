@@ -34,6 +34,19 @@ export default function App() {
     return "dashboard";
   });
 
+  const [displayedTab, setDisplayedTab] = useState(activeTab);
+  const pumpExiting = displayedTab === "pump" && activeTab !== "pump";
+  useEffect(() => {
+    if (displayedTab === activeTab) return;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (displayedTab !== "pump" || reduceMotion) {
+      setDisplayedTab(activeTab);
+      return;
+    }
+    const timer = window.setTimeout(() => setDisplayedTab(activeTab), 220);
+    return () => window.clearTimeout(timer);
+  }, [activeTab, displayedTab]);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth <= 768 : false);
 
@@ -51,9 +64,9 @@ export default function App() {
   }, [activeTab]);
 
   useEffect(() => {
-    document.body.classList.toggle("traffic-dashboard-body", activeTab === "dashboard" && isLoggedIn);
+    document.body.classList.toggle("traffic-dashboard-body", displayedTab === "dashboard" && isLoggedIn);
     return () => document.body.classList.remove("traffic-dashboard-body");
-  }, [activeTab, isLoggedIn]);
+  }, [displayedTab, isLoggedIn]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -97,7 +110,7 @@ export default function App() {
   }
 
   return (
-    <div className={`app-wrapper ${activeTab === "dashboard" ? "traffic-active" : ""}`}>
+    <div className={`app-wrapper ${displayedTab === "dashboard" ? "traffic-active" : ""}`}>
       <Navbar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
@@ -114,37 +127,37 @@ export default function App() {
         style={{
           marginLeft: isMobile ? "0px" : (isSidebarOpen ? "260px" : "0px"),
           paddingTop: "60px",
-          paddingLeft: activeTab === "dashboard" ? "0" : (isMobile ? "10px" : "20px"),
-          paddingRight: activeTab === "dashboard" ? "0" : (isMobile ? "10px" : "20px"),
-          paddingBottom: activeTab === "dashboard" ? "0" : (isMobile ? "10px" : "20px"),
+          paddingLeft: displayedTab === "dashboard" ? "0" : (isMobile ? "10px" : "20px"),
+          paddingRight: displayedTab === "dashboard" ? "0" : (isMobile ? "10px" : "20px"),
+          paddingBottom: displayedTab === "dashboard" ? "0" : (isMobile ? "10px" : "20px"),
           transition: "margin-left 0.3s ease",
           boxSizing: "border-box",
           minHeight: "100vh"
         }}
       >
-        <div style={{ display: activeTab === "dashboard" ? "block" : "none" }}>
+        <div style={{ display: displayedTab === "dashboard" ? "block" : "none" }}>
           <TrafficDashboard dateRange={dateRange} isActive={activeTab === "dashboard"} />
         </div>
         
-        <div style={{ display: activeTab === "callcenter" ? "block" : "none" }}>
+        <div style={{ display: displayedTab === "callcenter" ? "block" : "none" }}>
           <CallCenterDashboard
             dateRange={callCenterDateRange} 
             isSidebarOpen={isSidebarOpen}
           />
         </div>
 
-        <div style={{ display: activeTab === "cctv" ? "block" : "none" }}>
+        <div style={{ display: displayedTab === "cctv" ? "block" : "none" }}>
           <CctvDashboard />
         </div>
 
-        <div style={{ display: activeTab === "perparkiran" ? "block" : "none" }}>
+        <div style={{ display: displayedTab === "perparkiran" ? "block" : "none" }}>
           <PerparkiranDashboard 
             dateRange={parkingDateRange} 
             isSidebarOpen={isSidebarOpen}
           />
         </div>
 
-        <div style={{ display: activeTab === "pump" ? "block" : "none" }}>
+        <div className={displayedTab === "pump" ? `pump-page-transition ${pumpExiting ? "is-exiting" : "is-entering"}` : undefined} inert={pumpExiting ? true : undefined} style={{ display: displayedTab === "pump" ? "block" : "none" }}>
           <PumpWeatherDashboard dateRange={dateRange} isSidebarOpen={isSidebarOpen} />
         </div>
 
