@@ -42,7 +42,7 @@ export default function Navbar({
     callcenter: "Call Center Dashboard / Emergency",
     cctv: "CCTV Dashboard",
     perparkiran: "Call Center Dashboard / Parking",
-    pump: "Pump Station",
+    pump: "Pump Station Dashboard",
   }[activeTab] || "Dashboard";
   const todayKey = new Date().toDateString();
   const isLiveRange = dateRange?.start?.toDateString() === todayKey && dateRange?.end?.toDateString() === todayKey;

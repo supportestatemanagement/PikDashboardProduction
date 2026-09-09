@@ -8,7 +8,7 @@ test("shows a single weighted total for the selected range", () => {
     { station: "PS2", date: "2026-09-09", status: "Run 6" },
   ] }} />);
   expect(screen.getByText(/01 Sep 2026 - 09 Sep 2026/i)).toBeInTheDocument();
-  expect(screen.getByText("5")).toHaveTextContent("5x");
+  expect(screen.getByText("5")).toHaveTextContent(/^5$/);
   expect(screen.queryByText("08 Sep 2026")).not.toBeInTheDocument();
 });
 
