@@ -18,38 +18,6 @@ const currentYearRange = () => {
 };
 
 export default function App() {
-  useEffect(() => {
-    const apiUrl = (process.env.REACT_APP_API_URL || "").replace(/\/$/, "");
-    let pending = null;
-    const ping = async () => {
-      if (pending) return;
-      const controller = new AbortController();
-      pending = controller;
-      const timeout = setTimeout(() => controller.abort(), 90000);
-      try {
-        await fetch(`${apiUrl}/api/health`, { cache: "no-store", signal: controller.signal });
-      } catch {
-        // Retry on the next interval or when the browser comes back online.
-      } finally {
-        clearTimeout(timeout);
-        pending = null;
-      }
-    };
-    const onVisible = () => {
-      if (document.visibilityState === "visible") ping();
-    };
-    ping();
-    const interval = setInterval(ping, 10 * 60 * 1000);
-    window.addEventListener("online", ping);
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("online", ping);
-      document.removeEventListener("visibilitychange", onVisible);
-      pending?.abort();
-    };
-  }, []);
-
   // BACA DARI LOCAL STORAGE AGAR TIDAK LOGOUT SAAT REFRESH
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     if (typeof window !== "undefined") {
