@@ -389,8 +389,8 @@ export default function Navbar({
                 {isGroup && (
                   <div id="call-center-subtopics" hidden={!isCallCenterOpen} className="call-center-subtopics">
                     {[
-                      { id: "callcenter", label: "Emergency Complaints" },
-                      { id: "perparkiran", label: "Parking Complaints" },
+                      { id: "callcenter", label: "Emergency" },
+                      { id: "perparkiran", label: "Parking" },
                     ].map(subtopic => (
                       <button key={subtopic.id} className="call-center-subtopic" aria-current={activeTab === subtopic.id ? "page" : undefined} onClick={() => {
                         setActiveTab(subtopic.id);
