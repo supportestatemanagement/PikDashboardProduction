@@ -4,7 +4,7 @@ import CctvDashboard from "./CctvDashboard";
 const originalFetch = global.fetch;
 afterEach(() => { global.fetch = originalFetch; });
 
-test("lists offline camera names under full area names without table columns", async () => {
+test("displays offline cameras in four area columns in one body row", async () => {
   global.fetch = jest.fn().mockResolvedValue({ json: async () => ({ status: "success", data: [
     { Tahun: 2025, Area: " bgm ", Kondisi: "off", "Nama Pada Layar (OSD)": "BGM Camera", "Sub Area": "Gate", Lokasi: "Entrance" },
     { Tahun: 2025, Area: "GI", Kondisi: "OFFLINE", "Nama Pada Layar (OSD)": "GI Camera" },
@@ -12,16 +12,18 @@ test("lists offline camera names under full area names without table columns", a
     { Tahun: 2025, Area: "BGM", Kondisi: "ON", "Nama Pada Layar (OSD)": "Online Camera" },
   ] }) });
   const { container } = render(<CctvDashboard />);
-  const bgm = await screen.findByRole("region", { name: "Bukit Golf Mediterania (1)" });
+  const bgm = await screen.findByRole("cell", { name: "Bukit Golf Mediterania (1)" });
   expect(within(bgm).getByText("BGM Camera")).toBeInTheDocument();
   expect(within(bgm).queryByText("Gate")).not.toBeInTheDocument();
   expect(within(bgm).queryByText("Entrance")).not.toBeInTheDocument();
   expect(within(bgm).getAllByRole("listitem")).toHaveLength(1);
-  expect(within(screen.getByRole("region", { name: "Golf Island (1)" })).getByText("GI Camera")).toBeInTheDocument();
-  expect(within(screen.getByRole("region", { name: "PIK 2 (1)" })).getByText("PIK2 Camera")).toBeInTheDocument();
-  expect(within(screen.getByRole("region", { name: "Riverwalk Island (0)" })).getByText("Tidak ada CCTV offline.")).toBeInTheDocument();
+  expect(within(screen.getByRole("cell", { name: "Golf Island (1)" })).getByText("GI Camera")).toBeInTheDocument();
+  expect(within(screen.getByRole("cell", { name: "PIK 2 (1)" })).getByText("PIK2 Camera")).toBeInTheDocument();
+  expect(within(screen.getByRole("cell", { name: "Riverwalk Island (0)" })).getByText("Tidak ada CCTV offline.")).toBeInTheDocument();
   const offline = screen.getByRole("region", { name: "Daftar CCTV offline per area" });
-  expect(within(offline).queryByRole("table")).not.toBeInTheDocument();
+  const table = within(offline).getByRole("table");
+  expect(within(table).getAllByRole("columnheader")).toHaveLength(4);
+  expect(table.querySelectorAll("tbody tr")).toHaveLength(1);
   expect(within(offline).queryByText("Nama Pada Layar (OSD)")).not.toBeInTheDocument();
   expect(screen.queryByText("Online Camera")).not.toBeInTheDocument();
   expect(container.querySelector("svg text[transform]")).toBeNull();

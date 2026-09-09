@@ -227,13 +227,17 @@ export default function CctvDashboard() {
         .cctv-area { grid-area: 2 / 3 / 3 / 5; }
         .cctv-condition { grid-area: 1 / 1 / 2 / 3; }
         .cctv-distribution { grid-area: 3 / 1 / 4 / 7; }
-        .cctv-offline-areas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
-        .cctv-offline-areas section { min-width: 0; }
-        .cctv-offline-areas h3 { margin: 0 0 10px; font-size: 12px; font-weight: 800; color: #1E3A8A; }
-        .cctv-offline-list { max-height: 160px; overflow-y: auto; font-size: 12px; line-height: 1.6; color: #475569; }
-        .cctv-offline-list ul { margin: 0; padding-left: 20px; padding-right: 8px; }
-        .cctv-offline-list li { padding-bottom: 4px; overflow-wrap: anywhere; }
-        .cctv-offline-list p { margin: 0; }
+        .cctv-offline-areas { overflow-x: auto; border: 1px solid #E2E8F0; border-radius: 10px; }
+        .cctv-offline-table { width: 100%; min-width: 640px; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+        .cctv-offline-table th { padding: 12px; background: #F1F5F9; color: #1E3A8A; font-size: 12px; font-weight: 800; text-align: left; border-bottom: 1px solid #E2E8F0; }
+        .cctv-offline-table th + th, .cctv-offline-table td + td { border-left: 1px solid #E2E8F0; }
+        .cctv-offline-table td { padding: 0; vertical-align: top; }
+        .cctv-offline-count { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 12px; background: #E2E8F0; font-size: 11px; white-space: nowrap; }
+        .cctv-offline-list { max-height: 190px; overflow-y: auto; font-size: 12px; line-height: 1.6; color: #475569; }
+        .cctv-offline-list ul { list-style: none; margin: 0; padding: 0; }
+        .cctv-offline-list li { padding: 9px 12px; overflow-wrap: anywhere; border-bottom: 1px solid #F1F5F9; }
+        .cctv-offline-list li:nth-child(even) { background: #F8FAFC; }
+        .cctv-offline-list p { margin: 0; padding: 12px; color: #64748B; }
         @container (max-width: 700px) {
           .cctv-panels { display: flex; flex-direction: column; }
           .cctv-condition { order: 0; }
@@ -242,9 +246,6 @@ export default function CctvDashboard() {
           .cctv-area { order: 3; }
           .cctv-locations { order: 4; }
           .cctv-distribution { order: 5; }
-        }
-        @container (max-width: 480px) {
-          .cctv-offline-areas { grid-template-columns: minmax(0, 1fr); }
         }
       `}</style>
 
@@ -452,9 +453,14 @@ export default function CctvDashboard() {
             <ChartBox title="CCTV Offline" autoHeight>
               <div className="cctv-offline-areas" role="region" aria-label="Daftar CCTV offline per area">
                 {loadError ? <p role="alert">Gagal memuat data CCTV offline.</p> : !offlineData ? <p role="status">Memuat data...</p> :
-                  Object.entries(offlineData).map(([area, cameras]) => (
-                    <section key={area} aria-labelledby={`offline-area-${area}`}>
-                      <h3 id={`offline-area-${area}`}>{offlineAreaNames[area]} ({cameras.length})</h3>
+                  <table className="cctv-offline-table" aria-label="CCTV offline menurut area">
+                    <thead><tr>{Object.entries(offlineData).map(([area, cameras]) => (
+                      <th key={area} id={`offline-area-${area}`} scope="col">
+                        {offlineAreaNames[area]} <span className="cctv-offline-count">({cameras.length})</span>
+                      </th>
+                    ))}</tr></thead>
+                    <tbody><tr>{Object.entries(offlineData).map(([area, cameras]) => (
+                    <td key={area} aria-labelledby={`offline-area-${area}`}>
                       <div className="cctv-offline-list" tabIndex={cameras.length ? 0 : undefined}>
                         {cameras.length === 0 ? <p>Tidak ada CCTV offline.</p> : (
                           <ul>{cameras.map((camera, index) => (
@@ -462,8 +468,9 @@ export default function CctvDashboard() {
                           ))}</ul>
                         )}
                       </div>
-                    </section>
-                  ))}
+                    </td>
+                    ))}</tr></tbody>
+                  </table>}
               </div>
             </ChartBox>
           </div>
