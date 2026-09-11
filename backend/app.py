@@ -42,9 +42,9 @@ else:
     creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 
 client = gspread.authorize(creds)
-spreadsheet = client.open("PIK Dashboard Backup")
+spreadsheet = client.open("PIK Dashboard")
 
-cc_spreadsheet = client.open("Master Data Dashboard Backup")
+cc_spreadsheet = client.open("Master Data Dashboard")
 cc_sheet = cc_spreadsheet.worksheet("CallCenter")
 cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
 perparkiran_sheet = cc_spreadsheet.worksheet("Perparkiran")
