@@ -169,7 +169,10 @@ export function StatusPanel({ data, station, filter }) {
 export default function PumpWeatherDashboard({ dateRange, isSidebarOpen = false }) {
   const navbarKey = iso(dateRange.start);
   const [peakFilter, setPeakFilter] = useState(yearToDate);
-  const [statusFilter, setStatusFilter] = useState(todayRange);
+  const [statusFilter, setStatusFilter] = useState(() => ({ start: navbarKey, end: navbarKey }));
+  useEffect(() => {
+    setStatusFilter({ start: navbarKey, end: navbarKey });
+  }, [navbarKey]);
   const baseRange = useMemo(() => range(navbarKey), [navbarKey]);
   const peakRange = useMemo(() => range(peakFilter.start, peakFilter.end), [peakFilter.start, peakFilter.end]);
   const statusRange = useMemo(() => range(statusFilter.start, statusFilter.end), [statusFilter.start, statusFilter.end]);
