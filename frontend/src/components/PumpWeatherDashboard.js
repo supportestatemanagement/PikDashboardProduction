@@ -123,14 +123,36 @@ function WeatherPanel({ rows }) {
 
 export function summarizePumpDays(events, station) {
   const days = new Map();
-  events.filter((event) => event.station === station).forEach((event) => {
+  const minutes = (time) => {
+    const match = /^(\d{1,2}):(\d{2})$/.exec(time || "");
+    if (!match) return null;
+    const hour = Number(match[1]);
+    return (hour === 0 ? 24 : hour) * 60 + Number(match[2]);
+  };
+  let previousDate = null, previousTime = null, activePumps = 0;
+  // Stable sorting preserves worksheet update order for equal timestamps.
+  const ordered = events.filter((event) => event.station === station).slice().sort((a, b) =>
+    a.date.localeCompare(b.date) || (minutes(a.time) ?? 0) - (minutes(b.time) ?? 0));
+  ordered.forEach((event) => {
+    const status = String(event.status ?? "").trim();
+    const match = /^(?:run\s*)?(\d+)$/i.exec(status);
+    if (!match && !/^(?:stand\s*by|stby)$/i.test(status)) return;
     if (!days.has(event.date)) days.set(event.date, { date: event.date, counts: {}, total: 0 });
     const day = days.get(event.date);
-    const match = /^Run (\d+)$/.exec(event.status);
-    if (match) {
-      day.counts[event.status] = (day.counts[event.status] || 0) + 1;
-      day.total += Number(match[1]);
+    const time = minutes(event.time);
+    // A new reporting day or a four-hour silence starts a new run session.
+    if (event.date !== previousDate || (time !== null && previousTime !== null && time - previousTime >= 240)) {
+      activePumps = 0;
     }
+    const running = match ? Number(match[1]) : 0;
+    if (match) {
+      const runLabel = `Run ${running}`;
+      day.counts[runLabel] = (day.counts[runLabel] || 0) + 1;
+      day.total += Math.max(0, running - activePumps);
+    }
+    activePumps = running;
+    previousDate = event.date;
+    previousTime = time;
   });
   return [...days.values()].sort((a, b) => b.date.localeCompare(a.date));
 }

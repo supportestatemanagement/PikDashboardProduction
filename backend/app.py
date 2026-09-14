@@ -115,7 +115,7 @@ def normalize_pump_status(value):
     normalized = text.lower().replace("stand by", "standby").replace("stby", "standby")
     if normalized == "standby":
         return "Standby"
-    match = re.search(r"run\s*(\d+)", normalized)
+    match = re.fullmatch(r"(?:run\s*)?(\d+)", normalized)
     return f"Run {match.group(1)}" if match else text.title()
 
 
@@ -147,7 +147,6 @@ def parse_pump_record(row):
 
 def load_pump_records():
     records = []
-    seen_timestamps = set()
     # Read formatted cell text so decimal commas (for example -1,97) are not
     # numericised by gspread into -197 before numeric_level parses them.
     values = pump_station_sheet.get_all_values()
@@ -159,10 +158,7 @@ def load_pump_records():
         parsed = parse_pump_record(row)
         if not parsed:
             continue
-        timestamp = (parsed["date"], parsed["time"])
-        if timestamp in seen_timestamps:
-            continue
-        seen_timestamps.add(timestamp)
+        # Keep same-hour updates: changes in pump counts represent starts/stops.
         records.append(parsed)
     # Preserve worksheet row order: the final row for a date is the latest update.
     return records
@@ -244,7 +240,7 @@ def get_pump_peak_events():
         run_occurrences = defaultdict(int)
         for row in records:
             for values in row["stations"].values():
-                if values.get("status", "").startswith("Run"):
+                if (values.get("status") or "").startswith("Run"):
                     run_occurrences[values["status"]] += 1
         expected_values = len(records) * 6
         actual_values = sum(1 for row in records for value in [row["twa"], row["sea"], *[item["level"] for item in row["stations"].values()]] if value is not None)
