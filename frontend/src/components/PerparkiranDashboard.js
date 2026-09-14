@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useLayoutEffect, useRef } from "react";
 
 export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }) {
   const [data, setData] = useState([]);
@@ -404,15 +404,36 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
 
 function HorizontalBar({ label, val, max, color }) {
   const percentage = max > 0 ? (val / max) * 100 : 0;
+  const barRef = useRef(null);
+  const valueRef = useRef(null);
+  const [isValueOutside, setIsValueOutside] = useState(false);
+
+  useLayoutEffect(() => {
+    const bar = barRef.current;
+    const value = valueRef.current;
+    const updateValuePosition = () => {
+      // Keep the right inset and a small left gap when the value fits inside.
+      setIsValueOutside(bar.getBoundingClientRect().width < value.getBoundingClientRect().width + 12);
+    };
+
+    updateValuePosition();
+    const observer = new ResizeObserver(updateValuePosition);
+    observer.observe(bar);
+    observer.observe(value);
+    return () => observer.disconnect();
+  }, [val]);
+
   return (
     <div style={{ display: "flex", alignItems: "center", marginBottom: "12px", gap: "12px" }}>
       <div style={{ width: "100px", flexShrink: 0, textAlign: "right", fontSize: "10px", fontWeight: "600", color: "#475569", lineHeight: "1.3", textTransform: "capitalize" }}>
         {label}
       </div>
-      <div style={{ flex: 1, display: "flex", alignItems: "center", position: "relative" }}>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", position: "relative" }}>
         <div style={{ position: "absolute", width: "100%", height: "24px", background: "transparent" }}></div>
-        <div style={{ width: `${Math.max(percentage, 5)}%`, height: "26px", background: color, borderRadius: "0 4px 4px 0", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "8px", color: "white", fontSize: "11px", fontWeight: "bold", transition: "width 0.8s ease-out", boxShadow: "inset 0px -3px 0px rgba(0,0,0,0.15)" }}>
-          {val}
+        <div ref={barRef} style={{ width: `${Math.max(percentage, 5)}%`, height: "26px", position: "relative", background: color, borderRadius: "0 4px 4px 0", fontSize: "11px", fontWeight: "bold", transition: "width 0.8s ease-out", boxShadow: "inset 0px -3px 0px rgba(0,0,0,0.15)" }}>
+          <span ref={valueRef} style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", left: isValueOutside ? "calc(100% + 6px)" : "auto", right: isValueOutside ? "auto" : "8px", color: isValueOutside ? color : "white", whiteSpace: "nowrap" }}>
+            {val}
+          </span>
         </div>
       </div>
     </div>
