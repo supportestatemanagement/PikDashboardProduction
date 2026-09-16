@@ -22,7 +22,6 @@ function LocationCard({ location }) {
         <h4>{location.name}</h4>
         <span className="parking-status">{LABELS[status(location)]}</span>
       </div>
-      <p className="parking-muted">Area: {location.area}</p>
       <div className="parking-location-body">
         <div className="parking-donut" style={{ "--occupancy": `${value}%` }} role="img" aria-label={`${value.toFixed(1)}% terisi`}>
           <strong>{value.toFixed(1)}%</strong>
@@ -33,7 +32,6 @@ function LocationCard({ location }) {
           <div><dt>Kapasitas</dt><dd>{number(location.capacity)}</dd></div>
         </dl>
       </div>
-      <p className="parking-updated">Update terakhir: {UPDATED}</p>
     </article>
   );
 }
@@ -51,13 +49,7 @@ export default function AvailableParkingDashboard() {
 
   return (
     <main className="available-parking">
-      <header className="parking-page-heading">
-        <div><h1>Available Parking</h1><p>Ketersediaan parkir di area BGM, GI, dan RWI</p></div>
-        <span className="parking-demo-badge">DATA DUMMY · 16 SEP 2026</span>
-      </header>
-
-      <section aria-labelledby="parking-summary-title">
-        <h2 id="parking-summary-title">Ringkasan</h2>
+      <section aria-label="Ringkasan ketersediaan parkir">
         <div className="parking-summary-grid">
           {summaries.map((item) => (
             <article key={item.label} className={`parking-summary parking-summary-${item.theme}`}>
@@ -76,15 +68,15 @@ export default function AvailableParkingDashboard() {
             <span className="parking-full">Penuh ≥95%</span>
           </div>
         </div>
-        <div className="parking-area-grid">
+        <div className="parking-area-stack">
           {AREAS.map((area) => {
             const locations = LOCATIONS.filter((location) => location.area === area);
             const available = locations.reduce((sum, location) => sum + location.capacity - location.occupied, 0);
             return (
               <section className="parking-area" key={area} aria-labelledby={`parking-area-${area}`}>
                 <header className="parking-area-heading">
-                  <div><span className="parking-area-label">AREA</span><h3 id={`parking-area-${area}`}>{area}</h3></div>
-                  <p>{locations.length} lokasi<strong>{number(available)} slot tersedia</strong></p>
+                  <h3 id={`parking-area-${area}`}>{area} <span>· {locations.length} lokasi · {number(available)} slot tersedia</span></h3>
+                  <p>{UPDATED}</p>
                 </header>
                 <div className="parking-area-locations">{locations.map((location) => <LocationCard key={location.name} location={location} />)}</div>
               </section>
@@ -93,7 +85,7 @@ export default function AvailableParkingDashboard() {
         </div>
       </section>
 
-      <section aria-labelledby="parking-ranking-title">
+      <section className="parking-ranking-panel" aria-labelledby="parking-ranking-title">
         <h2 id="parking-ranking-title">Lokasi dengan Tingkat Terisi Tertinggi</h2>
         <p className="parking-section-description">Diurutkan dari yang paling padat pada masing-masing area</p>
         <div className="parking-area-grid">
