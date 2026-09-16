@@ -8,6 +8,7 @@ import CallCenterDashboard from "./components/CallCenterDashboard";
 import CctvDashboard from "./components/CctvDashboard";
 import PerparkiranDashboard from "./components/PerparkiranDashboard";
 import PumpWeatherDashboard from "./components/PumpWeatherDashboard";
+import AvailableParkingDashboard from "./components/AvailableParkingDashboard";
 
 const currentYearRange = () => {
   const today = new Date();
@@ -149,6 +150,8 @@ export default function App() {
         <div className={isSidebarOpen ? "cctv-sidebar-open" : undefined} style={{ display: displayedTab === "cctv" ? "block" : "none" }}>
           <CctvDashboard />
         </div>
+
+        {displayedTab === "availableparking" && <AvailableParkingDashboard />}
 
         <div style={{ display: displayedTab === "perparkiran" ? "block" : "none" }}>
           <PerparkiranDashboard 

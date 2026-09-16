@@ -43,6 +43,7 @@ export default function Navbar({
     cctv: "CCTV Dashboard",
     perparkiran: "Call Center Dashboard / Parking",
     pump: "Pump Station Dashboard",
+    availableparking: "Parking Availability Dashboard",
   }[activeTab] || "Dashboard";
   const todayKey = new Date().toDateString();
   const isLiveRange = dateRange?.start?.toDateString() === todayKey && dateRange?.end?.toDateString() === todayKey;
@@ -335,6 +336,7 @@ export default function Navbar({
               { id: "callcenter", label: "Call Center", icon: "call" },
               { id: "cctv", label: "CCTV", icon: "camera" },
               { id: "pump", label: "Pump Station", icon: "pump" },
+              { id: "availableparking", label: "Available Parking", icon: "parking" },
             ].map(tab => {
               const isGroup = tab.id === "callcenter";
               const isActive = activeTab === tab.id || (isGroup && activeTab === "perparkiran");
