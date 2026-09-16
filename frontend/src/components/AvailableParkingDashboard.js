@@ -3,11 +3,18 @@ import "./AvailableParkingDashboard.css";
 const AREAS = ["BGM", "GI", "RWI"];
 const AREA_LOGOS = { BGM: "/logobgm.png", GI: "/logogi2.png", RWI: "/logorwi2.png" };
 const LOCATIONS = [
-  { name: "PIK ICON", area: "BGM", capacity: 1500, occupied: 1349 },
-  { name: "La Riviera", area: "BGM", capacity: 800, occupied: 402 },
-  { name: "The Breeze", area: "BGM", capacity: 650, occupied: 112 },
-  { name: "Golf Island Marina", area: "GI", capacity: 400, occupied: 351 },
-  { name: "Riverwalk Boardwalk", area: "RWI", capacity: 300, occupied: 48 },
+  // Capacities and occupancy are illustrative dummy values.
+  { id: 101, name: "EMERALD PARK", area: "BGM", capacity: 1500, occupied: 1349 },
+  { id: 102, name: "RUKAN EXCLUSIVE", area: "BGM", capacity: 800, occupied: 402 },
+  { id: 103, name: "RUKAN CORDOBA", area: "BGM", capacity: 650, occupied: 112 },
+  { id: 104, name: "CROWN GOLF", area: "BGM", capacity: 450, occupied: 288 },
+  { id: 105, name: "RUKAN GARDEN HOUSE", area: "BGM", capacity: 500, occupied: 425 },
+  { id: 106, name: "RUKAN GOLD COAST", area: "BGM", capacity: 600, occupied: 576 },
+  { id: 141, name: "RUKAN PALLADIUM", area: "GI", capacity: 400, occupied: 351 },
+  { id: 144, name: "RUKAN GOLF ISLAND", area: "GI", capacity: 550, occupied: 330 },
+  { id: 148, name: "RUKAN THEME PARK", area: "GI", capacity: 350, occupied: 140 },
+  { id: 153, name: "RUKAN AMSTERDAM", area: "RWI", capacity: 300, occupied: 48 },
+  { id: 154, name: "RUKAN EBONY BATAVIA", area: "RWI", capacity: 450, occupied: 234 },
 ];
 const number = (value) => value.toLocaleString("id-ID");
 const percent = (location) => location.occupied / location.capacity * 100;
@@ -89,7 +96,7 @@ export default function AvailableParkingDashboard() {
                   <span className="parking-busy">Padat 80–&lt;95%</span>
                   <span className="parking-full">Penuh ≥95%</span>
                 </div>
-                <div className="parking-area-locations">{locations.map((location) => <LocationCard key={location.name} location={location} />)}</div>
+                <div className="parking-area-locations">{locations.map((location) => <LocationCard key={location.id} location={location} />)}</div>
               </section>
             );
           })}
@@ -105,7 +112,7 @@ export default function AvailableParkingDashboard() {
               <header><h3>{area}</h3><span>Tingkat terisi (%)</span></header>
               <div className="parking-ranking-bars">
                 {LOCATIONS.filter((location) => location.area === area).sort((a, b) => percent(b) - percent(a)).map((location) => (
-                  <div key={location.name} className={`parking-rank-row parking-${status(location)}`}>
+                  <div key={location.id} className={`parking-rank-row parking-${status(location)}`}>
                     <div className="parking-rank-label"><span>{location.name}</span><strong>{percent(location).toFixed(1)}%</strong></div>
                     <div className="parking-bar-track"><div className="parking-bar" style={{ width: `${percent(location)}%` }} /></div>
                   </div>
