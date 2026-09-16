@@ -57,7 +57,7 @@ export default function AvailableParkingDashboard() {
       <section aria-label="Ringkasan ketersediaan parkir">
         <div className="parking-summary-grid">
           {summaries.map((item) => (
-            <article key={item.area} className="parking-summary" aria-label={`Ringkasan parkir ${item.area}`}>
+            <article key={item.area} className="parking-summary" data-area={item.area} aria-label={`Ringkasan parkir ${item.area}`}>
               <header className="parking-summary-heading">
                 <img className="parking-area-logo" src={AREA_LOGOS[item.area]} alt={item.area} />
                 <span>{item.count} lokasi parkir</span>
@@ -80,7 +80,7 @@ export default function AvailableParkingDashboard() {
             const locations = LOCATIONS.filter((location) => location.area === area);
             const available = locations.reduce((sum, location) => sum + location.capacity - location.occupied, 0);
             return (
-              <section className="parking-area" key={area} aria-labelledby={`parking-area-${area}`}>
+              <section className="parking-area" data-area={area} key={area} aria-labelledby={`parking-area-${area}`}>
                 <header className="parking-area-heading">
                   <div className="parking-area-identity">
                     <img className="parking-area-logo" src={AREA_LOGOS[area]} alt={area} />
@@ -108,7 +108,7 @@ export default function AvailableParkingDashboard() {
         <p className="parking-section-description">Diurutkan dari yang paling padat pada masing-masing area</p>
         <div className="parking-area-grid">
           {AREAS.map((area) => (
-            <article className="parking-ranking" key={area} aria-label={`Grafik tingkat terisi ${area}`}>
+            <article className="parking-ranking" data-area={area} key={area} aria-label={`Grafik tingkat terisi ${area}`}>
               <header><h3>{area}</h3><span>Tingkat terisi (%)</span></header>
               <div className="parking-ranking-bars">
                 {LOCATIONS.filter((location) => location.area === area).sort((a, b) => percent(b) - percent(a)).map((location) => (

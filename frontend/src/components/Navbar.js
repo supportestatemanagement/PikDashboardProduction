@@ -336,7 +336,7 @@ export default function Navbar({
               { id: "callcenter", label: "Call Center", icon: "call" },
               { id: "cctv", label: "CCTV", icon: "camera" },
               { id: "pump", label: "Pump Station", icon: "pump" },
-              { id: "availableparking", label: "Available Parking", icon: "parking" },
+              { id: "availableparking", label: "Parking Availability", icon: "parking" },
             ].map(tab => {
               const isGroup = tab.id === "callcenter";
               const isActive = activeTab === tab.id || (isGroup && activeTab === "perparkiran");
