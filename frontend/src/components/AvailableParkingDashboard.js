@@ -1,6 +1,7 @@
 import "./AvailableParkingDashboard.css";
 
 const AREAS = ["BGM", "GI", "RWI"];
+const AREA_LOGOS = { BGM: "/logobgm.png", GI: "/logogi2.png", RWI: "/logorwi2.png" };
 const LOCATIONS = [
   { name: "PIK ICON", area: "BGM", capacity: 1500, occupied: 1349 },
   { name: "La Riviera", area: "BGM", capacity: 800, occupied: 402 },
@@ -37,23 +38,30 @@ function LocationCard({ location }) {
 }
 
 export default function AvailableParkingDashboard() {
-  const capacity = LOCATIONS.reduce((sum, location) => sum + location.capacity, 0);
-  const occupied = LOCATIONS.reduce((sum, location) => sum + location.occupied, 0);
-  const crowded = LOCATIONS.filter((location) => status(location) !== "available").length;
-  const summaries = [
-    { label: "Total kapasitas parkir", value: `${number(capacity)} slot`, note: `Dari ${LOCATIONS.length} lokasi · 3 area`, theme: "primary" },
-    { label: "Slot tersedia saat ini", value: `${number(capacity - occupied)} slot`, note: `Snapshot ${UPDATED}`, theme: "green" },
-    { label: "Slot terisi", value: `${number(occupied)} slot`, note: "Kendaraan yang sedang parkir", theme: "navy" },
-    { label: "Rata-rata tingkat terisi", value: `${(occupied / capacity * 100).toFixed(1)}%`, note: `${crowded} dari ${LOCATIONS.length} lokasi berstatus PADAT/PENUH`, theme: "orange" },
-  ];
+  const summaries = AREAS.map((area) => {
+    const locations = LOCATIONS.filter((location) => location.area === area);
+    const capacity = locations.reduce((sum, location) => sum + location.capacity, 0);
+    const occupied = locations.reduce((sum, location) => sum + location.occupied, 0);
+    return { area, capacity, occupied, available: capacity - occupied, count: locations.length };
+  });
 
   return (
     <main className="available-parking">
       <section aria-label="Ringkasan ketersediaan parkir">
         <div className="parking-summary-grid">
           {summaries.map((item) => (
-            <article key={item.label} className={`parking-summary parking-summary-${item.theme}`}>
-              <h3>{item.label}</h3><strong>{item.value}</strong><p>{item.note}</p>
+            <article key={item.area} className="parking-summary" aria-label={`Ringkasan parkir ${item.area}`}>
+              <header className="parking-summary-heading">
+                <img className="parking-area-logo" src={AREA_LOGOS[item.area]} alt={item.area} />
+                <span>{item.count} lokasi parkir</span>
+              </header>
+              <div className="parking-summary-capacity"><h3>Total kapasitas parkir</h3><strong>{number(item.capacity)} <small>slot</small></strong></div>
+              <dl className="parking-summary-metrics">
+                <div><dt>Tersedia</dt><dd className="parking-summary-available">{number(item.available)} <small>slot</small></dd></div>
+                <div><dt>Terisi</dt><dd>{number(item.occupied)} <small>slot</small></dd></div>
+                <div><dt>Tingkat terisi</dt><dd>{percent(item).toFixed(1)}<small>%</small></dd></div>
+              </dl>
+              <p className="parking-summary-snapshot">Pembaruan: {UPDATED}</p>
             </article>
           ))}
         </div>
@@ -68,7 +76,7 @@ export default function AvailableParkingDashboard() {
               <section className="parking-area" key={area} aria-labelledby={`parking-area-${area}`}>
                 <header className="parking-area-heading">
                   <div className="parking-area-identity">
-                    <span className="parking-area-badge" aria-hidden="true">{area}</span>
+                    <img className="parking-area-logo" src={AREA_LOGOS[area]} alt={area} />
                     <div>
                       <h2 id={`parking-area-${area}`}><span className="parking-visually-hidden">{area} · </span>Status Parkir per Lokasi</h2>
                       <p className="parking-area-meta"><span>{locations.length} lokasi</span><span className="parking-area-availability"><strong>{number(available)}</strong> slot tersedia</span></p>
