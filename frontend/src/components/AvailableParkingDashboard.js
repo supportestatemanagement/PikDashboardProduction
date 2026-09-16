@@ -67,11 +67,14 @@ export default function AvailableParkingDashboard() {
             return (
               <section className="parking-area" key={area} aria-labelledby={`parking-area-${area}`}>
                 <header className="parking-area-heading">
-                  <div>
-                    <h2 id={`parking-area-${area}`}>{area} · Status Parkir Per Lokasi</h2>
-                    <p>{locations.length} lokasi · {number(available)} slot tersedia</p>
+                  <div className="parking-area-identity">
+                    <span className="parking-area-badge" aria-hidden="true">{area}</span>
+                    <div>
+                      <h2 id={`parking-area-${area}`}><span className="parking-visually-hidden">{area} · </span>Status Parkir per Lokasi</h2>
+                      <p className="parking-area-meta"><span>{locations.length} lokasi</span><span className="parking-area-availability"><strong>{number(available)}</strong> slot tersedia</span></p>
+                    </div>
                   </div>
-                  <p>{UPDATED}</p>
+                  <p className="parking-area-updated"><span>Pembaruan terakhir</span><time dateTime="2026-09-16T09:32:00+07:00">{UPDATED}</time></p>
                 </header>
                 <div className="parking-legend" aria-label={`Keterangan status parkir ${area}`}>
                   <span className="parking-available">Tersedia &lt;80%</span>
