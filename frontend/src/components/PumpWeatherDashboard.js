@@ -81,7 +81,11 @@ export function PeakPanel({ data, filter, setFilter, navbarKey }) {
   </article>;
 }
 
-function TrendChart({ rows }) {
+function UpdatedLabel({ latest }) {
+  return <span className="pw-active-date">Updated: {latest?.date ? `${niceDate(latest.date)} / ${latest.time || "-"}` : "-"}</span>;
+}
+
+function TrendChart({ rows, latest }) {
   const [active, setActive] = useState(() => new Set(SERIES.map(({ key }) => key)));
   const ordered = useMemo(() => [...rows].sort((a, b) => { const hour = (row) => Number(row.period.slice(-5, -3)) || 24; return hour(a) - hour(b); }), [rows]);
   const selected = SERIES.filter(({ key }) => active.has(key));
@@ -92,7 +96,7 @@ function TrendChart({ rows }) {
   const x = (i) => left + 24 + i * ((right - left - 24) / Math.max(ordered.length - 1, 1));
   const y = (value) => top + (1 - (value - min) / span) * (bottom - top);
   const toggle = (key) => setActive((old) => { const next = new Set(old); next.has(key) ? next.delete(key) : next.add(key); return next; });
-  return <article className="pw-panel pw-trend-panel"><div className="pw-panel-head"><div><h2>WATER LEVEL TREND</h2><small>Observations on the selected date</small></div></div>
+  return <article className="pw-panel pw-trend-panel"><div className="pw-panel-head"><div><h2>WATER LEVEL TREND</h2><small>Observations on the selected date</small></div><UpdatedLabel latest={latest} /></div>
     <div className="pw-series-switches">{SERIES.map((item) => <button key={item.key} className={active.has(item.key) ? "active" : ""} onClick={() => toggle(item.key)}><i style={{ background: item.color }} />{item.label}</button>)}</div>
     <div className="pw-chart-scroll"><svg className="pw-chart" viewBox="0 0 970 320" role="img" aria-label="Water level trend">
       {[0, .25, .5, .75, 1].map((ratio) => { const yy = top + ratio * (bottom - top), value = max - ratio * span; return <g key={ratio}><line x1={left} x2={right} y1={yy} y2={yy} /><text className="y-label" x={left - 12} y={yy + 4} textAnchor="end">{fmt(value)}</text></g>; })}
@@ -181,10 +185,10 @@ export default function PumpWeatherDashboard({ dateRange, isSidebarOpen = false 
     {(base.error || peaks.error || statuses.error) && <div className="pw-error">{base.error || peaks.error || statuses.error}</div>}
     <WeatherPanel rows={base.data?.analytics?.weatherTimeline || []} />
     <section className="pw-panel pw-level-section" aria-label="Water levels">
-      <div className="pw-status-toolbar"><h2>WATER LEVELS</h2><span className="pw-active-date">{niceDate(navbarKey)}{base.data?.analytics?.latest?.time ? ` / ${base.data.analytics.latest.time}` : " / -"}</span></div>
+      <div className="pw-status-toolbar"><h2>WATER LEVELS</h2><UpdatedLabel latest={base.data?.analytics?.latest} /></div>
       <CurrentCards latest={base.data?.analytics?.latest} />
     </section>
-    <section className="pw-main-grid"><PeakPanel data={peaks.data} filter={peakFilter} setFilter={setPeakFilter} navbarKey={navbarKey} /><TrendChart rows={base.data?.chart || []} /></section>
+    <section className="pw-main-grid"><PeakPanel data={peaks.data} filter={peakFilter} setFilter={setPeakFilter} navbarKey={navbarKey} /><TrendChart rows={base.data?.chart || []} latest={base.data?.analytics?.latest} /></section>
     <section className="pw-panel pw-status-section" aria-label="Pump Run Summary">
       <div className="pw-status-toolbar"><h2>PUMP RUN SUMMARY</h2><DateRangeFilter {...statusFilter} active={statusFilter.start !== navbarKey || statusFilter.end !== navbarKey} onPreset={(months) => setStatusFilter(presetRange(navbarKey, months))} onStart={(start) => start && setStatusFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => end && setStatusFilter((old) => ({ ...old, start: old.start > end ? end : old.start, end }))} /></div>
       <div className="pw-status-row">{["PS1", "PS2", "PS3", "PS4"].map((station) => <StatusPanel key={station} station={station} data={statuses.data} filter={statusFilter} />)}</div>

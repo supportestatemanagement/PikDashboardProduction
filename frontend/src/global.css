@@ -729,6 +729,10 @@ body {
 .pw-range-picker summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 12px; font-size: 10px; cursor: pointer; list-style: none; }
 .pw-range-picker summary::-webkit-details-marker { display: none; }
 .pw-range-popover { position: absolute; right: 0; top: calc(100% + 8px); width: 290px; max-width: calc(100vw - 64px); box-sizing: border-box; padding: 14px; z-index: 50; background: #142237; border: 1px solid #30465f; border-radius: 9px; box-shadow: 0 12px 30px #0007; }
+.pw-peak-panel .pw-range-picker { width: 290px; box-sizing: border-box; }
+.pw-peak-panel .pw-range-popover { left: 0; right: auto; width: 100%; max-width: 100%; }
+.pw-trend-panel .pw-panel-head { flex-wrap: wrap; }
+.pw-trend-panel .pw-active-date { margin-left: auto; }
 .pw-range-popover label { display: flex; flex-direction: column; gap: 6px; font-size: 10px; color: #b8c6d9; min-width: 0; }
 .pw-range-popover select,.pw-range-popover input { min-width: 0; width: 100%; box-sizing: border-box; padding: 7px; border: 1px solid #30465f; border-radius: 5px; background: #0a1524; color: #e2e8f0; color-scheme: dark; font-size: 11px; }
 .pw-range-inputs { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-top: 12px; }
