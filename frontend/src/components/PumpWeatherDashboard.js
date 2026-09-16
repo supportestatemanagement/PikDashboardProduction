@@ -129,7 +129,7 @@ export function summarizePumpDays(events, station) {
     const hour = Number(match[1]);
     return (hour === 0 ? 24 : hour) * 60 + Number(match[2]);
   };
-  let previousDate = null, previousTime = null, activePumps = 0;
+  let previousDate = null, activePumps = 0;
   // Stable sorting preserves worksheet update order for equal timestamps.
   const ordered = events.filter((event) => event.station === station).slice().sort((a, b) =>
     a.date.localeCompare(b.date) || (minutes(a.time) ?? 0) - (minutes(b.time) ?? 0));
@@ -139,9 +139,9 @@ export function summarizePumpDays(events, station) {
     if (!match && !/^(?:stand\s*by|stby)$/i.test(status)) return;
     if (!days.has(event.date)) days.set(event.date, { date: event.date, counts: {}, total: 0 });
     const day = days.get(event.date);
-    const time = minutes(event.time);
-    // A new reporting day or a four-hour silence starts a new run session.
-    if (event.date !== previousDate || (time !== null && previousTime !== null && time - previousTime >= 240)) {
+    // Reset at the reporting-day boundary, never because of a logging gap.
+    // Repeated RUN readings remain the same session until the status changes.
+    if (event.date !== previousDate) {
       activePumps = 0;
     }
     const running = match ? Number(match[1]) : 0;
@@ -152,7 +152,6 @@ export function summarizePumpDays(events, station) {
     }
     activePumps = running;
     previousDate = event.date;
-    previousTime = time;
   });
   return [...days.values()].sort((a, b) => b.date.localeCompare(a.date));
 }
