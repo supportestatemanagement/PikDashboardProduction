@@ -59,15 +59,7 @@ export default function AvailableParkingDashboard() {
         </div>
       </section>
 
-      <section aria-labelledby="parking-locations-title">
-        <div className="parking-section-heading">
-          <h2 id="parking-locations-title">Status Parkir Per Lokasi</h2>
-          <div className="parking-legend">
-            <span className="parking-available">Tersedia &lt;80%</span>
-            <span className="parking-busy">Padat 80–&lt;95%</span>
-            <span className="parking-full">Penuh ≥95%</span>
-          </div>
-        </div>
+      <section aria-label="Status parkir per area">
         <div className="parking-area-stack">
           {AREAS.map((area) => {
             const locations = LOCATIONS.filter((location) => location.area === area);
@@ -75,9 +67,17 @@ export default function AvailableParkingDashboard() {
             return (
               <section className="parking-area" key={area} aria-labelledby={`parking-area-${area}`}>
                 <header className="parking-area-heading">
-                  <h3 id={`parking-area-${area}`}>{area} <span>· {locations.length} lokasi · {number(available)} slot tersedia</span></h3>
+                  <div>
+                    <h2 id={`parking-area-${area}`}>{area} · Status Parkir Per Lokasi</h2>
+                    <p>{locations.length} lokasi · {number(available)} slot tersedia</p>
+                  </div>
                   <p>{UPDATED}</p>
                 </header>
+                <div className="parking-legend" aria-label={`Keterangan status parkir ${area}`}>
+                  <span className="parking-available">Tersedia &lt;80%</span>
+                  <span className="parking-busy">Padat 80–&lt;95%</span>
+                  <span className="parking-full">Penuh ≥95%</span>
+                </div>
                 <div className="parking-area-locations">{locations.map((location) => <LocationCard key={location.name} location={location} />)}</div>
               </section>
             );
