@@ -1,5 +1,5 @@
 .vehicle-map-icon { background: none; border: 0; }
-.vehicle-login { pointer-events: auto; width: 260px; }
+.vehicle-login { width: 260px; }
 .vehicle-login form, .vehicle-login label { display: grid; gap: 5px; margin-top: 8px; }
 .vehicle-login input { min-width: 0; padding: 7px; border: 1px solid #64748b; border-radius: 4px; color: #111827; background: white; }
 .vehicle-login button, .vehicle-logout { border: 0; border-radius: 4px; padding: 7px 10px; background: #fbbf24; color: #111827; cursor: pointer; }
@@ -12,3 +12,5 @@
 .leaflet-tooltip-top.vehicle-map-label--inactive::before { border-top-color: #64748b; }
 .vehicle-map-label small { display: block; font-size: 10px; font-weight: 400; }
 .vehicle-tracking-status { position: absolute; bottom: 28px; left: 12px; z-index: 800; background: #0f172ae8; color: #fff; border-radius: 6px; padding: 7px 10px; font-size: 12px; max-width: min(360px, 65%); pointer-events: none; }
+/* The login form must receive clicks even though the passive status panel does not. */
+.vehicle-tracking-status.vehicle-login { pointer-events: auto; }
