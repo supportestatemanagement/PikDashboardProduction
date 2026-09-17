@@ -785,12 +785,12 @@ body {
 .pw-dashboard.sidebar-open .pw-current-row .pw-level-card { padding-left: 10px; padding-right: 10px; gap: 5px; }
 .pw-dashboard.sidebar-open .pw-current-row .pw-pump-indicator { padding: 5px 6px; font-size: 8px; gap: 4px; }
 
-/* Place both traffic charts on the same row over the map. */
-.traffic-overlay { left: 10px; width: auto; display: grid; grid-template-columns: minmax(0, 232px) minmax(0, 1fr) minmax(0, 232px); grid-template-rows: auto auto auto; align-content: start; align-items: start; }
-.traffic-overlay > .traffic-summary-panel { grid-column: 3; grid-row: 1; }
-.traffic-overlay > .checkpoint-panel { grid-column: 3; grid-row: 2; }
-.traffic-overlay > .hourly-chart-panel { grid-column: 3; grid-row: 3; }
-.traffic-overlay > .monthly-chart-panel { grid-column: 1; grid-row: 3; }
+/* Scroll only the right-hand panel column, leaving the map interactive. */
+.traffic-overlay { left: auto; bottom: auto; width: 232px; max-height: calc(100% - 22px); display: flex; flex-direction: column; align-items: stretch; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; pointer-events: auto; scrollbar-width: thin; scrollbar-color: #475569 transparent; }
+.traffic-overlay > .glass-panel { flex: 0 0 auto; }
+.traffic-overlay.modal-open { overflow: visible; pointer-events: none; }
+.monthly-chart-panel.panel-minimized .chart-heading { margin-bottom: 0; }
+.monthly-chart-panel.panel-minimized .chart-title-row { align-items: center; }
 .monthly-chart-panel .monthly-svg text { font-size: 20px; }
 .monthly-chart-panel .monthly-svg text.x-label { font-size: 20px; text-anchor: middle; }
 .monthly-message { min-height: 96px; display: grid; place-items: center; color: #94a3b8; font-size: 11px; }
@@ -805,10 +805,30 @@ body {
 .monthly-chart-panel.panel-maximized { box-sizing: border-box; }
 .monthly-chart-panel.panel-maximized .monthly-svg { height: auto; max-height: min(48vh, 440px); margin-bottom: 8px; flex-shrink: 0; }
 @media (max-width: 768px) {
-  .traffic-overlay { left: 6px; width: auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .traffic-overlay > .traffic-summary-panel, .traffic-overlay > .checkpoint-panel, .traffic-overlay > .hourly-chart-panel { grid-column: 2; }
-  .traffic-overlay > .monthly-chart-panel { grid-column: 1; }
+  .traffic-overlay { left: auto; width: min(210px, calc(100vw - 70px)); max-height: calc(100% - 16px); }
+}
+@media (max-width: 390px) {
+  .traffic-overlay { width: min(196px, calc(100vw - 62px)); }
 }
 
 .water-map-marker { background: transparent; border: 0; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
 .water-map-marker:hover { filter: drop-shadow(0 2px 5px rgba(56,189,248,.7)); }
+
+/* Monthly popup: compact controls above a full-width plot. */
+.monthly-legends { display: grid; gap: 3px; }
+.monthly-plot-scroll { min-width: 0; }
+.monthly-chart-panel.panel-maximized { width: calc(100vw - 48px) !important; }
+.monthly-chart-panel.panel-maximized .monthly-toolbar { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 20px; padding-right: 32px; }
+.monthly-chart-panel.panel-maximized .chart-heading { margin-bottom: 0; padding-right: 0; }
+.monthly-chart-panel.panel-maximized .monthly-range { margin: 0; gap: 8px; }
+.monthly-chart-panel.panel-maximized .monthly-range label { font-size: 10px; gap: 4px; }
+.monthly-chart-panel.panel-maximized .monthly-range input { width: 128px; min-width: 0; }
+.monthly-chart-panel.panel-maximized .monthly-range input,
+.monthly-chart-panel.panel-maximized .monthly-range button { box-sizing: border-box; height: 30px; padding: 4px 7px; font-size: 11px; }
+.monthly-chart-panel.panel-maximized .monthly-plot-scroll { overflow-x: auto; overscroll-behavior: contain; margin-top: 16px; scrollbar-width: thin; scrollbar-color: #475569 transparent; }
+.monthly-chart-panel.panel-maximized .monthly-svg { width: 100%; height: min(57vh, 540px); max-height: none; margin: 0 0 8px; }
+.monthly-chart-panel.panel-maximized .monthly-svg text.monthly-data-label { font-size: 11px; }
+@media (max-width: 768px) {
+  .monthly-chart-panel.panel-maximized { width: calc(100vw - 16px) !important; }
+  .monthly-chart-panel.panel-maximized .monthly-toolbar { padding-right: 0; }
+}

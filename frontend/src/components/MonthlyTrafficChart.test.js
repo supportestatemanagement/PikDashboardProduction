@@ -15,6 +15,9 @@ beforeEach(() => {
 test("keeps month filters in the popup and restores current month when closed", async () => {
   const current = toApiDate(new Date()).slice(0, 7);
   const { rerender } = render(<MonthlyTrafficChart maximized={false} onMaximize={() => {}} />);
+  expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Perbesar panel" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Buka panel" }));
   await screen.findByText("Belum ada data untuk rentang bulan ini.");
   expect(screen.queryByLabelText("Bulan awal")).not.toBeInTheDocument();
   expect(fetchMonthlyTraffic).toHaveBeenLastCalledWith(current, current, expect.anything());
@@ -31,6 +34,7 @@ test("keeps month filters in the popup and restores current month when closed", 
 test("shows a failed request instead of a zero traffic chart", async () => {
   fetchMonthlyTraffic.mockRejectedValue(new Error("Koneksi gagal"));
   render(<MonthlyTrafficChart maximized={false} onMaximize={() => {}} />);
+  fireEvent.click(screen.getByRole("button", { name: "Buka panel" }));
   expect(await screen.findByRole("alert")).toHaveTextContent("Koneksi gagal");
   expect(screen.queryByRole("img")).not.toBeInTheDocument();
 });

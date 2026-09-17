@@ -15,7 +15,7 @@ export default function MonthlyTrafficChart({ maximized, onMaximize }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [minimized, setMinimized] = useState(false);
+  const [minimized, setMinimized] = useState(true);
   const [active, setActive] = useState(() => CHECKPOINTS.map(({ key }) => key));
   const start = maximized ? range.start : currentMonth;
   const end = maximized ? range.end : currentMonth;
@@ -43,17 +43,30 @@ export default function MonthlyTrafficChart({ maximized, onMaximize }) {
   const rows = data?.rows || [];
   const selected = SERIES.filter(({ key }) => active.includes(key));
   const max = Math.max(1, ...rows.flatMap((row) => selected.map(({ column }) => Number(row[column]) || 0)));
-  const x = (index) => 70 + index / Math.max(1, rows.length - 1) * 900;
-  const y = (value) => 245 - value / max * 220;
+  const width = maximized ? Math.max(1600, rows.length * (data?.granularity === "monthly" ? 85 : 48) + 140) : 1000;
+  const height = maximized ? 500 : 290;
+  const baseline = height - 45;
+  const x = (index) => 100 + index / Math.max(1, rows.length - 1) * (width - 135);
+  const y = (value) => baseline - value / max * (baseline - 35);
+  const labelPositions = rows.map((row) => {
+    const positions = {};
+    let previous = 10;
+    selected.map((item) => ({ key: item.key, top: y(Number(row[item.column]) || 0) - 8 }))
+      .sort((a, b) => a.top - b.top)
+      .forEach(({ key, top }) => { positions[key] = Math.max(top, previous + 14); previous = positions[key]; });
+    const overflow = Math.max(0, previous - (baseline + 14));
+    return Object.fromEntries(Object.entries(positions).map(([key, value]) => [key, value - overflow]));
+  });
   const hasData = rows.some((row) => row.recordCount > 0);
   const toggle = (key) => setActive((items) => items.includes(key) ? (items.length > 1 ? items.filter((item) => item !== key) : items) : [...items, key]);
 
   return <section className={`glass-panel hourly-chart-panel monthly-chart-panel ${minimized ? "panel-minimized" : ""} ${maximized ? "panel-maximized" : ""}`} aria-label="Monthly checkpoint and vehicle in traffic" aria-busy={loading}>
+    <div className="monthly-toolbar">
     <div className="panel-heading chart-heading">
-      <div className="chart-title-row"><div><span>MONTHLY TRAFFIC</span><small>{monthLabel(start)}{start !== end ? ` – ${monthLabel(end)}` : ""}</small></div>
+      <div className="chart-title-row"><div><span>MONTHLY TRAFFIC</span>{!minimized && <small>{monthLabel(start)}{start !== end ? ` – ${monthLabel(end)}` : ""}</small>}</div>
         <PanelControls minimized={minimized} maximized={maximized} onMinimize={() => setMinimized(!minimized)} onMaximize={onMaximize} />
       </div>
-      {!minimized && <div className="chart-legend">{SERIES.map((item) => <button type="button" key={item.key} aria-pressed={active.includes(item.key)} className={active.includes(item.key) ? "active" : ""} onClick={() => toggle(item.key)}><i style={{ background: item.color }} />{item.label}</button>)}</div>}
+      {!minimized && <div className="monthly-legends">{[SERIES.slice(0, CHECKPOINTS.length), SERIES.slice(CHECKPOINTS.length)].map((group, index) => <div className="chart-legend" key={index} aria-label={index === 0 ? "Checkpoint" : "Vehicle In"}>{group.map((item) => <button type="button" key={item.key} aria-pressed={active.includes(item.key)} className={active.includes(item.key) ? "active" : ""} onClick={() => toggle(item.key)}><i style={{ background: item.color }} />{item.label}</button>)}</div>)}</div>}
     </div>
     {maximized && <form className="monthly-range" onSubmit={(event) => { event.preventDefault(); if (draft.start && draft.end && draft.start <= draft.end) setRange({ ...draft }); }}>
       <label>Bulan awal<input type="month" required value={draft.start} max={draft.end || undefined} onChange={(event) => setDraft({ ...draft, start: event.target.value })} /></label>
@@ -61,9 +74,10 @@ export default function MonthlyTrafficChart({ maximized, onMaximize }) {
       <button type="submit">Terapkan</button>
       <button type="button" onClick={() => { const next = { start: currentMonth, end: currentMonth }; setDraft(next); setRange(next); }}>Bulan ini</button>
     </form>}
-    {!minimized && (loading ? <p className="monthly-message" role="status">Memuat traffic bulanan…</p> : error ? <p className="monthly-message" role="alert">{error}</p> : !hasData ? <p className="monthly-message">Belum ada data untuk rentang bulan ini.</p> : <svg className="hourly-svg monthly-svg" viewBox="0 0 1000 290" role="img" aria-label={`Grafik checkpoint dan vehicle in ${monthLabel(start)} sampai ${monthLabel(end)}`}>
-      {[0, .25, .5, .75, 1].map((ratio) => <g key={ratio}><line x1="70" y1={y(max * ratio)} x2="970" y2={y(max * ratio)} /><text x="62" y={y(max * ratio) + 4}>{formatInteger(max * ratio)}</text></g>)}
-      {rows.map((row, index) => (index % Math.max(1, Math.ceil(rows.length / (maximized ? 16 : 8))) === 0 || index === rows.length - 1) && <text className="x-label" key={row.period} x={x(index)} y="275">{data.granularity === "daily" ? row.period.slice(8) : monthLabel(row.period)}</text>)}
+    </div>
+    {!minimized && (loading ? <p className="monthly-message" role="status">Memuat traffic bulanan…</p> : error ? <p className="monthly-message" role="alert">{error}</p> : !hasData ? <p className="monthly-message">Belum ada data untuk rentang bulan ini.</p> : <div className="monthly-plot-scroll"><svg className="hourly-svg monthly-svg" style={maximized ? { minWidth: width * .8 } : undefined} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio={maximized ? "none" : "xMidYMid meet"} role="img" aria-label={`Grafik checkpoint dan vehicle in ${monthLabel(start)} sampai ${monthLabel(end)}`}>
+      {[0, .25, .5, .75, 1].map((ratio) => <g key={ratio}><line x1="70" y1={y(max * ratio)} x2={width - 35} y2={y(max * ratio)} /><text x="62" y={y(max * ratio) + 4}>{formatInteger(max * ratio)}</text></g>)}
+      {rows.map((row, index) => (maximized || index % Math.max(1, Math.ceil(rows.length / 8)) === 0 || index === rows.length - 1) && <text className="x-label" key={row.period} x={x(index)} y={height - 12}>{data.granularity === "daily" ? row.period.slice(8) : monthLabel(row.period)}</text>)}
       {selected.map((item, seriesIndex) => <g key={item.key}>
         <path d={rows.map((row, index) => row.recordCount ? `${index > 0 && rows[index - 1].recordCount ? "L" : "M"}${x(index)},${y(Number(row[item.column]) || 0)}` : "").join(" ")} fill="none" stroke={item.color} strokeWidth="2" />
         {rows.map((row, index) => {
@@ -72,10 +86,10 @@ export default function MonthlyTrafficChart({ maximized, onMaximize }) {
           const pointY = y(value);
           return <g key={row.period}>
             <circle cx={x(index)} cy={pointY} r="3" fill={item.color}><title>{row.period} · {item.label}: {formatInteger(value)}</title></circle>
-            <text className="data-label monthly-data-label" x={x(index)} y={pointY + (seriesIndex % 2 === 0 ? -7 : 13)}>{formatInteger(value)}</text>
+            <text className="data-label monthly-data-label" x={x(index)} y={maximized ? labelPositions[index][item.key] : pointY + (seriesIndex % 2 === 0 ? -7 : 13)}>{formatInteger(value)}</text>
           </g>;
         })}
       </g>)}
-    </svg>)}
+    </svg></div>)}
   </section>;
 }
