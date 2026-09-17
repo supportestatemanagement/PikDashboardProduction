@@ -1,6 +1,6 @@
 import React from 'react';
 import VehicleTrackingLayer from './VehicleTrackingLayer';
-import { AttributionControl, MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { AttributionControl, LayersControl, MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getAreaTrafficStage } from '../services/trafficService';
@@ -602,7 +602,25 @@ export default function HeatmapMap({ traffic, waterLocations = [], isActive = tr
         <MapSizeController isActive={isActive} />
         <VehicleTrackingLayer isActive={isActive} />
         <AttributionControl position="bottomright" prefix={false} />
-        <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <LayersControl position="topleft" collapsed={false}>
+          <LayersControl.BaseLayer checked name="Satelit">
+            <TileLayer
+              attribution='Tiles &copy; <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a> &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+              url="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              maxNativeZoom={19}
+              maxZoom={22}
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Peta Jalan">
+            <TileLayer
+              className="traffic-street-tiles"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maxNativeZoom={19}
+              maxZoom={22}
+            />
+          </LayersControl.BaseLayer>
+        </LayersControl>
 
         <GeoJSON
           key={Object.values(areaStages).map((stage) => stage.stage).join('-')}
