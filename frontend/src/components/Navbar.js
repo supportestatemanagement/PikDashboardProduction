@@ -157,7 +157,7 @@ export default function Navbar({
             />
             <div>
               <div style={{ color: "white", fontSize: isMobile ? "10px" : "15px", fontWeight: "700", lineHeight: "1.1", whiteSpace: "nowrap" }}>
-                {isMobile ? "COMMAND CENTER PANTAI INDAH KAPUK" : "COMMAND CENTER PANTAI INDAH KAPUK"}
+                {isMobile ? "COMMAND CENTER PIK" : "COMMAND CENTER PANTAI INDAH KAPUK"}
               </div>
               {!isMobile && (
                 <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "10px" }}>
@@ -339,7 +339,7 @@ export default function Navbar({
               { id: "cctv", label: "CCTV", icon: "camera" },
               { id: "pump", label: "Pump Station", icon: "pump" },
               { id: "availableparking", label: "Parking Availability", icon: "parking" },
-              { id: "disaster", label: "Pantau Bencana Dashboard", icon: "disaster" },
+              { id: "disaster", label: "Pantau Bencana", icon: "disaster" },
             ].map(tab => {
               const isGroup = tab.id === "callcenter";
               const isActive = activeTab === tab.id || (isGroup && activeTab === "perparkiran");
