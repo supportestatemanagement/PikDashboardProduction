@@ -816,6 +816,9 @@ body {
 
 /* Monthly popup: compact controls above a full-width plot. */
 .monthly-legends { display: grid; gap: 3px; }
+.monthly-toolbar { width: 100%; min-width: 0; box-sizing: border-box; }
+.monthly-chart-panel:not(.panel-maximized) .chart-heading { width: 100%; }
+.monthly-chart-panel:not(.panel-maximized) .panel-controls { margin-left: auto; flex-shrink: 0; }
 .monthly-plot-scroll { min-width: 0; }
 .monthly-chart-panel.panel-maximized { width: calc(100vw - 48px) !important; }
 .monthly-chart-panel.panel-maximized .monthly-toolbar { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 20px; padding-right: 32px; }
@@ -832,3 +835,15 @@ body {
   .monthly-chart-panel.panel-maximized { width: calc(100vw - 16px) !important; }
   .monthly-chart-panel.panel-maximized .monthly-toolbar { padding-right: 0; }
 }
+
+.traffic-map-layer .leaflet-control-attribution {
+  padding: 1px 5px;
+  border-radius: 4px 0 0 0;
+  background: rgba(255, 255, 255, .72);
+  color: #334155;
+  font-size: 9px;
+  line-height: 1.4;
+}
+.traffic-map-layer .leaflet-control-attribution a { color: #334155; }
+.traffic-map-layer .leaflet-control-attribution a:hover,
+.traffic-map-layer .leaflet-control-attribution a:focus-visible { color: #075985; text-decoration: underline; }

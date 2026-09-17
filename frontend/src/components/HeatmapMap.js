@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { AttributionControl, MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getAreaTrafficStage } from '../services/trafficService';
@@ -591,6 +591,7 @@ export default function HeatmapMap({ traffic, waterLocations = [], isActive = tr
   return (
     <div className="traffic-map-layer">
       <MapContainer
+        attributionControl={false}
         bounds={initialViewBounds}
         boundsOptions={{ padding: [12, 8] }}
         zoomSnap={0.25}
@@ -598,7 +599,8 @@ export default function HeatmapMap({ traffic, waterLocations = [], isActive = tr
         style={{ height: '100%', width: '100%' }}
       >
         <MapSizeController isActive={isActive} />
-        <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <AttributionControl position="bottomright" prefix={false} />
+        <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
         <GeoJSON
           key={Object.values(areaStages).map((stage) => stage.stage).join('-')}

@@ -15,7 +15,7 @@ export default function MonthlyTrafficChart({ maximized, onMaximize }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [minimized, setMinimized] = useState(true);
+  const [minimized, setMinimized] = useState(false);
   const [active, setActive] = useState(() => CHECKPOINTS.map(({ key }) => key));
   const start = maximized ? range.start : currentMonth;
   const end = maximized ? range.end : currentMonth;
