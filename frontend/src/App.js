@@ -128,9 +128,9 @@ export default function App() {
         style={{
           marginLeft: isMobile ? "0px" : (isSidebarOpen ? "260px" : "0px"),
           paddingTop: "60px",
-          paddingLeft: displayedTab === "dashboard" ? "0" : (isMobile ? "10px" : "20px"),
-          paddingRight: displayedTab === "dashboard" ? "0" : (isMobile ? "10px" : "20px"),
-          paddingBottom: displayedTab === "dashboard" ? "0" : (isMobile ? "10px" : "20px"),
+          paddingLeft: ["dashboard", "disaster"].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
+          paddingRight: ["dashboard", "disaster"].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
+          paddingBottom: ["dashboard", "disaster"].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
           transition: "margin-left 0.3s ease",
           boxSizing: "border-box",
           minHeight: "100vh"
@@ -152,6 +152,12 @@ export default function App() {
         </div>
 
         {displayedTab === "availableparking" && <AvailableParkingDashboard />}
+        {displayedTab === "disaster" && <iframe
+          title="Pantau Bencana Dashboard"
+          src="https://ninoplus.vercel.app/dashboard"
+          referrerPolicy="no-referrer"
+          style={{ display: "block", width: "100%", height: "calc(100dvh - 60px)", border: 0, background: "#07111f" }}
+        />}
 
         <div style={{ display: displayedTab === "perparkiran" ? "block" : "none" }}>
           <PerparkiranDashboard 
