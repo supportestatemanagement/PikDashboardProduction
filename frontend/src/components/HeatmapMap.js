@@ -1,4 +1,5 @@
 import React from 'react';
+import VehicleTrackingLayer from './VehicleTrackingLayer';
 import { AttributionControl, MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -599,6 +600,7 @@ export default function HeatmapMap({ traffic, waterLocations = [], isActive = tr
         style={{ height: '100%', width: '100%' }}
       >
         <MapSizeController isActive={isActive} />
+        <VehicleTrackingLayer isActive={isActive} />
         <AttributionControl position="bottomright" prefix={false} />
         <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 

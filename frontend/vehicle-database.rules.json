@@ -1,0 +1,12 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "vehicle_locations": {
+      ".read": "auth != null && auth.uid === '9HpVuSHj8XYUaSvvSx7tfo5YsD32'",
+      "PATROL_01": {
+        ".write": true
+      }
+    }
+  }
+}
