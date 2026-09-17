@@ -2,6 +2,13 @@ import { AREA_TRAFFIC_STAGE_CONFIG, CHECKPOINTS, TRAFFIC_STAGE_CONFIG } from "..
 
 const API_URL = process.env.REACT_APP_API_URL || "";
 
+export async function fetchWaterLocations(signal) {
+  const response = await fetch(`${API_URL}/api/berbagi-air`, { signal });
+  const payload = await response.json();
+  if (!response.ok || payload.status !== "success") throw new Error(payload.message || "Gagal mengambil lokasi berbagi air");
+  return payload.locations || [];
+}
+
 export async function fetchMonthlyTraffic(startMonth, endMonth, signal) {
   const params = new URLSearchParams({ startMonth, endMonth });
   const response = await fetch(`${API_URL}/api/traffic-monthly?${params}`, { signal });

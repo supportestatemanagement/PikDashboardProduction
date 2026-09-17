@@ -809,3 +809,6 @@ body {
   .traffic-overlay > .traffic-summary-panel, .traffic-overlay > .checkpoint-panel, .traffic-overlay > .hourly-chart-panel { grid-column: 2; }
   .traffic-overlay > .monthly-chart-panel { grid-column: 1; }
 }
+
+.water-map-marker { background: transparent; border: 0; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+.water-map-marker:hover { filter: drop-shadow(0 2px 5px rgba(56,189,248,.7)); }

@@ -283,6 +283,41 @@ def filter_records_by_date(records, start_date, end_date):
     ]
 
 
+def parse_water_coordinates(value):
+    text = str(value or "").strip().strip("()[]")
+    parts = re.split(r"\s*[,;]\s*|\s+", text)
+    if len(parts) != 2:
+        return None
+    try:
+        latitude, longitude = map(float, parts)
+    except ValueError:
+        return None
+    if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+        return None
+    return [latitude, longitude]
+
+
+@app.route('/api/berbagi-air', methods=['GET'])
+def get_water_locations():
+    try:
+        try:
+            sheet = cc_spreadsheet.worksheet("BerbagiAir")
+        except gspread.WorksheetNotFound:
+            sheet = spreadsheet.worksheet("BerbagiAir")
+        locations = []
+        skipped = 0
+        for index, row in enumerate(sheet.get_all_records(), start=2):
+            name = str(record_value(row, "Nama Lokasi") or "").strip()
+            position = parse_water_coordinates(record_value(row, "Koordinat"))
+            if not name or position is None:
+                skipped += 1
+                continue
+            locations.append({"id": f"water-{index}", "name": name, "position": position})
+        return jsonify({"status": "success", "locations": locations, "meta": {"skippedRows": skipped}})
+    except Exception as error:
+        return jsonify({"status": "error", "message": str(error)}), 500
+
+
 @app.route('/api/traffic-monthly', methods=['GET'])
 def get_traffic_monthly():
     try:
