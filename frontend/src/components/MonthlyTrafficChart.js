@@ -16,7 +16,7 @@ export default function MonthlyTrafficChart({ maximized, onMaximize }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [minimized, setMinimized] = useState(false);
-  const [active, setActive] = useState(() => SERIES.map(({ key }) => key));
+  const [active, setActive] = useState(() => CHECKPOINTS.map(({ key }) => key));
   const start = maximized ? range.start : currentMonth;
   const end = maximized ? range.end : currentMonth;
 
@@ -64,9 +64,17 @@ export default function MonthlyTrafficChart({ maximized, onMaximize }) {
     {!minimized && (loading ? <p className="monthly-message" role="status">Memuat traffic bulanan…</p> : error ? <p className="monthly-message" role="alert">{error}</p> : !hasData ? <p className="monthly-message">Belum ada data untuk rentang bulan ini.</p> : <svg className="hourly-svg monthly-svg" viewBox="0 0 1000 290" role="img" aria-label={`Grafik checkpoint dan vehicle in ${monthLabel(start)} sampai ${monthLabel(end)}`}>
       {[0, .25, .5, .75, 1].map((ratio) => <g key={ratio}><line x1="70" y1={y(max * ratio)} x2="970" y2={y(max * ratio)} /><text x="62" y={y(max * ratio) + 4}>{formatInteger(max * ratio)}</text></g>)}
       {rows.map((row, index) => (index % Math.max(1, Math.ceil(rows.length / (maximized ? 16 : 8))) === 0 || index === rows.length - 1) && <text className="x-label" key={row.period} x={x(index)} y="275">{data.granularity === "daily" ? row.period.slice(8) : monthLabel(row.period)}</text>)}
-      {selected.map((item) => <g key={item.key}>
+      {selected.map((item, seriesIndex) => <g key={item.key}>
         <path d={rows.map((row, index) => row.recordCount ? `${index > 0 && rows[index - 1].recordCount ? "L" : "M"}${x(index)},${y(Number(row[item.column]) || 0)}` : "").join(" ")} fill="none" stroke={item.color} strokeWidth="2" />
-        {rows.map((row, index) => row.recordCount > 0 && <circle key={row.period} cx={x(index)} cy={y(Number(row[item.column]) || 0)} r="3" fill={item.color}><title>{row.period} · {item.label}: {formatInteger(row[item.column])}</title></circle>)}
+        {rows.map((row, index) => {
+          if (!row.recordCount) return null;
+          const value = Number(row[item.column]) || 0;
+          const pointY = y(value);
+          return <g key={row.period}>
+            <circle cx={x(index)} cy={pointY} r="3" fill={item.color}><title>{row.period} · {item.label}: {formatInteger(value)}</title></circle>
+            <text className="data-label monthly-data-label" x={x(index)} y={pointY + (seriesIndex % 2 === 0 ? -7 : 13)}>{formatInteger(value)}</text>
+          </g>;
+        })}
       </g>)}
     </svg>)}
   </section>;

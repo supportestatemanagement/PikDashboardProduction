@@ -800,6 +800,10 @@ body {
 .monthly-range button { cursor: pointer; }
 .monthly-chart-panel.panel-maximized .monthly-svg text { font-size: 12px; }
 .monthly-chart-panel.panel-maximized .monthly-svg text.x-label { font-size: 12px; }
+.monthly-chart-panel .monthly-svg text.monthly-data-label { font-size: 8px; font-weight: 600; text-anchor: middle; paint-order: stroke; stroke: #07121c; stroke-width: 2px; stroke-linejoin: round; }
+.monthly-chart-panel.panel-maximized .monthly-svg text.monthly-data-label { font-size: 9px; }
+.monthly-chart-panel.panel-maximized { box-sizing: border-box; }
+.monthly-chart-panel.panel-maximized .monthly-svg { height: auto; max-height: min(48vh, 440px); margin-bottom: 8px; flex-shrink: 0; }
 @media (max-width: 768px) {
   .traffic-overlay { left: 6px; width: auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .traffic-overlay > .traffic-summary-panel, .traffic-overlay > .checkpoint-panel, .traffic-overlay > .hourly-chart-panel { grid-column: 2; }

@@ -468,8 +468,9 @@ function MapSizeController({ isActive }) {
     const refreshSize = () => {
       map.invalidateSize({ animate: false, pan: false });
       if (!initialized.current && map.getSize().x > 0 && map.getSize().y > 0) {
-        const overlay = map.getContainer().parentElement.parentElement.querySelector('.traffic-overlay');
-        const panelWidth = overlay ? overlay.getBoundingClientRect().width + 24 : 24;
+        // The overlay spans the map; reserve only the right-hand panel width.
+        const panel = map.getContainer().parentElement.parentElement.querySelector('.traffic-summary-panel:not(.panel-maximized)');
+        const panelWidth = Math.min(panel ? panel.getBoundingClientRect().width + 24 : 256, map.getSize().x / 2);
         map.fitBounds(initialViewBounds, {
           paddingTopLeft: [12, 8],
           paddingBottomRight: [map.getSize().x > 700 ? panelWidth : 12, 8],
