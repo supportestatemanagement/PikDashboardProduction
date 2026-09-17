@@ -283,6 +283,39 @@ def filter_records_by_date(records, start_date, end_date):
     ]
 
 
+@app.route('/api/traffic-monthly', methods=['GET'])
+def get_traffic_monthly():
+    try:
+        current_month = datetime.date.today().strftime("%Y-%m")
+        start = datetime.datetime.strptime(request.args.get("startMonth", current_month), "%Y-%m").date()
+        end = datetime.datetime.strptime(request.args.get("endMonth", current_month), "%Y-%m").date()
+        if start > end:
+            return jsonify({"status": "error", "message": "Bulan awal harus sebelum bulan akhir"}), 400
+        daily = start == end
+        buckets = {}
+        cursor = start
+        while cursor <= end or (daily and cursor.month == start.month and cursor.year == start.year):
+            key = cursor.isoformat() if daily else cursor.strftime("%Y-%m")
+            buckets[key] = {column: 0 for column in TRAFFIC_SUMMARY_COLUMNS}
+            buckets[key]["recordCount"] = 0
+            cursor = cursor + datetime.timedelta(days=1) if daily else (cursor.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
+        for row in TRAFFIC_SHEETS["summary"].get_all_records():
+            date = parse_sheet_date(record_value(row, "Date"))
+            if not date:
+                continue
+            key = date.isoformat() if daily else date.strftime("%Y-%m")
+            if key in buckets:
+                buckets[key]["recordCount"] += 1
+                for column in TRAFFIC_SUMMARY_COLUMNS:
+                    buckets[key][column] += integer_value(record_value(row, column))
+        return jsonify({"status": "success", "granularity": "daily" if daily else "monthly",
+                        "rows": [{"period": key, **values} for key, values in buckets.items()]})
+    except ValueError:
+        return jsonify({"status": "error", "message": "Bulan harus menggunakan YYYY-MM"}), 400
+    except Exception as error:
+        return jsonify({"status": "error", "message": str(error)}), 500
+
+
 @app.route('/api/traffic-dashboard', methods=['GET'])
 def get_traffic_dashboard():
     """Return final worksheet values, filtered at the data source boundary."""

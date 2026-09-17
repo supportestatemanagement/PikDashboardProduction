@@ -784,3 +784,24 @@ body {
 .pw-dashboard.sidebar-open .pw-level-reading strong { font-size: 18px; }
 .pw-dashboard.sidebar-open .pw-current-row .pw-level-card { padding-left: 10px; padding-right: 10px; gap: 5px; }
 .pw-dashboard.sidebar-open .pw-current-row .pw-pump-indicator { padding: 5px 6px; font-size: 8px; gap: 4px; }
+
+/* Place both traffic charts on the same row over the map. */
+.traffic-overlay { left: 10px; width: auto; display: grid; grid-template-columns: minmax(0, 232px) minmax(0, 1fr) minmax(0, 232px); grid-template-rows: auto auto auto; align-content: start; align-items: start; }
+.traffic-overlay > .traffic-summary-panel { grid-column: 3; grid-row: 1; }
+.traffic-overlay > .checkpoint-panel { grid-column: 3; grid-row: 2; }
+.traffic-overlay > .hourly-chart-panel { grid-column: 3; grid-row: 3; }
+.traffic-overlay > .monthly-chart-panel { grid-column: 1; grid-row: 3; }
+.monthly-chart-panel .monthly-svg text { font-size: 20px; }
+.monthly-chart-panel .monthly-svg text.x-label { font-size: 20px; text-anchor: middle; }
+.monthly-message { min-height: 96px; display: grid; place-items: center; color: #94a3b8; font-size: 11px; }
+.monthly-range { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 16px 0; }
+.monthly-range label { display: grid; gap: 6px; color: #cbd5e1; font-size: 12px; }
+.monthly-range input, .monthly-range button { color-scheme: dark; background: #1e293b; color: #e2e8f0; border: 1px solid #475569; border-radius: 6px; padding: 8px 10px; }
+.monthly-range button { cursor: pointer; }
+.monthly-chart-panel.panel-maximized .monthly-svg text { font-size: 12px; }
+.monthly-chart-panel.panel-maximized .monthly-svg text.x-label { font-size: 12px; }
+@media (max-width: 768px) {
+  .traffic-overlay { left: 6px; width: auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .traffic-overlay > .traffic-summary-panel, .traffic-overlay > .checkpoint-panel, .traffic-overlay > .hourly-chart-panel { grid-column: 2; }
+  .traffic-overlay > .monthly-chart-panel { grid-column: 1; }
+}
