@@ -12,6 +12,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 import json
 from collections import defaultdict
+from dashboard_auth import register_dashboard_auth
+from firebase_admin_service import create_dashboard_token
 
 # Menggunakan RapidOCR (Ringan, Cepat, dan Akurat untuk Angka CCTV)
 from rapidocr_onnxruntime import RapidOCR
@@ -413,15 +415,11 @@ def get_traffic_dashboard():
 
 # ================= 1. SEMUA ENDPOINT LAMA (TIDAK ADA YANG DIHAPUS) =================
 
-@app.route('/api/login', methods=['POST'])
-def login():
-    data = request.json
-    sheet = spreadsheet.worksheet("OFFICER")
-    records = sheet.get_all_records()
-    for row in records:
-        if (str(row['NAMA LENGKAP']) == data['username'] and str(row['PASSWORD']) == data['password']):
-            return jsonify({"status": "success", "user": row})
-    return jsonify({"status": "failed"}), 401
+register_dashboard_auth(
+    app,
+    lambda: spreadsheet.worksheet("OFFICER").get_all_records(),
+    create_dashboard_token,
+)
 
 @app.route('/api/perparkiran-data', methods=['GET'])
 def get_perparkiran_data():

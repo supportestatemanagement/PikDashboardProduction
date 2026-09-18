@@ -1,37 +1,34 @@
-import { applyVehicleEvent, getVehicles, subscribeVehicles } from './vehicleTrackingService';
+import { onValue } from 'firebase/database';
+import { getFirebaseServices } from '../config/firebase';
+import { getVehicles, subscribeVehicles } from './vehicleTrackingService';
+jest.mock('firebase/database', () => ({ onValue: jest.fn(), ref: (_, path) => path }));
+jest.mock('../config/firebase', () => ({ getFirebaseServices: jest.fn() }));
 
-test('handles initial snapshots, nested patches, deletion and clearing', () => {
-  let state = applyVehicleEvent(null, 'put', { path: '/', data: { PATROL_01: { latitude: -6, longitude: 106, tracking: true } } });
-  state = applyVehicleEvent(state, 'patch', { path: '/', data: { 'PATROL_01/latitude': -6.1, 'PATROL_01/officer_name': 'Rohmat' } });
-  expect(getVehicles(state)[0]).toMatchObject({ position: [-6.1, 106], officer_name: 'Rohmat' });
-  state = applyVehicleEvent(state, 'put', { path: '/PATROL_01/tracking', data: false });
-  expect(getVehicles(state)[0].tracking).toBe(false);
-  expect(applyVehicleEvent(state, 'put', { path: '/PATROL_01', data: null })).toEqual({});
-  expect(getVehicles(applyVehicleEvent(state, 'put', { path: '/', data: null }))).toEqual([]);
-});
-
-test('rejects invalid GPS coordinates without losing valid zero coordinates', () => {
+beforeEach(() => { jest.clearAllMocks(); });
+test('rejects invalid GPS coordinates and keeps valid zero coordinates', () => {
   expect(getVehicles({ a: { latitude: null, longitude: 106 }, b: { latitude: 91, longitude: 106 }, c: { latitude: 0, longitude: 0 } })).toEqual([{ id: 'c', latitude: 0, longitude: 0, position: [0, 0] }]);
 });
-
-test('streams updates, reports disconnection and closes rejected subscriptions', () => {
+test('does not subscribe before authentication', () => {
+  getFirebaseServices.mockReturnValue({ auth: { currentUser: null }, database: {} });
+  expect(() => subscribeVehicles(jest.fn(), jest.fn(), null)).toThrow('authentication required');
+  expect(onValue).not.toHaveBeenCalled();
+});
+test('updates positions, handles deletes/denial and unsubscribes both listeners', () => {
+  const user = { uid: 'dashboard_ADMIN01' };
+  getFirebaseServices.mockReturnValue({ auth: { currentUser: user }, database: {} });
   const listeners = {};
-  const source = { addEventListener: jest.fn((name, callback) => { listeners[name] = callback; }), close: jest.fn() };
-  const original = global.EventSource;
-  global.EventSource = jest.fn(() => source);
-  try {
-    const onVehicles = jest.fn();
-    const onStatus = jest.fn();
-    const stop = subscribeVehicles(onVehicles, onStatus, 'test-token');
-    expect(global.EventSource).toHaveBeenCalledWith(expect.stringContaining('?auth=test-token'));
-    listeners.put({ data: JSON.stringify({ path: '/', data: { A: { latitude: -6, longitude: 106 } } }) });
-    expect(onVehicles.mock.calls[0][0]).toHaveLength(1);
-    expect(onStatus).toHaveBeenLastCalledWith('Terhubung');
-    source.onerror();
-    expect(onStatus.mock.calls.at(-1)[0]).toContain('terputus');
-    listeners.cancel();
-    expect(source.close).toHaveBeenCalled();
-    expect(onVehicles).toHaveBeenLastCalledWith([]);
-    stop();
-  } finally { global.EventSource = original; }
+  const cleanup = jest.fn();
+  onValue.mockImplementation((path, receive, error) => { listeners[path] = { receive, error }; return cleanup; });
+  const vehicles = jest.fn(), status = jest.fn();
+  const stop = subscribeVehicles(vehicles, status, user);
+  listeners['.info/connected'].receive({ val: () => true });
+  listeners.vehicle_locations.receive({ val: () => ({ A: { latitude: -6, longitude: 106 } }) });
+  expect(vehicles).toHaveBeenLastCalledWith([expect.objectContaining({ position: [-6, 106] })]);
+  expect(status).toHaveBeenLastCalledWith('Terhubung');
+  listeners.vehicle_locations.receive({ val: () => null });
+  expect(vehicles).toHaveBeenLastCalledWith([]);
+  listeners.vehicle_locations.error(new Error('Permission denied'));
+  expect(status).toHaveBeenLastCalledWith('Unable to connect to realtime vehicle data.');
+  stop();
+  expect(cleanup).toHaveBeenCalledTimes(2);
 });

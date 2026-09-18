@@ -3,7 +3,7 @@
     ".read": false,
     ".write": false,
     "vehicle_locations": {
-      ".read": "auth != null && auth.uid === '9HpVuSHj8XYUaSvvSx7tfo5YsD32'",
+      ".read": "auth != null && auth.token.role === 'dashboard'",
       "PATROL_01": {
         ".write": true
       }

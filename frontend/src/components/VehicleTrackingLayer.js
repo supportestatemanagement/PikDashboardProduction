@@ -3,8 +3,7 @@ import { Marker, Popup, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import { subscribeVehicles } from '../services/vehicleTrackingService';
 import './VehicleTrackingLayer.css';
-import VehicleLogin from './VehicleLogin';
-import { refreshVehicleSession } from '../services/vehicleAuthService';
+import { useVehicleAuth } from './VehicleAuthProvider';
 
 function VehicleMarker({ vehicle, now, connected }) {
   const marker = useRef(null);
@@ -45,36 +44,25 @@ function VehicleMarker({ vehicle, now, connected }) {
 }
 
 export default function VehicleTrackingLayer({ isActive }) {
-  const [session, setSession] = useState(null);
-  const [sessionError, setSessionError] = useState('');
+  const { status: authStatus, user, retry } = useVehicleAuth();
   const [vehicles, setVehicles] = useState([]);
   const [status, setStatus] = useState('Menghubungkan GPS…');
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
-    if (!isActive || !session) return undefined;
-    const unsubscribe = subscribeVehicles(setVehicles, setStatus, session.idToken);
+    if (!isActive || authStatus !== 'ready' || !user) { setVehicles([]); return undefined; }
+    let unsubscribe;
+    try { unsubscribe = subscribeVehicles(setVehicles, setStatus, user); }
+    catch { setVehicles([]); setStatus('Unable to connect to realtime vehicle data.'); }
     const timer = setInterval(() => setNow(Date.now()), 5000);
-    return () => { unsubscribe(); clearInterval(timer); };
-  }, [isActive, session]);
-  useEffect(() => {
-    if (!session) return undefined;
-    const controller = new AbortController();
-    const timer = setTimeout(async () => {
-      try {
-        const renewed = await refreshVehicleSession(session.refreshToken, controller.signal);
-        if (!controller.signal.aborted) setSession(renewed);
-      } catch (err) {
-        if (!controller.signal.aborted) {
-          setSession(null); setVehicles([]); setSessionError(err.message);
-        }
-      }
-    }, Math.max(0, session.expiresAt - Date.now() - 60000));
-    return () => { clearTimeout(timer); controller.abort(); };
-  }, [session]);
-  if (!session) return <VehicleLogin error={sessionError} onLogin={next => { setSessionError(''); setSession(next); }} />;
+    return () => { unsubscribe?.(); clearInterval(timer); };
+  }, [isActive, authStatus, user]);
+  if (authStatus !== 'ready') return <div className="vehicle-tracking-status" role="status">
+    {authStatus === 'error' ? <>Unable to connect to realtime vehicle data. <button className="vehicle-auth-retry" onClick={retry}>Coba lagi</button></> : 'Connecting to realtime service...'}
+  </div>;
   return <>
-    <div className="vehicle-tracking-status" role="status">GPS · {status}{status === 'Terhubung' && ` · ${vehicles.length} kendaraan`}</div>
-    <button className="vehicle-logout" onClick={event => { event.stopPropagation(); setSession(null); setVehicles([]); }}>Keluar GPS</button>
+    <div className="vehicle-tracking-status" role="status">GPS · {status}{status === 'Terhubung' && ` · ${vehicles.length} kendaraan`}
+      {status === 'Unable to connect to realtime vehicle data.' && <button className="vehicle-auth-retry" onClick={retry}>Coba lagi</button>}
+    </div>
     {vehicles.map(vehicle => <VehicleMarker key={vehicle.id} vehicle={vehicle} now={now} connected={status === 'Terhubung'} />)}
   </>;
 }

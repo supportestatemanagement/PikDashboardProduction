@@ -9,6 +9,8 @@ import CctvDashboard from "./components/CctvDashboard";
 import PerparkiranDashboard from "./components/PerparkiranDashboard";
 import PumpWeatherDashboard from "./components/PumpWeatherDashboard";
 import AvailableParkingDashboard from "./components/AvailableParkingDashboard";
+import useDashboardSession from './services/useDashboardSession';
+import VehicleAuthProvider from './components/VehicleAuthProvider';
 
 const currentYearRange = () => {
   const today = new Date();
@@ -19,13 +21,8 @@ const currentYearRange = () => {
 };
 
 export default function App() {
-  // BACA DARI LOCAL STORAGE AGAR TIDAK LOGOUT SAAT REFRESH
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("cc_isLoggedIn") === "true";
-    }
-    return false;
-  });
+  const { session, checking, restoreError, retry, login, logout } = useDashboardSession();
+  const isLoggedIn = Boolean(session);
 
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== "undefined") {
@@ -50,13 +47,6 @@ export default function App() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth <= 768 : false);
-
-  // SIMPAN STATE KE LOCAL STORAGE SAAT ADA PERUBAHAN
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("cc_isLoggedIn", isLoggedIn);
-    }
-  }, [isLoggedIn]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -98,7 +88,7 @@ export default function App() {
     : activeTab === "perparkiran" ? setParkingDateRange : setDateRange;
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
+    logout();
     setActiveTab("dashboard");
     if (typeof window !== "undefined") {
       localStorage.removeItem("cc_isLoggedIn");
@@ -106,11 +96,14 @@ export default function App() {
     }
   };
 
+  if (checking) return <main className="login-page" role="status">Memeriksa sesi dashboard…</main>;
+  if (restoreError) return <main className="login-page"><div role="alert">Tidak dapat memeriksa sesi dashboard. <button onClick={retry}>Coba lagi</button></div></main>;
   if (!isLoggedIn) {
-    return <Login onLogin={() => setIsLoggedIn(true)} />;
+    return <Login onLogin={login} />;
   }
 
   return (
+    <VehicleAuthProvider session={session} onSessionExpired={logout}>
     <div className={`app-wrapper ${displayedTab === "dashboard" ? "traffic-active" : ""}`}>
       <Navbar 
         activeTab={activeTab} 
@@ -172,5 +165,6 @@ export default function App() {
 
       </div>
     </div>
+    </VehicleAuthProvider>
   );
 }

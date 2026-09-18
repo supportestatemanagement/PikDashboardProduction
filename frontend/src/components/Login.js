@@ -29,8 +29,8 @@ export default function Login({ onLogin }) {
         body: JSON.stringify({ username: username.trim(), password }),
       });
       const data = await response.json();
-      if (response.ok && data.status === "success") onLogin();
-      else setError("Username atau password salah.");
+      if (response.ok && data.status === "success") { setPassword(''); onLogin(data); }
+      else setError(response.status >= 500 ? "Layanan login belum tersedia. Silakan coba kembali." : "Username atau password salah.");
     } catch (requestError) {
       setError("Tidak dapat terhubung ke server. Silakan coba kembali.");
     } finally {

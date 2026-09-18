@@ -11,3 +11,7 @@ backend/ocr_agent_lokal/
 # --- FRONTEND IGNORES ---
 frontend/node_modules/
 frontend/.env
+backend/.env
+**/serviceAccountKey.json
+**/*firebase-adminsdk*.json
+backend/.test-deps/

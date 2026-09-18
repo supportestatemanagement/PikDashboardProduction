@@ -1,22 +1,5 @@
-export const VEHICLE_DATABASE_URL = process.env.REACT_APP_VEHICLE_DATABASE_URL ||
-  'https://track-vehicle-234cb-default-rtdb.asia-southeast1.firebasedatabase.app';
-
-// Firebase stream paths are relative to vehicle_locations, including nested patches.
-export function applyVehicleEvent(current, type, { path, data }) {
-  const replace = (root, segments, value) => {
-    if (!segments.length) return value;
-    const [key, ...rest] = segments;
-    const next = { ...(root && typeof root === 'object' ? root : {}) };
-    const child = replace(next[key], rest, value);
-    if (child === null) delete next[key];
-    else Object.defineProperty(next, key, { value: child, enumerable: true, writable: true, configurable: true });
-    return next;
-  };
-  const parts = path.split('/').filter(Boolean);
-  if (type === 'put') return replace(current, parts, data);
-  return Object.entries(data || {}).reduce((state, [key, value]) =>
-    replace(state, [...parts, ...key.split('/')], value), current);
-}
+import { onValue, ref } from 'firebase/database';
+import { getFirebaseServices } from '../config/firebase';
 
 export function getVehicles(snapshot) {
   return Object.entries(snapshot || {}).flatMap(([id, vehicle]) => {
@@ -28,29 +11,25 @@ export function getVehicles(snapshot) {
   });
 }
 
-export function subscribeVehicles(onVehicles, onStatus, idToken) {
-  let snapshot = null;
-  const auth = idToken ? `?auth=${encodeURIComponent(idToken)}` : '';
-  const source = new EventSource(`${VEHICLE_DATABASE_URL.replace(/\/$/, '')}/vehicle_locations.json${auth}`);
-  onStatus('Menghubungkan GPS…');
-  const receive = (type) => (event) => {
-    try {
-      snapshot = applyVehicleEvent(snapshot, type, JSON.parse(event.data));
-      onVehicles(getVehicles(snapshot));
-      onStatus('Terhubung');
-    } catch {
-      onStatus('Data GPS tidak valid');
-    }
-  };
-  source.addEventListener('put', receive('put'));
-  source.addEventListener('patch', receive('patch'));
-  source.onerror = () => onStatus('GPS terputus; mencoba kembali. Jika berlanjut, periksa akses Firebase.');
-  const denied = () => {
-    source.close();
+export function subscribeVehicles(onVehicles, onStatus, user) {
+  const { auth, database } = getFirebaseServices();
+  if (!user || auth.currentUser?.uid !== user.uid) throw new Error('Firebase authentication required');
+  onStatus('Connecting to realtime service...');
+  let hasData = false;
+  let connected = false;
+  let denied = false;
+  const stopConnection = onValue(ref(database, '.info/connected'), snapshot => {
+    connected = snapshot.val() === true;
+    if (!denied) onStatus(connected && hasData ? 'Terhubung' : 'Connecting to realtime service...');
+  });
+  const stopVehicles = onValue(ref(database, 'vehicle_locations'), snapshot => {
+    hasData = true;
+    onVehicles(getVehicles(snapshot.val()));
+    onStatus(connected ? 'Terhubung' : 'Connecting to realtime service...');
+  }, () => {
+    denied = true;
     onVehicles([]);
-    onStatus('Akses GPS ditolak. Periksa autentikasi dan rules Firebase.');
-  };
-  source.addEventListener('cancel', denied);
-  source.addEventListener('auth_revoked', denied);
-  return () => source.close();
+    onStatus('Unable to connect to realtime vehicle data.');
+  });
+  return () => { stopVehicles(); stopConnection(); };
 }
