@@ -453,6 +453,8 @@ const trackerGeojsonData = {
   features: geojsonData.features.map(feature => feature.properties.name === 'BGM' ? vehicleTrackerBgm : feature),
 };
 
+const TRACKER_AREA_COLORS = { BGM: '#16a34a', GI: '#2563eb', RWI: '#eab308', PIK2: '#ef4444' };
+
 const AREA_CONFIG = {
   PIK2: { center: [-6.051, 106.694] },
   BGM: { center: [-6.1100, 106.7427] },
@@ -509,7 +511,7 @@ const createLabel = (name, count, zoom, showCount) => {
     className: showCount ? 'custom-label' : 'custom-label vehicle-area-label',
     html: `
       <div style="
-        color: white;
+        color: ${showCount ? 'white' : TRACKER_AREA_COLORS[name]};
         text-align: center;
         line-height: 1.1;
         display: flex;
@@ -584,7 +586,10 @@ export default function HeatmapMap({ traffic, waterLocations = [], isActive = tr
 
   // Fungsi style dinamis untuk setiap poligon di GeoJSON
   const styleGeoJson = (feature) => {
-    if (isTracker) return { color: '#16a34a', weight: 2.5, opacity: 1, fillColor: '#22c55e', fillOpacity: 0.16 };
+    if (isTracker) {
+      const color = TRACKER_AREA_COLORS[feature.properties.name] || '#16a34a';
+      return { color, weight: 2.5, opacity: 1, fillColor: color, fillOpacity: 0.08 };
+    }
     const areaName = feature.properties.name;
     const value = data[areaName] || 0;
 

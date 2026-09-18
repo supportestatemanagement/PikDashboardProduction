@@ -4,7 +4,7 @@ import L from 'leaflet';
 import { subscribeVehicles } from '../services/vehicleTrackingService';
 import './VehicleTrackingLayer.css';
 import { useVehicleAuth } from './VehicleAuthProvider';
-import { getVehicleType, vehicleIconSvg } from './vehicleIcons';
+import { getVehicleType, getVehicleColor, vehicleIconSvg } from './vehicleIcons';
 
 function VehicleMarker({ vehicle, now, connected }) {
   const marker = useRef(null);
@@ -12,10 +12,11 @@ function VehicleMarker({ vehicle, now, connected }) {
   const status = !vehicle.tracking ? 'Tracking berhenti' : stale ? 'GPS tidak diperbarui' : !connected ? 'Koneksi terputus' : 'Live';
   const heading = Number.isFinite(vehicle.heading) ? vehicle.heading : 0;
   const vehicleType = getVehicleType(vehicle);
+  const vehicleColor = getVehicleColor(vehicle);
   const icon = useMemo(() => L.divIcon({
     className: 'vehicle-map-icon', iconSize: [32, 48], iconAnchor: [16, 24],
-    html: vehicleIconSvg(vehicleType, heading, status === 'Live'),
-  }), [heading, status, vehicleType]);
+    html: vehicleIconSvg(vehicleType, heading, vehicleColor),
+  }), [heading, vehicleColor, vehicleType]);
 
   useEffect(() => {
     const instance = marker.current;
@@ -35,10 +36,10 @@ function VehicleMarker({ vehicle, now, connected }) {
   const name = vehicle.vehicle_name || vehicle.vehicle_id || vehicle.id;
   return <Marker ref={marker} position={initialPosition.current} icon={icon} title={name} zIndexOffset={1000}>
     <Tooltip permanent direction="top" offset={[0, -28]} className={`vehicle-map-label ${status === 'Live' ? '' : 'vehicle-map-label--inactive'}`}>
-      {name} {vehicle.plate_number || ''}{status !== 'Live' && <small>{status}</small>}
+      {name} {vehicle.plate_number || ''}{status !== 'Live' && status !== 'GPS tidak diperbarui' && <small>{status}</small>}
     </Tooltip>
     <Popup><strong>{name}</strong><div>Pelat: {vehicle.plate_number || '—'}</div>
-      <div>Petugas: {vehicle.officer_name || '—'}</div><div>Status: {status}</div>
+      <div>Petugas: {vehicle.officer_name || '—'}</div>{status !== 'GPS tidak diperbarui' && <div>Status: {status}</div>}
       <div>Akurasi GPS: {Number.isFinite(vehicle.accuracy) ? `${vehicle.accuracy.toFixed(1)} m` : '—'}</div>
       <div>Pembaruan: {Number.isFinite(vehicle.timestamp) ? new Date(vehicle.timestamp).toLocaleString('id-ID') : '—'}</div>
     </Popup>

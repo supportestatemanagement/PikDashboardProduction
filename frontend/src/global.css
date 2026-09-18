@@ -285,7 +285,7 @@ body {
 .vehicle-tracker-dashboard .traffic-map-layer,
 .vehicle-tracker-dashboard .leaflet-container { background: #eef2e8; }
 .vehicle-tracker-dashboard .leaflet-control-layers { background: #fff; color: #1e293b; border-color: #cbd5e1; }
-.vehicle-tracker-dashboard .vehicle-area-label > div { color: #172d24 !important; text-shadow: 0 0 3px #fff, 0 0 6px #fff !important; }
+.vehicle-tracker-dashboard .vehicle-area-label > div { text-shadow: 0 0 3px #fff, 0 0 6px #fff !important; }
 .traffic-map-layer .leaflet-control-zoom { margin-top: 18px; }
 .traffic-overlay { position: absolute; z-index: 400; top: 14px; right: 12px; bottom: 12px; width: 268px; display: flex; flex-direction: column; align-items: stretch; gap: 6px; pointer-events: none; overflow: visible; }
 .glass-panel { background: rgba(7, 18, 28, .84); border: 1px solid rgba(148, 163, 184, .2); box-shadow: 0 12px 32px rgba(0,0,0,.28); backdrop-filter: blur(12px); border-radius: 11px; pointer-events: auto; font-family: 'Inter', sans-serif; font-size: 11px; transition: transform .24s ease, opacity .2s ease, padding .24s ease, box-shadow .24s ease; animation: panel-soft-in .28s ease both; }

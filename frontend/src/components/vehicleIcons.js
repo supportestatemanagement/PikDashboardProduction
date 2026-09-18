@@ -5,10 +5,19 @@ export function getVehicleType(vehicle) {
   return 'car';
 }
 
+export function getVehicleColor(vehicle) {
+  const id = String(vehicle.vehicle_id || vehicle.id || '').trim().toUpperCase();
+  if (/^MACAN(?:_|$)/.test(id)) return '#facc15';
+  if (/^JAGUAR(?:_|$)/.test(id)) return '#f97316';
+  if (/^TRITON(?:_|$)/.test(id)) return '#1e3a8a';
+  if (getVehicleType(vehicle) === 'water-tanker') return '#38bdf8';
+  if (getVehicleType(vehicle) === 'fire-truck') return '#ef4444';
+  return '#a855f7';
+}
+
 // Top-down silhouettes point north; rotate only the SVG, leaving labels upright.
-export function vehicleIconSvg(type, heading, live) {
+export function vehicleIconSvg(type, heading, color) {
   const angle = Number.isFinite(heading) ? heading : 0;
-  const color = live ? ({ 'water-tanker': '#0ea5e9', 'fire-truck': '#ef4444', car: '#fbbf24' }[type] || '#fbbf24') : '#94a3b8';
   const wheels = '<g fill="#111827"><rect x="3" y="8" width="5" height="10" rx="2"/><rect x="24" y="8" width="5" height="10" rx="2"/><rect x="3" y="32" width="5" height="11" rx="2"/><rect x="24" y="32" width="5" height="11" rx="2"/></g>';
   let body;
   if (type === 'water-tanker') {
