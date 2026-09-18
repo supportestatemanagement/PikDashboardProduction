@@ -24,7 +24,7 @@ Frontend (Create React App):
 - `package.json`/lock: dependency `firebase`.
 - Tes Navbar diselaraskan dengan label Emergency/Parking yang sudah ada; menu tidak diubah.
 
-Peta satelit, marker, popup, dan aturan status kendaraan dipertahankan. Tracking tetap berada di peta Traffic existing; perubahan ini tidak menambah/memindahkan menu peta.
+Menu Vehicle Tracker terpisah menampilkan GPS dan lokasi Berbagi Air. Default Peta Jalan terang dengan cakupan/zoom awal yang sama dengan Traffic; Satelit tetap tersedia. Label area tanpa counting/checkpoint, dan batas BGM khusus tracker memakai vehicleTrackerBgm.json. Traffic Dashboard hanya menampilkan counting dan panel traffic; tidak memuat GPS/Berbagi Air.
 
 ## Environment Render
 
@@ -73,7 +73,7 @@ File `vehicle-database.rules.json` menyediakan rules lengkap berdasarkan rules t
 2. Publish rule role dashboard, isi env Vercel, push perubahan kode, dan rebuild/deploy frontend.
 3. Login memakai USERNAME + PASSWORD existing. Tidak ada form email/password GPS.
 4. Di Network browser: POST `/api/login` berhasil, GET `/api/session` berhasil, lalu GET `/api/firebase-token` memakai Authorization bearer. Respons tidak mengandung password. Jangan menyalin token/password ke log/chat.
-5. Firebase Authentication > Users menampilkan UID dashboard_USERNAME. Buka Traffic/peta tracking: status Connecting berubah menjadi Terhubung. Perubahan GPS HP memperbarui marker.
+5. Firebase Authentication > Users menampilkan UID dashboard_USERNAME. Buka Vehicle Tracker: status Connecting berubah menjadi Terhubung. Perubahan GPS HP memperbarui marker.
 6. Refresh halaman: dashboard session divalidasi server, Firebase user valid dipakai ulang tanpa request custom token setiap render.
 7. Logout: dashboard kembali ke login, signed session lokal dibuang, Firebase signOut, listener dilepas. Cek juga logout lintas tab dan login akun lain.
 8. Anonymous/forged/expired request ke `/api/firebase-token` harus 401. Session dashboard yang expired mengembalikan login existing. Permission denied atau jaringan gagal hanya memengaruhi GPS, dengan pesan Unable to connect to realtime vehicle data dan tombol Coba lagi.

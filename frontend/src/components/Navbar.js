@@ -40,6 +40,7 @@ export default function Navbar({
   const isSingleDateDashboard = isTrafficDashboard || activeTab === "pump";
   const dashboardSubtitle = {
     dashboard: "Traffic Dashboard",
+    vehicletracker: "Vehicle Tracker",
     callcenter: "Call Center Dashboard / Emergency",
     cctv: "CCTV Dashboard",
     perparkiran: "Call Center Dashboard / Parking",
@@ -335,6 +336,7 @@ export default function Navbar({
           <nav style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {[
               { id: "dashboard", label: "Traffic", icon: "car" },
+              { id: "vehicletracker", label: "Vehicle Tracker", icon: "car" },
               { id: "callcenter", label: "Call Center", icon: "call" },
               { id: "cctv", label: "CCTV", icon: "camera" },
               { id: "pump", label: "Pump Station", icon: "pump" },

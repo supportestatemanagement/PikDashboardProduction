@@ -5,6 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getAreaTrafficStage } from '../services/trafficService';
 import pik2Boundary from '../config/pik2Boundary.json';
+import vehicleTrackerBgm from '../config/vehicleTrackerBgm.json';
 import { CHECKPOINTS, CHECKPOINT_ENTRANCES } from '../config/trafficConfig';
 
 const geojsonData = {
@@ -447,6 +448,11 @@ const geojsonData = {
   ]
 };
 
+const trackerGeojsonData = {
+  ...geojsonData,
+  features: geojsonData.features.map(feature => feature.properties.name === 'BGM' ? vehicleTrackerBgm : feature),
+};
+
 const AREA_CONFIG = {
   PIK2: { center: [-6.051, 106.694] },
   BGM: { center: [-6.1100, 106.7427] },
@@ -496,11 +502,11 @@ function MapSizeController({ isActive }) {
 }
 
 // TEMPLATE LABEL
-const createLabel = (name, count, zoom) => {
+const createLabel = (name, count, zoom, showCount) => {
   const titleSize = Math.max(10, Math.min(19, 12 + (zoom - 12) * 3));
   const countSize = Math.max(9, Math.min(14, titleSize - 3));
   return L.divIcon({
-    className: 'custom-label',
+    className: showCount ? 'custom-label' : 'custom-label vehicle-area-label',
     html: `
       <div style="
         color: white;
@@ -513,9 +519,9 @@ const createLabel = (name, count, zoom) => {
         text-shadow: 0 1px 3px #000, 0 0 4px #000;
       ">
         <div style="font-size: ${titleSize}px; font-weight: 800;">${name}</div>
-        <div style="font-size: ${countSize}px; font-weight: 600;">
+        ${showCount ? `<div style="font-size: ${countSize}px; font-weight: 600;">
           ${(count || 0).toLocaleString('id-ID')}
-        </div>
+        </div>` : ''}
       </div>
     `,
     iconSize: [80, 40],
@@ -523,11 +529,11 @@ const createLabel = (name, count, zoom) => {
   });
 };
 
-function AreaMarker({ area, count, children }) {
+function AreaMarker({ area, count, children, showCount = true }) {
   const map = useMapEvents({ zoomend: () => setZoom(map.getZoom()) });
   const [zoom, setZoom] = React.useState(() => map.getZoom());
   return (
-    <Marker position={AREA_CONFIG[area].center} icon={createLabel(area, count, zoom)}>
+    <Marker position={AREA_CONFIG[area].center} icon={createLabel(area, count, zoom, showCount)} interactive={showCount} keyboard={showCount}>
       {children}
     </Marker>
   );
@@ -563,7 +569,8 @@ const waterIcon = L.divIcon({
   </svg>`,
 });
 
-export default function HeatmapMap({ traffic, waterLocations = [], isActive = true }) {
+export default function HeatmapMap({ traffic, waterLocations = [], isActive = true, mode = 'traffic' }) {
+  const isTracker = mode === 'vehicle-tracker';
   // Ambil data kendaraan dari props, berikan default jika kosong
   const data = {
     BGM: traffic?.vehicles?.bgm ?? 0,
@@ -577,6 +584,7 @@ export default function HeatmapMap({ traffic, waterLocations = [], isActive = tr
 
   // Fungsi style dinamis untuk setiap poligon di GeoJSON
   const styleGeoJson = (feature) => {
+    if (isTracker) return { color: '#16a34a', weight: 2.5, opacity: 1, fillColor: '#22c55e', fillOpacity: 0.16 };
     const areaName = feature.properties.name;
     const value = data[areaName] || 0;
 
@@ -600,10 +608,10 @@ export default function HeatmapMap({ traffic, waterLocations = [], isActive = tr
         style={{ height: '100%', width: '100%' }}
       >
         <MapSizeController isActive={isActive} />
-        <VehicleTrackingLayer isActive={isActive} />
+        {isTracker && <VehicleTrackingLayer isActive={isActive} />}
         <AttributionControl position="bottomright" prefix={false} />
         <LayersControl position="topleft" collapsed={false}>
-          <LayersControl.BaseLayer checked name="Satelit">
+          <LayersControl.BaseLayer checked={!isTracker} name="Satelit">
             <TileLayer
               attribution='Tiles &copy; <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a> &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
               url="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -611,9 +619,9 @@ export default function HeatmapMap({ traffic, waterLocations = [], isActive = tr
               maxZoom={22}
             />
           </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Peta Jalan">
+          <LayersControl.BaseLayer checked={isTracker} name="Peta Jalan">
             <TileLayer
-              className="traffic-street-tiles"
+              className={isTracker ? 'vehicle-street-tiles' : 'traffic-street-tiles'}
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               maxNativeZoom={19}
@@ -624,7 +632,7 @@ export default function HeatmapMap({ traffic, waterLocations = [], isActive = tr
 
         <GeoJSON
           key={Object.values(areaStages).map((stage) => stage.stage).join('-')}
-          data={geojsonData}
+          data={isTracker ? trackerGeojsonData : geojsonData}
           style={styleGeoJson}
         />
 
@@ -634,16 +642,17 @@ export default function HeatmapMap({ traffic, waterLocations = [], isActive = tr
             key={area}
             area={area}
             count={data[area]}
+            showCount={!isTracker}
           >
-            <Popup className="traffic-popup">
+            {!isTracker && <Popup className="traffic-popup">
               <div className="popup-title">{area}</div>
               <div className="popup-row"><span>Vehicle In</span><strong>{data[area].toLocaleString('id-ID')}</strong></div>
               {area === 'BGM' && <div className="popup-row"><span>CP BGM</span><strong>{(traffic?.checkpoints?.bgm || 0).toLocaleString('id-ID')}</strong></div>}
               <div className="popup-row"><span>Status</span><strong style={{ color: areaStages[area].color }}>STAGE {areaStages[area].stage} · {areaStages[area].label}</strong></div>
-            </Popup>
+            </Popup>}
           </AreaMarker>
         ))}
-        {checkpointMarkers.map((entrance) => (
+        {!isTracker && checkpointMarkers.map((entrance) => (
           <Marker
             key={entrance.id}
             position={entrance.position}
@@ -662,7 +671,7 @@ export default function HeatmapMap({ traffic, waterLocations = [], isActive = tr
             </Popup>
           </Marker>
         ))}
-        {waterLocations.map((location) => <Marker
+        {isTracker && waterLocations.map((location) => <Marker
           key={location.id}
           position={location.position}
           icon={waterIcon}

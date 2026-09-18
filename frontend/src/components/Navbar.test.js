@@ -6,6 +6,13 @@ const props = () => ({
   isSidebarOpen: true, setIsSidebarOpen: jest.fn(), isMobile: false,
 });
 
+test('Vehicle Tracker opens as a separate dashboard menu', () => {
+  const callbacks = props();
+  render(<Navbar {...callbacks} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Vehicle Tracker' }));
+  expect(callbacks.setActiveTab).toHaveBeenCalledWith('vehicletracker');
+});
+
 test("Call Center expands into the existing emergency and parking dashboards", () => {
   const callbacks = props();
   render(<Navbar {...callbacks} />);

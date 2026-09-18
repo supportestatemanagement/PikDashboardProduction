@@ -4,6 +4,7 @@ import "./global.css";
 import Login from "./components/Login";
 import Navbar from "./components/Navbar";
 import TrafficDashboard from "./components/TrafficDashboard";
+import VehicleTrackerDashboard from './components/VehicleTrackerDashboard';
 import CallCenterDashboard from "./components/CallCenterDashboard";
 import CctvDashboard from "./components/CctvDashboard";
 import PerparkiranDashboard from "./components/PerparkiranDashboard";
@@ -55,7 +56,7 @@ export default function App() {
   }, [activeTab]);
 
   useEffect(() => {
-    document.body.classList.toggle("traffic-dashboard-body", displayedTab === "dashboard" && isLoggedIn);
+    document.body.classList.toggle("traffic-dashboard-body", ["dashboard", "vehicletracker"].includes(displayedTab) && isLoggedIn);
     return () => document.body.classList.remove("traffic-dashboard-body");
   }, [displayedTab, isLoggedIn]);
 
@@ -104,7 +105,7 @@ export default function App() {
 
   return (
     <VehicleAuthProvider session={session} onSessionExpired={logout}>
-    <div className={`app-wrapper ${displayedTab === "dashboard" ? "traffic-active" : ""}`}>
+    <div className={`app-wrapper ${["dashboard", "vehicletracker"].includes(displayedTab) ? "traffic-active" : ""}`}>
       <Navbar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
@@ -121,9 +122,9 @@ export default function App() {
         style={{
           marginLeft: isMobile ? "0px" : (isSidebarOpen ? "260px" : "0px"),
           paddingTop: "60px",
-          paddingLeft: ["dashboard", "disaster"].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
-          paddingRight: ["dashboard", "disaster"].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
-          paddingBottom: ["dashboard", "disaster"].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
+          paddingLeft: ["dashboard", "vehicletracker", "disaster"].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
+          paddingRight: ["dashboard", "vehicletracker", "disaster"].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
+          paddingBottom: ["dashboard", "vehicletracker", "disaster"].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
           transition: "margin-left 0.3s ease",
           boxSizing: "border-box",
           minHeight: "100vh"
@@ -132,6 +133,7 @@ export default function App() {
         <div style={{ display: displayedTab === "dashboard" ? "block" : "none" }}>
           <TrafficDashboard dateRange={dateRange} isActive={activeTab === "dashboard"} />
         </div>
+        {displayedTab === 'vehicletracker' && <VehicleTrackerDashboard isActive={activeTab === 'vehicletracker'} />}
         
         <div style={{ display: displayedTab === "callcenter" ? "block" : "none" }}>
           <CallCenterDashboard
