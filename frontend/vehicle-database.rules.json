@@ -6,6 +6,15 @@
       ".read": "auth != null && auth.token.role === 'dashboard'",
       "PATROL_01": {
         ".write": true
+      },
+      "PATROL_02": {
+        ".write": true
+      },
+      "PATROL_03": {
+        ".write": true
+      },
+      "PATROL_04": {
+        ".write": true
       }
     }
   }

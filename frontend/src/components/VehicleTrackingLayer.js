@@ -4,16 +4,18 @@ import L from 'leaflet';
 import { subscribeVehicles } from '../services/vehicleTrackingService';
 import './VehicleTrackingLayer.css';
 import { useVehicleAuth } from './VehicleAuthProvider';
+import { getVehicleType, vehicleIconSvg } from './vehicleIcons';
 
 function VehicleMarker({ vehicle, now, connected }) {
   const marker = useRef(null);
   const stale = !Number.isFinite(vehicle.timestamp) || now - vehicle.timestamp > 60000;
   const status = !vehicle.tracking ? 'Tracking berhenti' : stale ? 'GPS tidak diperbarui' : !connected ? 'Koneksi terputus' : 'Live';
   const heading = Number.isFinite(vehicle.heading) ? vehicle.heading : 0;
+  const vehicleType = getVehicleType(vehicle);
   const icon = useMemo(() => L.divIcon({
     className: 'vehicle-map-icon', iconSize: [32, 48], iconAnchor: [16, 24],
-    html: `<svg width="32" height="48" viewBox="0 0 32 48" style="transform:rotate(${heading}deg)" aria-hidden="true"><rect x="4" y="9" width="4" height="10" rx="2" fill="#111827"/><rect x="24" y="9" width="4" height="10" rx="2" fill="#111827"/><rect x="4" y="31" width="4" height="10" rx="2" fill="#111827"/><rect x="24" y="31" width="4" height="10" rx="2" fill="#111827"/><rect x="7" y="2" width="18" height="44" rx="7" fill="${status === 'Live' ? '#fbbf24' : '#94a3b8'}" stroke="#fff" stroke-width="2"/><path d="M10 12h12l-1 9H11Z M11 32h10l1 6H10Z" fill="#1e293b"/><path d="M10 5h4m4 0h4" stroke="#fff" stroke-width="3"/></svg>`,
-  }), [heading, status]);
+    html: vehicleIconSvg(vehicleType, heading, status === 'Live'),
+  }), [heading, status, vehicleType]);
 
   useEffect(() => {
     const instance = marker.current;
