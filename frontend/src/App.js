@@ -10,6 +10,7 @@ import CctvDashboard from "./components/CctvDashboard";
 import PerparkiranDashboard from "./components/PerparkiranDashboard";
 import PumpWeatherDashboard from "./components/PumpWeatherDashboard";
 import AvailableParkingDashboard from "./components/AvailableParkingDashboard";
+import WaterQualityDashboard from "./components/WaterQualityDashboard";
 import useDashboardSession from './services/useDashboardSession';
 import VehicleAuthProvider from './components/VehicleAuthProvider';
 
@@ -83,9 +84,12 @@ export default function App() {
 
   const [callCenterDateRange, setCallCenterDateRange] = useState(currentYearRange);
   const [parkingDateRange, setParkingDateRange] = useState(currentYearRange);
+  const [waterDateRange, setWaterDateRange] = useState(currentYearRange);
   const activeDateRange = activeTab === "callcenter" ? callCenterDateRange
+    : activeTab === "waterquality" ? waterDateRange
     : activeTab === "perparkiran" ? parkingDateRange : dateRange;
   const setActiveDateRange = activeTab === "callcenter" ? setCallCenterDateRange
+    : activeTab === "waterquality" ? setWaterDateRange
     : activeTab === "perparkiran" ? setParkingDateRange : setDateRange;
 
   const handleLogout = () => {
@@ -147,6 +151,7 @@ export default function App() {
         </div>
 
         {displayedTab === "availableparking" && <AvailableParkingDashboard />}
+        {displayedTab === "waterquality" && <WaterQualityDashboard dateRange={waterDateRange} />}
         {displayedTab === "disaster" && <iframe
           title="Pantau Bencana Dashboard"
           src="https://ninoplus.vercel.app/dashboard"

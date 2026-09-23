@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 
 function MenuIcon({ type }) {
+  if (type === "water") return <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M12 3S5 11 5 15a7 7 0 0 0 14 0c0-4-7-12-7-12Z" /><path d="M9 15a3 3 0 0 0 3 3" /></svg>;
   const common = { width: 19, height: 19, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true };
   if (type === "car") return <svg {...common}><path d="m5 11 1.5-4h11l1.5 4" /><path d="M3 13a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5H3Z" /><circle cx="7" cy="16" r="1" /><circle cx="17" cy="16" r="1" /><path d="M5 18v2M19 18v2" /></svg>;
   if (type === "call") return <svg {...common}><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c1 .4 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z" /></svg>;
@@ -45,6 +46,7 @@ export default function Navbar({
     cctv: "CCTV Dashboard",
     perparkiran: "Call Center Dashboard / Parking",
     pump: "Pump Station Dashboard",
+    waterquality: "Water Quality Monitoring",
     availableparking: "Parking Availability Dashboard",
     disaster: "Pantau Bencana Dashboard",
   }[activeTab] || "Dashboard";
@@ -173,7 +175,7 @@ export default function Navbar({
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "4px" : "12px", flexShrink: 0 }}>
 
           {/* RENTANG TANGGAL DATERANGE UNTUK CALL CENTER */}
-          {(activeTab === "dashboard" || activeTab === "callcenter" || activeTab === "perparkiran" || activeTab === "pump") && dateRange && (
+          {(["dashboard", "callcenter", "perparkiran", "pump", "waterquality"].includes(activeTab)) && dateRange && (
             <div style={{ position: "relative" }}>
               <div 
                 onClick={() => {
@@ -340,6 +342,7 @@ export default function Navbar({
               { id: "callcenter", label: "Call Center", icon: "call" },
               { id: "cctv", label: "CCTV", icon: "camera" },
               { id: "pump", label: "Pump Station", icon: "pump" },
+              { id: "waterquality", label: "Water Quality Monitoring", icon: "water" },
               { id: "availableparking", label: "Parking Availability", icon: "parking" },
               { id: "disaster", label: "Pantau Bencana", icon: "disaster" },
             ].map(tab => {

@@ -429,6 +429,21 @@ def get_perparkiran_data():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/api/water-quality-data', methods=['GET'])
+def get_water_quality_data():
+    try:
+        sheet = cc_spreadsheet.worksheet("KualitasAir")
+        records = sheet.get_all_records(numericise_ignore=['all'])
+        records = [row for row in records if any(
+            str(row.get(column, '')).strip()
+            for column in ('TANGGAL', 'LOKASI SAMPLING', 'TDS', 'AREA')
+        )]
+        return jsonify({"status": "success", "data": records})
+    except Exception:
+        app.logger.exception("Unable to load KualitasAir")
+        return jsonify({"status": "error", "message": "Unable to load water quality records."}), 500
+
+
 @app.route('/api/call-center-data', methods=['GET'])
 def get_call_center_data():
     try:
