@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./WaterQualityDashboard.css";
-import WaterQualityTrend from "./WaterQualityTrend";
+import WaterQualityTrend, { formatTrendValue } from "./WaterQualityTrend";
 
 const columns = [
   ["TANGGAL", "Date"], ["JAM", "Time"],
@@ -193,7 +193,7 @@ export default function WaterQualityDashboard({ dateRange }) {
       <section className="water-areas" aria-label="Water quality by area">
         {summaries.map(summary => <article className="water-area-card" key={summary.name} aria-label={`${summary.name} water quality`} style={{ '--area-accent': summary.accent }}>
           <div className="water-area-heading"><img src={summary.logo} alt={summary.name} /><span className="water-location-count">{summary.locations} sampling locations</span></div>
-          <div className="water-area-primary"><div><span>Average TDS</span><strong>{summary.average}</strong></div><div><span>Median pH</span><strong>{summary.medianPh ?? 'N/A'}</strong></div><small>{summary.samples} samples in selected period</small></div>
+          <div className="water-area-primary"><div><span>Average TDS</span><strong>{summary.average}</strong></div><div><span>Median pH</span><strong>{summary.medianPh === null ? 'N/A' : formatTrendValue(summary.medianPh, 'pH')}</strong></div><small>{summary.samples} samples in selected period</small></div>
           <div className="water-stat-grid">
             <div><span>Min TDS</span><strong>{summary.minTds.value ?? 'N/A'}</strong><small>{summary.minTds.locations || 'No measurements'}</small></div>
             <div><span>Max TDS</span><strong>{summary.maxTds.value ?? 'N/A'}</strong><small>{summary.maxTds.locations || 'No measurements'}</small></div>

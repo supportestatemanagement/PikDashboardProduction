@@ -72,9 +72,16 @@
 .water-trend-legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 20px 0 4px; font-size: 10px; color: #64748b; }
 .water-trend-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
 .water-trend-scroll { overflow-x: auto; }
-.water-trend svg { display: block; width: 100%; min-width: 540px; }
+.water-trend .water-trend-plot { display: block; width: 100%; min-width: 540px; }
 .water-trend svg text { fill: #718198; font-size: 11px; }
 .water-trend svg .water-axis-title { fill: #344b69; font-weight: 600; }
+.water-trend svg .water-data-label { font-size: 10px; font-weight: 700; paint-order: stroke; stroke: white; stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+.water-trend-actions { display: flex; align-items: flex-end; gap: 10px; }
+.water-trend-actions button { display: grid; place-items: center; min-height: 36px; }
+.water-chart-dialog { width: min(96vw, 1800px); max-width: 96vw; max-height: 94vh; padding: 0; border: 0; border-radius: 16px; box-shadow: 0 24px 90px #132e5555; overflow: auto; }
+.water-chart-dialog::backdrop { background: #13243db3; backdrop-filter: blur(3px); }
+.water-chart-dialog .water-trend-expanded { margin: 0; padding: 24px; }
+.water-chart-dialog .water-trend-plot { min-width: 720px; }
 .water-trend svg circle { cursor: crosshair; }
 .water-trend svg circle:hover, .water-trend svg circle:focus { r: 6; stroke: #203653; }
 .water-trend-detail { border-top: 1px solid #edf0f5; padding-top: 12px; min-height: 30px; font-size: 11px; line-height: 1.5; color: #64748b; }
