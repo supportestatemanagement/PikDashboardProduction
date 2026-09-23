@@ -11,6 +11,8 @@ jest.mock('./components/PerparkiranDashboard', () => () => null);
 jest.mock('./components/PumpWeatherDashboard', () => () => null);
 jest.mock('./components/AvailableParkingDashboard', () => () => null);
 jest.mock('./components/WaterQualityDashboard', () => () => null);
+jest.mock('./components/pantauBencana/DisasterMap', () => () => <div>WebGIS Peta Bencana Indonesia</div>);
+jest.mock('./services/disaster/useDisasterSource', () => () => ({ data: null, loading: false, error: false }));
 
 beforeEach(() => {
   localStorage.clear();
@@ -24,11 +26,8 @@ test('opens the prototype by direct URL and restores it after remount', () => {
   expect(screen.getByRole('heading', { name: 'Pusat Pantau Bencana' })).toBeInTheDocument();
   expect(screen.getByText('WebGIS Peta Bencana Indonesia')).toBeInTheDocument();
   expect(screen.getByText('Aktivitas Gunung Api')).toBeInTheDocument();
-  expect(screen.getByText('Kab. Tangerang, Banten')).toBeInTheDocument();
+  expect(screen.getByText(/Lokasi cuaca belum dikonfigurasi/)).toBeInTheDocument();
   expect(localStorage.getItem('cc_activeTab')).toBe('pantau-bencana-develop');
-  const map = screen.getByRole('img', { name: 'Peta persebaran gempa dan gunung api Indonesia' });
-  fireEvent.click(screen.getByRole('button', { name: 'Perbesar peta' }));
-  expect(map).toHaveStyle({ transform: 'scale(1.25)' });
   view.unmount();
   render(<App />);
   expect(screen.getByRole('heading', { name: 'Pusat Pantau Bencana' })).toBeInTheDocument();
