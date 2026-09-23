@@ -49,22 +49,37 @@ export function phNumber(value) {
   return tdsNumber(match ? match[1] : text);
 }
 const normalize = value => String(value ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
-const bands = [['green', '< 300'], ['orange', '300 – < 500'], ['red', '≥ 500']];
+const bands = [['green', '< 300'], ['orange', '300-499'], ['red', '500+']];
 const accents = ['#285ac2', '#008493', '#5945be', '#287c69', '#a56127'];
 function cellValue(row, key) {
+  if (key === 'TANGGAL') return formatWaterDate(row[key]);
+  if (key === 'JAM') return formatWaterTime(row[key]);
   return key === 'KETERANGAN' ? phNumber(row[key]) ?? '' : String(row[key] ?? '').trim();
 }
 function sampleTime(row) {
   const date = parseWaterDate(row.TANGGAL);
   if (date === null) return null;
-  const time = String(row.JAM || '').match(/^(\d{1,2})[:.](\d{2})/);
-  return date + (time ? (Number(time[1]) * 60 + Number(time[2])) * 60000 : 0);
+  return date + (timeMinutes(row.JAM) ?? 0) * 60000;
 }
 const sortableKeys = ['TANGGAL', 'JAM', 'TDS', 'KETERANGAN'];
 function timeMinutes(value) {
-  const match = String(value || '').trim().match(/^(\d{1,2})[:.](\d{2})(?::(\d{2}))?$/);
+  const match = String(value || '').trim().match(/^(\d{1,2})[:.,](\d{2})(?::(\d{2}))?$/);
   return match && Number(match[1]) < 24 && Number(match[2]) < 60 && Number(match[3] || 0) < 60
     ? Number(match[1]) * 60 + Number(match[2]) + Number(match[3] || 0) / 60 : null;
+}
+export function formatWaterDate(value) {
+  const time = parseWaterDate(value);
+  if (time === null) return '';
+  const date = new Date(time);
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${String(date.getDate()).padStart(2, '0')}-${months[date.getMonth()]}-${String(date.getFullYear()).slice(-2)}`;
+}
+export function formatWaterTime(value) {
+  const minutes = timeMinutes(value);
+  return minutes === null ? '' : `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(Math.floor(minutes % 60)).padStart(2, '0')}`;
+}
+function SortIcon({ direction }) {
+  return <svg width="14" height="16" viewBox="0 0 14 16" fill="none" aria-hidden="true"><path d="m3 6 4-4 4 4" stroke="currentColor" strokeWidth="1.8" opacity={direction === 'descending' ? 0.25 : 1} /><path d="m3 10 4 4 4-4" stroke="currentColor" strokeWidth="1.8" opacity={direction === 'ascending' ? 0.25 : 1} /></svg>;
 }
 export function summarizeMeasurements(samples) {
   const tds = samples.map(row => ({ value: tdsNumber(row.TDS), location: String(row['LOKASI SAMPLING'] || '').trim() })).filter(row => row.value !== null);
@@ -77,7 +92,27 @@ export function summarizeMeasurements(samples) {
   const middle = Math.floor(ph.length / 2);
   return { minTds: extreme('min'), maxTds: extreme('max'),
     medianPh: ph.length ? Number((ph.length % 2 ? ph[middle] : (ph[middle - 1] + ph[middle]) / 2).toFixed(3)) : null,
-    minPh: ph.length ? ph[0] : null, maxPh: ph.length ? ph[ph.length - 1] : null };
+    minPh: ph.length ? ph[0] : null, maxPh: ph.length ? ph[ph.length - 1] : null,
+    minPhLocations: [...new Set(samples.filter(row => ph.length && phNumber(row.KETERANGAN) === ph[0]).map(row => String(row['LOKASI SAMPLING'] || 'Location unavailable').trim()))].join(', '),
+    maxPhLocations: [...new Set(samples.filter(row => ph.length && phNumber(row.KETERANGAN) === ph[ph.length - 1]).map(row => String(row['LOKASI SAMPLING'] || 'Location unavailable').trim()))].join(', ') };
+}
+export function dailyMeasurementPoints(rows, metric) {
+  const groups = new Map();
+  rows.forEach(row => {
+    const time = parseWaterDate(row.TANGGAL), area = areaName(row.AREA);
+    const value = metric === 'TDS' ? tdsNumber(row.TDS) : phNumber(row.KETERANGAN);
+    if (time === null || value === null || area === 'Other') return;
+    const id = `${area}-${time}`;
+    if (!groups.has(id)) groups.set(id, { id, area, time, values: [] });
+    groups.get(id).values.push(value);
+  });
+  return [...groups.values()].map(({ values, ...point }) => {
+    values.sort((a, b) => a - b);
+    const middle = Math.floor(values.length / 2);
+    const value = metric === 'TDS' ? values.reduce((sum, number) => sum + number, 0) / values.length
+      : values.length % 2 ? values[middle] : (values[middle - 1] + values[middle]) / 2;
+    return { ...point, value, count: values.length };
+  }).sort((a, b) => a.time - b.time);
 }
 export function measurementPoints(rows, metric) {
   return rows.map((row, id) => {
@@ -151,20 +186,19 @@ export default function WaterQualityDashboard({ dateRange }) {
   useEffect(() => setPage(1), [search, filters, dateRange, pageSize, sort]);
   const pages = Math.max(1, Math.ceil(rows.length / pageSize));
   const currentPage = Math.min(page, pages);
-  const trends = useMemo(() => ({ TDS: measurementPoints(dated, 'TDS'), pH: measurementPoints(dated, 'pH') }), [dated]);
+  const trends = useMemo(() => ({ TDS: dailyMeasurementPoints(dated, 'TDS'), pH: dailyMeasurementPoints(dated, 'pH') }), [dated]);
   const setFilter = (key, value) => setFilters(previous => ({ ...previous, [key]: value }));
   return <main className="water-quality" aria-label="Water quality dashboard">
     {loading ? <p role="status">Loading water quality records…</p> : error ? <div role="alert">Unable to load water quality records. <button onClick={() => setReload(value => value + 1)}>Try again</button></div> : <>
       <section className="water-areas" aria-label="Water quality by area">
         {summaries.map(summary => <article className="water-area-card" key={summary.name} aria-label={`${summary.name} water quality`} style={{ '--area-accent': summary.accent }}>
           <div className="water-area-heading"><img src={summary.logo} alt={summary.name} /><span className="water-location-count">{summary.locations} sampling locations</span></div>
-          <div className="water-area-primary"><span>Average TDS</span><strong>{summary.average}</strong><small>{summary.samples} samples in selected period</small></div>
+          <div className="water-area-primary"><div><span>Average TDS</span><strong>{summary.average}</strong></div><div><span>Median pH</span><strong>{summary.medianPh ?? 'N/A'}</strong></div><small>{summary.samples} samples in selected period</small></div>
           <div className="water-stat-grid">
-            <div><span>Min TDS</span><strong>{summary.minTds.value ?? '?'}</strong><small>{summary.minTds.locations || 'No measurements'}</small></div>
-            <div><span>Max TDS</span><strong>{summary.maxTds.value ?? '?'}</strong><small>{summary.maxTds.locations || 'No measurements'}</small></div>
-            <div><span>Median pH</span><strong>{summary.medianPh ?? '?'}</strong></div>
-            <div><span>Min pH</span><strong>{summary.minPh ?? '?'}</strong></div>
-            <div><span>Max pH</span><strong>{summary.maxPh ?? '?'}</strong></div>
+            <div><span>Min TDS</span><strong>{summary.minTds.value ?? 'N/A'}</strong><small>{summary.minTds.locations || 'No measurements'}</small></div>
+            <div><span>Max TDS</span><strong>{summary.maxTds.value ?? 'N/A'}</strong><small>{summary.maxTds.locations || 'No measurements'}</small></div>
+            <div><span>Min pH</span><strong>{summary.minPh ?? 'N/A'}</strong><small>{summary.minPhLocations || 'No measurements'}</small></div>
+            <div><span>Max pH</span><strong>{summary.maxPh ?? 'N/A'}</strong><small>{summary.maxPhLocations || 'No measurements'}</small></div>
           </div>
           <div className="water-area-bands">{bands.map(([status, label]) => <div key={status}><span><i className={status} />{label}</span><strong className={`water-count-${status}`}>{summary.counts[status]}</strong><small>samples</small></div>)}</div>
           <div className="water-area-footer"><span>Latest sample: <b>{summary.latest}</b></span>{summary.counts.unknown > 0 && <span>{summary.counts.unknown} samples without TDS</span>}</div>
@@ -172,18 +206,18 @@ export default function WaterQualityDashboard({ dateRange }) {
       </section>
       <div className="water-trends">{['TDS', 'pH'].map(metric => <WaterQualityTrend key={metric} metric={metric} points={trends[metric]} areas={areas.map(([name]) => name)} />)}</div>
       <section className="water-records" aria-labelledby="water-records-title">
-        <div className="water-toolbar"><div><h2 id="water-records-title">Water Quality Records</h2><p>{rows.length} matching records ? {pageSize} per page</p></div><label>Rows per page<select aria-label="Rows per page" value={pageSize} onChange={event => setPageSize(Number(event.target.value))}>{[5, 10, 15, 20].map(size => <option key={size}>{size}</option>)}</select></label></div>
+        <div className="water-toolbar"><div><h2 id="water-records-title">Water Quality Records</h2><p>{rows.length} matching records / {pageSize} per page</p></div><label>Rows per page<select aria-label="Rows per page" value={pageSize} onChange={event => setPageSize(Number(event.target.value))}>{[5, 10, 15, 20].map(size => <option key={size}>{size}</option>)}</select></label></div>
         <section className="water-filter-panel" aria-label="Record filters">
           <div className="water-filter-heading"><strong>Filter records</strong><button onClick={() => { setSearch(''); setFilters({}); }}>Clear filters</button></div>
-          <div className="water-filter-grid"><label className="water-search">Search records<input type="search" value={search} placeholder="Search any column?" onChange={event => setSearch(event.target.value)} /></label>
+          <div className="water-filter-grid"><label className="water-search">Search records<input type="search" value={search} placeholder="Enter a search keyword" onChange={event => setSearch(event.target.value)} /></label>
           {columns.map(([key, label]) => <label key={key}>{label}
             {key === 'TDS' ? <select aria-label="Filter TDS" value={filters[key] || ''} onChange={event => setFilter(key, event.target.value)}><option value="">All TDS</option>{bands.map(([status, band]) => <option key={status} value={status}>{status[0].toUpperCase() + status.slice(1)}: {band}</option>)}</select>
             : options[key] ? <select aria-label={'Filter ' + label} value={filters[key] || ''} onChange={event => setFilter(key, event.target.value)}><option value="">All</option>{options[key].map(value => <option key={value} value={value}>{key === 'AREA' ? value.toUpperCase() : value[0].toUpperCase() + value.slice(1)}</option>)}</select>
-            : <input aria-label={'Filter ' + label} type={key === 'TANGGAL' ? 'date' : 'text'} placeholder="Filter?" value={filters[key] || ''} onChange={event => setFilter(key, event.target.value)} />}
+            : <input aria-label={'Filter ' + label} type={key === 'TANGGAL' ? 'date' : 'text'} placeholder={key === 'JAM' ? 'Enter time (HH:MM)' : key === 'KETERANGAN' ? 'Enter pH value' : key === 'LOKASI SAMPLING' ? 'Enter sampling location' : 'Select a date'} value={filters[key] || ''} onChange={event => setFilter(key, event.target.value)} />}
           </label>)}</div>
         </section>
         <div className="water-table-scroll"><table><thead><tr>{columns.map(([key, label]) => <th key={key} scope="col" aria-sort={sortableKeys.includes(key) ? sort.key === key ? sort.direction : 'none' : undefined}>
-          {sortableKeys.includes(key) ? <button aria-label={'Sort ' + label} onClick={() => setSort({ key, direction: sort.key === key && sort.direction === 'ascending' ? 'descending' : 'ascending' })}>{label} <span aria-hidden="true">{sort.key === key ? sort.direction === 'ascending' ? '?' : '?' : '?'}</span></button> : label}
+          {sortableKeys.includes(key) ? <button aria-label={'Sort ' + label} onClick={() => setSort({ key, direction: sort.key === key && sort.direction === 'ascending' ? 'descending' : 'ascending' })}>{label} <SortIcon direction={sort.key === key ? sort.direction : undefined} /></button> : label}
         </th>)}</tr></thead>
           <tbody>{rows.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((row, index) => <tr key={`${currentPage}-${index}`}>{columns.map(([key]) => <td key={key}>{key === 'TDS' ? <span className={`water-tds ${tdsStatus(row.TDS)}`} title={tdsStatus(row.TDS) === 'unknown' ? 'TDS unavailable' : `TDS ${bands.find(([status]) => status === tdsStatus(row.TDS))[1]}`}>{cellValue(row, key) || '—'}</span> : cellValue(row, key) === '' ? '—' : cellValue(row, key)}</td>)}</tr>)}{rows.length === 0 && <tr><td className="water-empty" colSpan={columns.length}>No records match the selected dates and filters.</td></tr>}</tbody>
         </table></div>

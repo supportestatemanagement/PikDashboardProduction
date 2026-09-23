@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import WaterQualityDashboard, { parseWaterDate, tdsStatus, phNumber, summarizeMeasurements, measurementPoints, compareMeasurements } from "./WaterQualityDashboard";
+import WaterQualityDashboard, { parseWaterDate, tdsStatus, phNumber, summarizeMeasurements, measurementPoints, dailyMeasurementPoints, compareMeasurements, formatWaterDate, formatWaterTime } from "./WaterQualityDashboard";
 
 test.each([[0, "green"], [299, "green"], [300, "orange"], [499, "orange"], [500, "red"], [501, "red"], ["", "unknown"], [null, "unknown"], ["-", "unknown"], ["299,5", "green"]])("classifies TDS %s as %s", (value, expected) => {
   expect(tdsStatus(value)).toBe(expected);
@@ -20,7 +20,7 @@ test('summarizes extrema with tied locations and computes median from valid pH v
     { TDS: '500', KETERANGAN: 'PH: 7', 'LOKASI SAMPLING': 'C' },
     { TDS: '', KETERANGAN: 'PH: 8' }, { TDS: '-', KETERANGAN: '-' },
   ]);
-  expect(result).toEqual({ minTds: { value: 100, locations: 'A' }, maxTds: { value: 500, locations: 'B, C' }, medianPh: 7.5, minPh: 6, maxPh: 9 });
+  expect(result).toEqual({ minTds: { value: 100, locations: 'A' }, maxTds: { value: 500, locations: 'B, C' }, medianPh: 7.5, minPh: 6, maxPh: 9, minPhLocations: 'A', maxPhLocations: 'B' });
   expect(summarizeMeasurements([]).medianPh).toBeNull();
   expect(summarizeMeasurements([{ KETERANGAN: '7' }]).medianPh).toBe(7);
 });
@@ -61,10 +61,37 @@ test('supports page sizes, sortable headers and independent trend area filters',
   fireEvent.click(screen.getByRole('button', { name: 'Sort TDS' }));
   expect(within(table).getAllByRole('row')[1]).toHaveTextContent('120');
   const tds = screen.getByRole('region', { name: 'TDS Trend' });
-  expect(tds.querySelectorAll('circle')).toHaveLength(21);
+  expect(tds.querySelectorAll('circle')).toHaveLength(2);
   fireEvent.change(screen.getByLabelText('TDS Trend Area'), { target: { value: 'GI' } });
   expect(tds.querySelectorAll('circle')).toHaveLength(1);
-  expect(screen.getByRole('region', { name: 'pH Trend' }).querySelectorAll('circle')).toHaveLength(21);
+  expect(screen.getByRole('region', { name: 'pH Trend' }).querySelectorAll('circle')).toHaveLength(2);
+  expect(screen.getByRole('button', { name: 'Sort TDS' }).querySelector('svg')).toBeInTheDocument();
+  expect(screen.getByPlaceholderText('Enter time (HH:MM)')).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: 'Orange: 300-499' })).toBeInTheDocument();
+});
+
+test('daily trends aggregate by calendar date and area with valid values only', () => {
+  const rows = [
+    { TANGGAL: '23-Sep-26', TDS: '100', KETERANGAN: 'PH: 6', AREA: 'BGM' },
+    { TANGGAL: 'Wednesday, September 23, 2026', TDS: '500', KETERANGAN: 'PH: 8', AREA: 'BGM' },
+    { TANGGAL: '23 Sept 2026', TDS: '900', KETERANGAN: 'PH: 12', AREA: 'BGM' },
+    { TANGGAL: '23-Sep-26', TDS: '', KETERANGAN: '-', AREA: 'BGM' },
+    { TANGGAL: '23-Sep-26', TDS: '10', KETERANGAN: 'PH: 7', AREA: 'GI' },
+    { TANGGAL: '24-Sep-26', TDS: '200', KETERANGAN: 'PH: 9', AREA: 'BGM' },
+  ];
+  expect(dailyMeasurementPoints(rows, 'TDS').map(({ area, value, count }) => ({ area, value, count }))).toEqual([
+    { area: 'BGM', value: 500, count: 3 }, { area: 'GI', value: 10, count: 1 }, { area: 'BGM', value: 200, count: 1 },
+  ]);
+  expect(dailyMeasurementPoints(rows, 'pH').map(point => point.value)).toEqual([8, 7, 9]);
+  expect(dailyMeasurementPoints(rows.slice(0, 2), 'pH')[0].value).toBe(7);
+});
+
+test('normalizes displayed dates and times from sheet formats', () => {
+  ['23-Sep-26', '23 Sept 2026', 'Wednesday, September 23, 2026'].forEach(value => expect(formatWaterDate(value)).toBe('23-Sep-26'));
+  expect(formatWaterTime('00.02')).toBe('00:02');
+  expect(formatWaterTime('00,25')).toBe('00:25');
+  expect(formatWaterTime('6:00')).toBe('06:00');
+  expect(formatWaterTime('25:00')).toBe('');
 });
 test("filters dates, searches records, filters TDS and areas", async () => {
   global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ status: "success", data: [
