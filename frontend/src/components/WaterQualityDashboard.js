@@ -188,25 +188,26 @@ export default function WaterQualityDashboard({ dateRange }) {
   const currentPage = Math.min(page, pages);
   const trends = useMemo(() => ({ TDS: dailyMeasurementPoints(dated, 'TDS'), pH: dailyMeasurementPoints(dated, 'pH') }), [dated]);
   const setFilter = (key, value) => setFilters(previous => ({ ...previous, [key]: value }));
+  const contentValue = value => loading ? <span className="water-loading-value" aria-label="Loading" /> : error ? 'Unavailable' : value;
   return <main className="water-quality" aria-label="Water quality dashboard">
-    {loading ? <p role="status">Loading water quality records…</p> : error ? <div role="alert">Unable to load water quality records. <button onClick={() => setReload(value => value + 1)}>Try again</button></div> : <>
+    {error && <div role="alert">Unable to load water quality records. <button onClick={() => setReload(value => value + 1)}>Try again</button></div>}
       <section className="water-areas" aria-label="Water quality by area">
-        {summaries.map(summary => <article className="water-area-card" key={summary.name} aria-label={`${summary.name} water quality`} style={{ '--area-accent': summary.accent }}>
-          <div className="water-area-heading"><img src={summary.logo} alt={summary.name} /><span className="water-location-count">{summary.locations} sampling locations</span></div>
-          <div className="water-area-primary"><div><span>Average TDS</span><strong>{summary.average}</strong></div><div><span>Median pH</span><strong>{summary.medianPh === null ? 'N/A' : formatTrendValue(summary.medianPh, 'pH')}</strong></div><small>{summary.samples} samples in selected period</small></div>
+        {summaries.map(summary => <article className="water-area-card" key={summary.name} aria-busy={loading} aria-label={`${summary.name} water quality`} style={{ '--area-accent': summary.accent }}>
+          <div className="water-area-heading"><img src={summary.logo} alt={summary.name} /><span className="water-location-count">{contentValue(`${summary.locations} sampling locations`)}</span></div>
+          <div className="water-area-primary"><div><span>Average TDS</span><strong>{contentValue(summary.average)}</strong></div><div><span>Median pH</span><strong>{contentValue(summary.medianPh === null ? 'N/A' : formatTrendValue(summary.medianPh, 'pH'))}</strong></div><small>{contentValue(`${summary.samples} samples in selected period`)}</small></div>
           <div className="water-stat-grid">
-            <div><span>Min TDS</span><strong>{summary.minTds.value ?? 'N/A'}</strong><small>{summary.minTds.locations || 'No measurements'}</small></div>
-            <div><span>Max TDS</span><strong>{summary.maxTds.value ?? 'N/A'}</strong><small>{summary.maxTds.locations || 'No measurements'}</small></div>
-            <div><span>Min pH</span><strong>{summary.minPh ?? 'N/A'}</strong><small>{summary.minPhLocations || 'No measurements'}</small></div>
-            <div><span>Max pH</span><strong>{summary.maxPh ?? 'N/A'}</strong><small>{summary.maxPhLocations || 'No measurements'}</small></div>
+            <div><span>Min TDS</span><strong>{contentValue(summary.minTds.value ?? 'N/A')}</strong><small>{contentValue(summary.minTds.locations || 'No measurements')}</small></div>
+            <div><span>Max TDS</span><strong>{contentValue(summary.maxTds.value ?? 'N/A')}</strong><small>{contentValue(summary.maxTds.locations || 'No measurements')}</small></div>
+            <div><span>Min pH</span><strong>{contentValue(summary.minPh ?? 'N/A')}</strong><small>{contentValue(summary.minPhLocations || 'No measurements')}</small></div>
+            <div><span>Max pH</span><strong>{contentValue(summary.maxPh ?? 'N/A')}</strong><small>{contentValue(summary.maxPhLocations || 'No measurements')}</small></div>
           </div>
-          <div className="water-area-bands">{bands.map(([status, label]) => <div key={status}><span><i className={status} />{label}</span><strong className={`water-count-${status}`}>{summary.counts[status]}</strong><small>samples</small></div>)}</div>
-          <div className="water-area-footer"><span>Latest sample: <b>{summary.latest}</b></span>{summary.counts.unknown > 0 && <span>{summary.counts.unknown} samples without TDS</span>}</div>
+          <div className="water-area-bands">{bands.map(([status, label]) => <div key={status}><span><i className={status} />{label}</span><strong className={`water-count-${status}`}>{contentValue(summary.counts[status])}</strong><small>samples</small></div>)}</div>
+          <div className="water-area-footer"><span>Latest sample: <b>{contentValue(summary.latest)}</b></span>{summary.counts.unknown > 0 && <span>{summary.counts.unknown} samples without TDS</span>}</div>
         </article>)}
       </section>
-      <div className="water-trends">{['TDS', 'pH'].map(metric => <WaterQualityTrend key={metric} metric={metric} points={trends[metric]} areas={areas.map(([name]) => name)} />)}</div>
-      <section className="water-records" aria-labelledby="water-records-title">
-        <div className="water-toolbar"><div><h2 id="water-records-title">Water Quality Records</h2><p>{rows.length} matching records / {pageSize} per page</p></div><label>Rows per page<select aria-label="Rows per page" value={pageSize} onChange={event => setPageSize(Number(event.target.value))}>{[5, 10, 15, 20].map(size => <option key={size}>{size}</option>)}</select></label></div>
+      <div className="water-trends">{['TDS', 'pH'].map(metric => <WaterQualityTrend key={metric} metric={metric} loading={loading} error={error} points={trends[metric]} areas={areas.map(([name]) => name)} />)}</div>
+      <section className="water-records" aria-labelledby="water-records-title" aria-busy={loading}>
+        <div className="water-toolbar"><div><h2 id="water-records-title">Water Quality Records</h2><p>{loading ? 'Loading records...' : error ? 'Records unavailable' : `${rows.length} matching records / ${pageSize} per page`}</p></div><label>Rows per page<select aria-label="Rows per page" value={pageSize} onChange={event => setPageSize(Number(event.target.value))}>{[5, 10, 15, 20].map(size => <option key={size}>{size}</option>)}</select></label></div>
         <section className="water-filter-panel" aria-label="Record filters">
           <div className="water-filter-heading"><strong>Filter records</strong><button onClick={() => { setSearch(''); setFilters({}); }}>Clear filters</button></div>
           <div className="water-filter-grid"><label className="water-search">Search records<input type="search" value={search} placeholder="Enter a search keyword" onChange={event => setSearch(event.target.value)} /></label>
@@ -219,10 +220,9 @@ export default function WaterQualityDashboard({ dateRange }) {
         <div className="water-table-scroll"><table><thead><tr>{columns.map(([key, label]) => <th key={key} scope="col" aria-sort={sortableKeys.includes(key) ? sort.key === key ? sort.direction : 'none' : undefined}>
           {sortableKeys.includes(key) ? <button aria-label={'Sort ' + label} onClick={() => setSort({ key, direction: sort.key === key && sort.direction === 'ascending' ? 'descending' : 'ascending' })}>{label} <SortIcon direction={sort.key === key ? sort.direction : undefined} /></button> : label}
         </th>)}</tr></thead>
-          <tbody>{rows.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((row, index) => <tr key={`${currentPage}-${index}`}>{columns.map(([key]) => <td key={key}>{key === 'TDS' ? <span className={`water-tds ${tdsStatus(row.TDS)}`} title={tdsStatus(row.TDS) === 'unknown' ? 'TDS unavailable' : `TDS ${bands.find(([status]) => status === tdsStatus(row.TDS))[1]}`}>{cellValue(row, key) || '—'}</span> : cellValue(row, key) === '' ? '—' : cellValue(row, key)}</td>)}</tr>)}{rows.length === 0 && <tr><td className="water-empty" colSpan={columns.length}>No records match the selected dates and filters.</td></tr>}</tbody>
+          <tbody>{loading ? Array.from({ length: pageSize }, (_, index) => <tr key={index} aria-hidden="true">{columns.map(([key]) => <td key={key}><span className="water-loading-value" /></td>)}</tr>) : error ? <tr><td className="water-empty" colSpan={columns.length}>Records could not be loaded. Please try again.</td></tr> : rows.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((row, index) => <tr key={`${currentPage}-${index}`}>{columns.map(([key]) => <td key={key}>{key === 'TDS' ? <span className={`water-tds ${tdsStatus(row.TDS)}`} title={tdsStatus(row.TDS) === 'unknown' ? 'TDS unavailable' : `TDS ${bands.find(([status]) => status === tdsStatus(row.TDS))[1]}`}>{cellValue(row, key) || '—'}</span> : cellValue(row, key) === '' ? '—' : cellValue(row, key)}</td>)}</tr>)}{!loading && !error && rows.length === 0 && <tr><td className="water-empty" colSpan={columns.length}>No records match the selected dates and filters.</td></tr>}</tbody>
         </table></div>
-        <footer className="water-pagination"><span>{rows.length ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, rows.length)} of {rows.length} records</span><div><button disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>Previous</button><span>Page {currentPage} of {pages}</span><button disabled={currentPage === pages} onClick={() => setPage(currentPage + 1)}>Next</button></div></footer>
+        <footer className="water-pagination"><span>{rows.length ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, rows.length)} of {rows.length} records</span><div><button disabled={loading || error || currentPage === 1} onClick={() => setPage(currentPage - 1)}>Previous</button><span>Page {currentPage} of {pages}</span><button disabled={loading || error || currentPage === pages} onClick={() => setPage(currentPage + 1)}>Next</button></div></footer>
       </section>
-    </>}
   </main>;
 }

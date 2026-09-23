@@ -5,7 +5,7 @@ const colors = ['#285ac2', '#008493', '#5945be', '#287c69', '#a56127'];
 const timestamp = value => new Date(value).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
 export const formatTrendValue = (value, metric) => metric === 'pH' ? (Math.round((value + Number.EPSILON) * 100) / 100).toFixed(2) : String(Number(value.toFixed(2)));
 
-export default function WaterQualityTrend({ metric, points, areas }) {
+export default function WaterQualityTrend({ metric, points, areas, loading = false, error = false }) {
   const statistic = metric === 'TDS' ? 'Daily average' : 'Daily median';
   const displayValue = value => formatTrendValue(value, metric);
   const [area, setArea] = useState('All areas');
@@ -56,11 +56,11 @@ export default function WaterQualityTrend({ metric, points, areas }) {
     });
     const dateStep = Math.max(1, Math.ceil(dates.length / (large ? 14 : 5)));
     return <>
-      <div className="water-trend-heading"><div><h2>{metric} Trend</h2><p>{statistic} / {visible.length} daily points</p></div><div className="water-trend-actions"><label>Area<select aria-label={`${metric} Trend Area${large ? ' expanded' : ''}`} value={area} onChange={event => { setArea(event.target.value); setHovered(null); }}><option>All areas</option>{areas.map(name => <option key={name}>{name}</option>)}</select></label>
+      <div className="water-trend-heading"><div><h2>{metric} Trend</h2><p>{loading ? 'Loading daily values...' : error ? 'Daily values unavailable' : `${statistic} / ${visible.length} daily points`}</p></div><div className="water-trend-actions"><label>Area<select aria-label={`${metric} Trend Area${large ? ' expanded' : ''}`} value={area} onChange={event => { setArea(event.target.value); setHovered(null); }}><option>All areas</option>{areas.map(name => <option key={name}>{name}</option>)}</select></label>
         {large ? <button type="button" onClick={() => setExpanded(false)} aria-label={`Close ${metric} Trend`}>Close</button> : <button type="button" ref={expandRef} onClick={() => setExpanded(true)} aria-label={`Expand ${metric} Trend`} title="Expand chart"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4M3 3l5 5m9-5-5 5M3 17l5-5m9 5-5-5" /></svg></button>}
       </div></div>
       <div className="water-trend-legend">{areas.filter(name => area === 'All areas' || area === name).map(name => <span key={name}><i style={{ background: colors[areas.indexOf(name)] }} />{name}</span>)}</div>
-      {visible.length ? <div className="water-trend-scroll"><svg className="water-trend-plot" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${metric} ${statistic.toLowerCase()} by date`}>
+      {loading ? <div className="water-chart-loading" role="status"><div className="water-loading-grid" aria-hidden="true" /><span>Loading {metric} trend...</span></div> : error ? <div className="water-trend-empty">Trend data could not be loaded.</div> : visible.length ? <div className="water-trend-scroll"><svg className="water-trend-plot" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${metric} ${statistic.toLowerCase()} by date`}>
         <text x="20" y="22" className="water-axis-title">{statistic} {metric}</text>
         {Array.from({ length: 5 }, (_, index) => minimum + (maximum - minimum) * index / 4).map(value => <g key={value}><line x1={left} x2={right} y1={y(value)} y2={y(value)} stroke="#e7edf5" /><text x={left - 10} y={y(value) + 4} textAnchor="end">{metric === 'pH' ? value.toFixed(2) : Math.round(value)}</text></g>)}
         {metric === 'TDS' && [300, 500].map(value => <g key={value}><line x1={left} x2={right} y1={y(value)} y2={y(value)} stroke={value === 300 ? '#dc962d' : '#d95454'} strokeDasharray="5 5" /><text x={right + 3} y={y(value) + 4}>{value}</text></g>)}
@@ -78,7 +78,7 @@ export default function WaterQualityTrend({ metric, points, areas }) {
     </>;
   };
   return <>
-    <section className="water-trend" aria-label={`${metric} Trend`}>{renderChart(false)}</section>
+    <section className="water-trend" aria-label={`${metric} Trend`} aria-busy={loading}>{renderChart(false)}</section>
     {expanded && createPortal(<dialog className="water-chart-dialog water-quality" ref={dialogRef} aria-label={`${metric} Trend expanded`} onCancel={() => setExpanded(false)} onClick={event => { if (event.target === event.currentTarget) setExpanded(false); }}><div className="water-trend water-trend-expanded">{renderChart(true)}</div></dialog>, document.body)}
   </>;
 }

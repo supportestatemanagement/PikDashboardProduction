@@ -78,10 +78,23 @@
 .water-trend svg .water-data-label { font-size: 10px; font-weight: 700; paint-order: stroke; stroke: white; stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
 .water-trend-actions { display: flex; align-items: flex-end; gap: 10px; }
 .water-trend-actions button { display: grid; place-items: center; min-height: 36px; }
-.water-chart-dialog { width: min(96vw, 1800px); max-width: 96vw; max-height: 94vh; padding: 0; border: 0; border-radius: 16px; box-shadow: 0 24px 90px #132e5555; overflow: auto; }
+.water-chart-dialog { position: fixed; inset: 0; margin: auto; box-sizing: border-box; width: min(94vw, 1600px); max-width: 94vw; height: min(88vh, 900px); height: min(88dvh, 900px); max-height: 92dvh; padding: 0; border: 0; border-radius: 16px; box-shadow: 0 24px 90px #132e5555; overflow: hidden; }
 .water-chart-dialog::backdrop { background: #13243db3; backdrop-filter: blur(3px); }
-.water-chart-dialog .water-trend-expanded { margin: 0; padding: 24px; }
-.water-chart-dialog .water-trend-plot { min-width: 720px; }
+.water-chart-dialog .water-trend-expanded { box-sizing: border-box; height: 100%; min-height: 0; margin: 0; padding: clamp(12px, 2vh, 22px); display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 10px; }
+.water-chart-dialog .water-trend-heading { gap: 8px; }
+.water-chart-dialog .water-trend-legend { margin: 0; gap: 8px 14px; }
+.water-chart-dialog .water-trend-scroll { min-height: 0; min-width: 0; overflow: hidden; }
+.water-chart-dialog .water-trend-plot { width: 100%; height: 100%; min-width: 0; min-height: 0; }
+.water-chart-dialog .water-trend-detail { min-height: 0; padding-top: 8px; overflow-wrap: anywhere; }
+.water-chart-dialog .water-trend-empty { min-height: 0; }
+@media (max-height: 600px) {
+  .water-chart-dialog { height: 94dvh; max-height: 94dvh; }
+  .water-chart-dialog .water-trend-expanded { padding: 10px 14px; gap: 6px; }
+  .water-chart-dialog h2 { font-size: 15px; margin-bottom: 3px; }
+  .water-chart-dialog .water-trend-heading label { gap: 3px; }
+  .water-chart-dialog .water-trend-actions button, .water-chart-dialog select { min-height: 30px; padding: 5px 8px; }
+  .water-chart-dialog .water-trend-detail { font-size: 10px; padding-top: 5px; }
+}
 .water-trend svg circle { cursor: crosshair; }
 .water-trend svg circle:hover, .water-trend svg circle:focus { r: 6; stroke: #203653; }
 .water-trend-detail { border-top: 1px solid #edf0f5; padding-top: 12px; min-height: 30px; font-size: 11px; line-height: 1.5; color: #64748b; }
@@ -102,3 +115,11 @@
 @media (max-width: 600px) { .water-table-scroll { margin: 0 12px; } }
 @media (max-width: 1200px) { .water-trends { grid-template-columns: 1fr; } .water-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .water-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .water-filter-panel { margin: 0 12px 16px; padding: 14px; } .water-filter-grid .water-search { grid-column: 1 / -1; } .water-trend { padding: 16px; } }
+.water-loading-value { display: inline-block; width: 70%; min-width: 28px; max-width: 125px; height: .8em; border-radius: 4px; background: linear-gradient(90deg, #e3eaf4 25%, #f4f7fc 50%, #e3eaf4 75%); background-size: 200% 100%; animation: water-loading-shimmer 1.5s ease-in-out infinite; }
+.water-chart-loading { position: relative; min-height: 0; aspect-ratio: 820 / 350; display: grid; place-items: center; color: #607795; font-size: 12px; }
+.water-loading-grid { position: absolute; inset: 28px 24px 36px 48px; border-left: 1px solid #e3eaf4; border-bottom: 1px solid #e3eaf4; background: repeating-linear-gradient(to top, transparent 0, transparent calc(25% - 1px), #edf1f7 calc(25% - 1px), #edf1f7 25%); }
+.water-chart-loading > span { position: relative; padding: 8px 14px; border-radius: 6px; background: #f5f8fc; }
+.water-chart-dialog .water-chart-loading { aspect-ratio: auto; height: 100%; }
+.water-quality > [role="alert"] { padding: 12px 16px; margin-bottom: 16px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; font-size: 13px; }
+@keyframes water-loading-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .water-loading-value { animation: none; } }

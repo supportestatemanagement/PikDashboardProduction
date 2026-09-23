@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import WaterQualityDashboard, { parseWaterDate, tdsStatus, phNumber, summarizeMeasurements, measurementPoints, dailyMeasurementPoints, compareMeasurements, formatWaterDate, formatWaterTime } from "./WaterQualityDashboard";
 
 test.each([[0, "green"], [299, "green"], [300, "orange"], [499, "orange"], [500, "red"], [501, "red"], ["", "unknown"], [null, "unknown"], ["-", "unknown"], ["299,5", "green"]])("classifies TDS %s as %s", (value, expected) => {
@@ -50,6 +50,7 @@ test('supports page sizes, sortable headers and independent trend area filters',
   global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ status: 'success', data }) });
   render(<WaterQualityDashboard />);
   const table = await screen.findByRole('table');
+  await waitFor(() => expect(screen.getByRole('region', { name: 'Water Quality Records' })).toHaveAttribute('aria-busy', 'false'));
   expect(within(table).queryByRole('columnheader', { name: 'No.' })).not.toBeInTheDocument();
   expect(within(table).queryByRole('combobox')).not.toBeInTheDocument();
   for (const size of [5, 10, 15, 20]) {
@@ -117,6 +118,22 @@ test("shows a retry action after a request failure", async () => {
   render(<WaterQualityDashboard />);
   expect(await screen.findByRole("alert")).toHaveTextContent("Unable to load");
   expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+});
+
+test('shows the dashboard panels immediately with local loading placeholders', async () => {
+  let resolveRequest;
+  global.fetch = jest.fn(() => new Promise(resolve => { resolveRequest = resolve; }));
+  render(<WaterQualityDashboard />);
+  expect(screen.getAllByRole('article')).toHaveLength(5);
+  expect(screen.getByRole('region', { name: 'TDS Trend' })).toHaveAttribute('aria-busy', 'true');
+  expect(screen.getByRole('region', { name: 'pH Trend' })).toHaveAttribute('aria-busy', 'true');
+  expect(screen.getByRole('region', { name: 'Record filters' })).toBeInTheDocument();
+  expect(screen.getByRole('table')).toBeInTheDocument();
+  expect(screen.queryByText(/No records match/)).not.toBeInTheDocument();
+  expect(screen.queryByText('No measurements')).not.toBeInTheDocument();
+  await act(async () => resolveRequest({ ok: true, json: async () => ({ status: 'success', data: [{ TANGGAL: '23-Sep-26', TDS: '120', AREA: 'BGM', 'LOKASI SAMPLING': 'Test location' }] }) }));
+  expect(within(screen.getByRole('table')).getByText('Test location')).toBeInTheDocument();
+  expect(screen.getByRole('region', { name: 'TDS Trend' })).toHaveAttribute('aria-busy', 'false');
 });
 
 test.each([['PH : 8.66', 8.66], ['pH 7,2', 7.2], ['8.1', 8.1], ['', null], ['no sample', null]])('extracts numeric pH from %s', (value, expected) => {

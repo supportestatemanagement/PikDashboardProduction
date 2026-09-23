@@ -46,7 +46,7 @@ export default function Navbar({
     cctv: "CCTV Dashboard",
     perparkiran: "Call Center Dashboard / Parking",
     pump: "Pump Station Dashboard",
-    waterquality: "Water Quality Monitoring",
+    waterquality: "Water Quality Dashboard",
     availableparking: "Parking Availability Dashboard",
     disaster: "Pantau Bencana Dashboard",
   }[activeTab] || "Dashboard";
@@ -342,7 +342,7 @@ export default function Navbar({
               { id: "callcenter", label: "Call Center", icon: "call" },
               { id: "cctv", label: "CCTV", icon: "camera" },
               { id: "pump", label: "Pump Station", icon: "pump" },
-              { id: "waterquality", label: "Water Quality Monitoring", icon: "water" },
+              { id: "waterquality", label: "Water Quality", icon: "water" },
               { id: "availableparking", label: "Parking Availability", icon: "parking" },
               { id: "disaster", label: "Pantau Bencana", icon: "disaster" },
             ].map(tab => {
