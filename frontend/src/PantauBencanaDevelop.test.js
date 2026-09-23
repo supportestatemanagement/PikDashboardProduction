@@ -1,0 +1,62 @@
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import App from './App';
+
+jest.mock('./services/useDashboardSession', () => ({ __esModule: true, default: () => ({ session: { user: 'test' }, checking: false, logout: jest.fn() }) }));
+jest.mock('./components/VehicleAuthProvider', () => ({ __esModule: true, default: ({ children }) => children }));
+jest.mock('./components/TrafficDashboard', () => () => <div>Traffic content</div>);
+jest.mock('./components/VehicleTrackerDashboard', () => () => null);
+jest.mock('./components/CallCenterDashboard', () => () => null);
+jest.mock('./components/CctvDashboard', () => () => null);
+jest.mock('./components/PerparkiranDashboard', () => () => null);
+jest.mock('./components/PumpWeatherDashboard', () => () => null);
+jest.mock('./components/AvailableParkingDashboard', () => () => null);
+jest.mock('./components/WaterQualityDashboard', () => () => null);
+
+beforeEach(() => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/');
+});
+afterEach(() => window.history.replaceState(null, '', '/'));
+
+test('opens the prototype by direct URL and restores it after remount', () => {
+  window.history.replaceState(null, '', '/#/pantau-bencana-develop');
+  const view = render(<App />);
+  expect(screen.getByRole('heading', { name: 'Pusat Pantau Bencana' })).toBeInTheDocument();
+  expect(screen.getByText('WebGIS Peta Bencana Indonesia')).toBeInTheDocument();
+  expect(screen.getByText('Aktivitas Gunung Api')).toBeInTheDocument();
+  expect(screen.getByText('Kab. Tangerang, Banten')).toBeInTheDocument();
+  expect(localStorage.getItem('cc_activeTab')).toBe('pantau-bencana-develop');
+  const map = screen.getByRole('img', { name: 'Peta persebaran gempa dan gunung api Indonesia' });
+  fireEvent.click(screen.getByRole('button', { name: 'Perbesar peta' }));
+  expect(map).toHaveStyle({ transform: 'scale(1.25)' });
+  view.unmount();
+  render(<App />);
+  expect(screen.getByRole('heading', { name: 'Pusat Pantau Bencana' })).toBeInTheDocument();
+});
+
+test('responds to direct hash navigation and browser history without replacing existing tabs', async () => {
+  render(<App />);
+  expect(screen.queryByRole('heading', { name: 'Pusat Pantau Bencana' })).not.toBeInTheDocument();
+  act(() => {
+    window.history.pushState({ dashboardTab: 'pantau-bencana-develop' }, '', '/#/pantau-bencana-develop');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+  expect(await screen.findByRole('heading', { name: 'Pusat Pantau Bencana' })).toBeInTheDocument();
+  act(() => {
+    window.history.replaceState({ dashboardTab: 'dashboard' }, '', '/');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
+  await waitFor(() => expect(screen.queryByRole('heading', { name: 'Pusat Pantau Bencana' })).not.toBeInTheDocument());
+  expect(screen.getByText('Traffic content')).toBeVisible();
+});
+
+test('sidebar opens the shareable route and leaving it restores the normal URL', async () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: 'Pantau Bencana Develop' }));
+  expect(window.location.hash).toBe('#/pantau-bencana-develop');
+  expect(await screen.findByRole('heading', { name: 'Pusat Pantau Bencana' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Pantau Bencana Develop' })).toHaveAttribute('aria-current', 'page');
+  fireEvent.click(screen.getByRole('button', { name: 'Traffic', exact: true }));
+  expect(window.location.hash).toBe('');
+  await waitFor(() => expect(screen.queryByRole('heading', { name: 'Pusat Pantau Bencana' })).not.toBeInTheDocument());
+});

@@ -11,8 +11,12 @@ import PerparkiranDashboard from "./components/PerparkiranDashboard";
 import PumpWeatherDashboard from "./components/PumpWeatherDashboard";
 import AvailableParkingDashboard from "./components/AvailableParkingDashboard";
 import WaterQualityDashboard from "./components/WaterQualityDashboard";
+import PusatPantauBencana from "./components/pantauBencana/PusatPantauBencana";
 import useDashboardSession from './services/useDashboardSession';
 import VehicleAuthProvider from './components/VehicleAuthProvider';
+
+const disasterDevelopTab = "pantau-bencana-develop";
+const disasterDevelopHash = `#/${disasterDevelopTab}`;
 
 const currentYearRange = () => {
   const today = new Date();
@@ -28,11 +32,38 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== "undefined") {
+      if (window.location.hash === disasterDevelopHash) return disasterDevelopTab;
       const savedTab = localStorage.getItem("cc_activeTab");
       return savedTab === "traffic" ? "dashboard" : (savedTab || "dashboard");
     }
     return "dashboard";
   });
+
+  // Keep the existing tab navigation; only the prototype adds a shareable URL.
+  const selectTab = (tab) => {
+    const base = window.location.pathname + window.location.search;
+    if (tab === disasterDevelopTab && window.location.hash !== disasterDevelopHash) {
+      window.history.replaceState({ ...window.history.state, dashboardTab: activeTab }, '', window.location.href);
+      window.history.pushState({ dashboardTab: tab }, '', base + disasterDevelopHash);
+    } else if (tab !== disasterDevelopTab && window.location.hash === disasterDevelopHash) {
+      window.history.pushState({ dashboardTab: tab }, '', base);
+    }
+    setActiveTab(tab);
+  };
+
+  useEffect(() => {
+    const restoreUrlTab = () => {
+      if (window.location.hash === disasterDevelopHash) setActiveTab(disasterDevelopTab);
+      else setActiveTab(current => current === disasterDevelopTab
+        ? window.history.state?.dashboardTab || "dashboard" : current);
+    };
+    window.addEventListener('hashchange', restoreUrlTab);
+    window.addEventListener('popstate', restoreUrlTab);
+    return () => {
+      window.removeEventListener('hashchange', restoreUrlTab);
+      window.removeEventListener('popstate', restoreUrlTab);
+    };
+  }, []);
 
   const [displayedTab, setDisplayedTab] = useState(activeTab);
   const pumpExiting = displayedTab === "pump" && activeTab !== "pump";
@@ -112,7 +143,7 @@ export default function App() {
     <div className={`app-wrapper ${["dashboard", "vehicletracker"].includes(displayedTab) ? "traffic-active" : ""}`}>
       <Navbar 
         activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
+        setActiveTab={selectTab}
         onLogout={handleLogout}
         dateRange={activeDateRange}
         onDateChange={setActiveDateRange}
@@ -126,9 +157,9 @@ export default function App() {
         style={{
           marginLeft: isMobile ? "0px" : (isSidebarOpen ? "260px" : "0px"),
           paddingTop: "60px",
-          paddingLeft: ["dashboard", "vehicletracker", "disaster"].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
-          paddingRight: ["dashboard", "vehicletracker", "disaster"].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
-          paddingBottom: ["dashboard", "vehicletracker", "disaster"].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
+          paddingLeft: ["dashboard", "vehicletracker", "disaster", disasterDevelopTab].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
+          paddingRight: ["dashboard", "vehicletracker", "disaster", disasterDevelopTab].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
+          paddingBottom: ["dashboard", "vehicletracker", "disaster", disasterDevelopTab].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
           transition: "margin-left 0.3s ease",
           boxSizing: "border-box",
           minHeight: "100vh"
@@ -152,6 +183,7 @@ export default function App() {
 
         {displayedTab === "availableparking" && <AvailableParkingDashboard />}
         {displayedTab === "waterquality" && <WaterQualityDashboard dateRange={waterDateRange} />}
+        {displayedTab === disasterDevelopTab && <PusatPantauBencana />}
         {displayedTab === "disaster" && <iframe
           title="Pantau Bencana Dashboard"
           src="https://ninoplus.vercel.app/dashboard"

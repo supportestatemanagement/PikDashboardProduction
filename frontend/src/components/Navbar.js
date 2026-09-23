@@ -49,6 +49,7 @@ export default function Navbar({
     waterquality: "Water Quality Dashboard",
     availableparking: "Parking Availability Dashboard",
     disaster: "Pantau Bencana Dashboard",
+    "pantau-bencana-develop": "Pantau Bencana Develop",
   }[activeTab] || "Dashboard";
   const todayKey = new Date().toDateString();
   const isLiveRange = dateRange?.start?.toDateString() === todayKey && dateRange?.end?.toDateString() === todayKey;
@@ -345,6 +346,7 @@ export default function Navbar({
               { id: "waterquality", label: "Water Quality", icon: "water" },
               { id: "availableparking", label: "Parking Availability", icon: "parking" },
               { id: "disaster", label: "Pantau Bencana", icon: "disaster" },
+              { id: "pantau-bencana-develop", label: "Pantau Bencana Develop", icon: "disaster" },
             ].map(tab => {
               const isGroup = tab.id === "callcenter";
               const isActive = activeTab === tab.id || (isGroup && activeTab === "perparkiran");
