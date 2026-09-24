@@ -1,4 +1,6 @@
-// Temporary static data. Replace with verified PVMBG/MAGMA data source.
+// Temporary fallback only.
+// Replace after verified PVMBG/MAGMA endpoint is available.
+// Illustrative statuses, NOT current official observations. No verified coordinates.
 export const VOLCANOES = [
   { name: "G. Lewotobi Laki-laki", place: "Flores Timur, NTT", status: "AWAS" },
   { name: "G. Ibu", place: "Halmahera Barat, Maluku Utara", status: "AWAS" },
@@ -8,4 +10,3 @@ export const VOLCANOES = [
   { name: "G. Semeru", place: "Lumajang, Jawa Timur", status: "SIAGA" },
   { name: "G. Ruang", place: "Sitaro, Sulawesi Utara", status: "SIAGA" },
 ];
-

@@ -52,10 +52,13 @@ Responses allowed cross-origin requests (`*` or echoed Origin). No third-party C
 proxy is used. Deployment/network access can still fail; the UI handles each source
 independently.
 
-Volcano data remains illustrative, isolated in `volcanoService.js` and labeled
-"Data sementara" in the UI. No volcano markers with fabricated coordinates are plotted.
-PVMBG/MAGMA, nowcasting, RDCA and other overlays require verified service metadata
-before implementation.
+Volcano data remains illustrative in `volcanoService.js`; `pvmbgVolcano.js` exposes
+the normalized service contract and explicitly labeled fallback. Filters, counts,
+legend and map interaction components are ready, but fallback markers are not
+plotted. Real-source integration is disabled pending a verified public list feed.
+See [PVMBG source verification](PVMBG_SOURCE_VERIFICATION.md) for checked URLs,
+the discovered session-dependent detail endpoint, limitations and next steps.
+Nowcasting, RDCA and other overlays still require verified service metadata.
 
 Official documentation:
 - https://data.bmkg.go.id/gempabumi/
