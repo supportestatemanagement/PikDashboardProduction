@@ -26,7 +26,8 @@ test('opens the prototype by direct URL and restores it after remount', () => {
   expect(screen.getByRole('heading', { name: 'Pusat Pantau Bencana' })).toBeInTheDocument();
   expect(screen.getByText('WebGIS Peta Bencana Indonesia')).toBeInTheDocument();
   expect(screen.getByText('Aktivitas Gunung Api')).toBeInTheDocument();
-  expect(screen.getByText(/Lokasi cuaca belum dikonfigurasi/)).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'PIK 1 — Kamal Muara' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'PIK 2 — Salembaran Jati' })).toBeInTheDocument();
   expect(localStorage.getItem('cc_activeTab')).toBe('pantau-bencana-develop');
   view.unmount();
   render(<App />);

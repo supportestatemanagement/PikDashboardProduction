@@ -1,6 +1,10 @@
 import { fetchJson, numberValue, sourceDate } from './client';
 export const WEATHER_REFRESH_INTERVAL = 30 * 60 * 1000;
-export const WEATHER_ADM4 = process.env.REACT_APP_BMKG_WEATHER_ADM4 || '';
+export const WEATHER_LOCATIONS = [
+  { id: 'pik1', label: 'PIK 1 — Kamal Muara', adm4: process.env.REACT_APP_BMKG_WEATHER_ADM4_PIK1 || '' },
+  { id: 'pik2', label: 'PIK 2 — Salembaran Jati', adm4: process.env.REACT_APP_BMKG_WEATHER_ADM4_PIK2 || '' },
+];
+export const weatherLoaders = WEATHER_LOCATIONS.map(({ adm4 }) => signal => fetchWeather(adm4, signal));
 const directions = { N: 'Utara', NE: 'Timur Laut', E: 'Timur', SE: 'Tenggara', S: 'Selatan', SW: 'Barat Daya', W: 'Barat', NW: 'Barat Laut' };
 export function normalizeWeather(payload, now = Date.now()) {
   const forecasts = (payload.data || []).flatMap(entry => (entry.cuaca || []).flat().map(row => ({ row, location: entry.lokasi || payload.lokasi })));
@@ -15,7 +19,7 @@ export function normalizeWeather(payload, now = Date.now()) {
     location: [location?.desa, location?.kotkab, location?.provinsi].filter(Boolean).join(', '),
     updatedAt: sourceDate(row.analysis_date) || new Date(now).toISOString(), timestampLabel: row.analysis_date ? 'Produksi prakiraan' : 'Terakhir diambil' };
 }
-export async function fetchWeather(signal) {
-  if (!/^\d{2}\.\d{2}\.\d{2}\.\d{4}$/.test(WEATHER_ADM4)) throw new Error('ADM4 belum dikonfigurasi');
-  return normalizeWeather(await fetchJson('https://api.bmkg.go.id/publik/prakiraan-cuaca?' + new URLSearchParams({ adm4: WEATHER_ADM4 }), signal));
+export async function fetchWeather(adm4, signal) {
+  if (!/^\d{2}\.\d{2}\.\d{2}\.\d{4}$/.test(adm4)) throw new Error('ADM4 belum dikonfigurasi');
+  return normalizeWeather(await fetchJson('https://api.bmkg.go.id/publik/prakiraan-cuaca?' + new URLSearchParams({ adm4 }), signal));
 }

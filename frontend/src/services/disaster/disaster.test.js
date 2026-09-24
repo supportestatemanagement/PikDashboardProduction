@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { normalizeEarthquake, parseCoordinates, fetchEarthquakeHistory } from './bmkgEarthquake';
-import { normalizeWeather } from './bmkgWeather';
+import { fetchWeather, normalizeWeather, WEATHER_LOCATIONS, weatherLoaders, WEATHER_REFRESH_INTERVAL } from './bmkgWeather';
 import { fetchHotspots, normalizeHotspot } from './bmkgHotspot';
 import { formatWib } from './client';
 import useDisasterSource from './useDisasterSource';
@@ -33,6 +33,35 @@ test('weather chooses nearest forecast, not the first, and interprets source tim
   expect(result.windDirection).toBe('Tenggara');
   expect(() => normalizeWeather({ data: [] })).toThrow();
 });
+test('weather locations request their own ADM4 and keep updating when another location fails', async () => {
+  jest.useFakeTimers();
+  let failFirst = false;
+  global.fetch = jest.fn().mockImplementation(async url => {
+    const adm4 = new URL(url).searchParams.get('adm4');
+    const first = adm4 === WEATHER_LOCATIONS[0].adm4;
+    if (first && failFirst) throw new Error('Offline');
+    return { ok: true, json: async () => ({ data: [{ cuaca: [[{ utc_datetime: '2026-09-24 00:00:00', t: first ? 29 : 31 }]] }] }) };
+  });
+  const { result, unmount } = renderHook(() => [
+    useDisasterSource(weatherLoaders[0], WEATHER_REFRESH_INTERVAL),
+    useDisasterSource(weatherLoaders[1], WEATHER_REFRESH_INTERVAL),
+  ]);
+  await act(async () => {});
+  expect(global.fetch.mock.calls.map(([url]) => new URL(url).searchParams.get('adm4'))).toEqual(WEATHER_LOCATIONS.map(location => location.adm4));
+  expect(result.current.map(source => source.data.temperature)).toEqual([29, 31]);
+  failFirst = true;
+  await act(async () => { jest.advanceTimersByTime(WEATHER_REFRESH_INTERVAL); });
+  expect(result.current[0]).toMatchObject({ error: true, data: { temperature: 29 } });
+  expect(result.current[1]).toMatchObject({ error: false, data: { temperature: 31 } });
+  unmount();
+});
+
+test('weather rejects missing ADM4 without fetching a fallback location', async () => {
+  global.fetch = jest.fn();
+  await expect(fetchWeather('')).rejects.toThrow('ADM4');
+  expect(global.fetch).not.toHaveBeenCalled();
+});
+
 test('hotspots page through the latest observation date and skip invalid points', async () => {
   const feature = id => ({ id, geometry: { type: 'Point', coordinates: [120, -8] }, properties: { date: '2026-09-01', system_date: 1788268500000 } });
   const responses = [{ features: [{ attributes: { date: '2026-09-01' } }] }, { count: 2002 }, { features: Array.from({ length: 2000 }, (_, index) => feature(index)), exceededTransferLimit: true }, { features: [feature(2000), { id: 2001, geometry: null }] }];

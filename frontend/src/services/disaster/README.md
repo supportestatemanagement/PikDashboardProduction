@@ -5,9 +5,17 @@ No backend proxy, new dependency, or authentication change is required.
 
 ## Weather configuration
 
-Set `REACT_APP_BMKG_WEATHER_ADM4` in `frontend/.env` to the confirmed village-level
-BMKG administrative code for the PIK / PIK 2 location, then restart/rebuild CRA.
-The value is intentionally empty in `.env.example`. No fallback location is used.
+Set the following in `frontend/.env`, then restart/rebuild CRA:
+
+```env
+REACT_APP_BMKG_WEATHER_ADM4_PIK1=31.72.01.1002
+REACT_APP_BMKG_WEATHER_ADM4_PIK2=36.03.14.2004
+```
+
+The banners show **PIK 1 — Kamal Muara** (Penjaringan, Jakarta Utara) and
+**PIK 2 — Salembaran Jati** (Kosambi, Tangerang). Each location fetches and
+refreshes independently, so a failed request does not block the other location.
+No fallback location or static weather data is used.
 Weather is a forecast, not a live sensor measurement; the banner shows its forecast
 validity time and production time separately. The nearest forecast is selected
 using explicit UTC/WIB offsets, regardless of the browser's timezone.
