@@ -7,6 +7,8 @@ import { formatWib } from '../../services/disaster/client';
 import { EarthquakeDetails } from './EarthquakePanel';
 import VolcanoLayer from './VolcanoLayer';
 import { VOLCANO_STATUS_CONFIG } from '../../services/disaster/pvmbgVolcano';
+import NowcastingLayer, { NowcastingEvents, NowcastingStatus } from './NowcastingLayer';
+import { NOWCASTING_AREA_CONFIG, NOWCASTING_LAYER_NAME } from '../../services/disaster/bmkgNowcasting';
 function ResizeMap() {
   const map = useMap();
   useEffect(() => {
@@ -31,18 +33,23 @@ const radius = magnitude => magnitude >= 6 ? 12 : magnitude >= 5 ? 9 : 6;
 export default function DisasterMap({ latestSource, historySource, volcanoes = [], volcanoSource, volcanoFocus, onVolcanoSelect }) {
   const [hotspotState, setHotspotState] = useState(null);
   const [hotspotEnabled, setHotspotEnabled] = useState(false);
+  const [nowcastingEnabled, setNowcastingEnabled] = useState(false);
+  const [nowcastingState, setNowcastingState] = useState(null);
   const latest = latestSource.data?.latest;
   const history = (historySource.data?.history || []).filter(quake => quake.coordinates && quake.id !== latest?.id);
   return <section className="ppb-panel">
     <div className="ppb-panel-head"><div className="ppb-panel-title"><span className="ppb-ind" />WebGIS Peta Bencana Indonesia</div></div>
     <div className="ppb-map-frame"><MapContainer center={[-2.5, 118]} zoom={5} scrollWheelZoom preferCanvas className="ppb-leaflet-map"><ResizeMap /><HotspotEvents onToggle={setHotspotEnabled} />
+      <NowcastingEvents onToggle={setNowcastingEnabled} />
       <LayersControl position="topright"><LayersControl.BaseLayer checked name="OpenStreetMap"><TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" /></LayersControl.BaseLayer>
         <LayersControl.Overlay checked name="Gempa Terkini"><LayerGroup><Pane name="ppb-latest-quake" style={{ zIndex: 450 }}>{latest?.coordinates && <CircleMarker center={latest.coordinates} radius={radius(latest.magnitude)} pathOptions={{ color: '#f0475a', fillOpacity: 0.8, weight: 2 }}><Popup maxWidth={260}><EarthquakeDetails quake={latest} /></Popup></CircleMarker>}</Pane></LayerGroup></LayersControl.Overlay>
         <LayersControl.Overlay checked name="Riwayat Gempa M≥5"><LayerGroup>{history.map(quake => <CircleMarker key={quake.id} center={quake.coordinates} radius={radius(quake.magnitude)} pathOptions={{ color: '#f7943c', fillOpacity: 0.65, weight: 1 }}><Popup><EarthquakeDetails quake={quake} /></Popup></CircleMarker>)}</LayerGroup></LayersControl.Overlay>
         <LayersControl.Overlay name="Hotspot BMKG"><LayerGroup><HotspotLayer onState={setHotspotState} enabled={hotspotEnabled} /></LayerGroup></LayersControl.Overlay>
+        <LayersControl.Overlay name={NOWCASTING_LAYER_NAME}><LayerGroup>{nowcastingEnabled && <NowcastingLayer onState={setNowcastingState} />}</LayerGroup></LayersControl.Overlay>
         <LayersControl.Overlay checked name="Gunung Api PVMBG"><VolcanoLayer volcanoes={volcanoes} isFallback={volcanoSource?.data?.isFallback ?? true} focusRequest={volcanoFocus} onSelect={onVolcanoSelect} /></LayersControl.Overlay>
       </LayersControl>
     </MapContainer><div className="ppb-legend"><div className="ppb-legend-title">LEGENDA (INDONESIA)</div>{[['#f0475a', 'Gempa Terkini'], ['#f7943c', 'Riwayat Gempa M5+'], ['#3fd4f2', 'Hotspot BMKG']].map(([color, label]) => <div className="ppb-legend-row" key={label}><span className="ppb-swatch ppb-circle" style={{ background: color }} />{label}</div>)}<div className="ppb-legend-title">Gunung Api</div>{Object.entries(VOLCANO_STATUS_CONFIG).map(([status, config]) => <div className="ppb-legend-row" key={status}><span style={{ color: config.color }}>▲</span>{status[0] + status.slice(1).toLowerCase()}</div>)}</div></div>
+    {nowcastingEnabled && <div className="ppb-source-note" aria-label="Legenda peringatan dini cuaca">{Object.entries(NOWCASTING_AREA_CONFIG).map(([label, config]) => <span key={label} style={{ marginRight: 16 }}><span className="ppb-swatch" style={{ background: config.color }} /> {label}</span>)}<NowcastingStatus state={nowcastingState} /></div>}
     {volcanoSource?.data?.isFallback && <p className="ppb-source-note">Gunung Api PVMBG: sumber belum terhubung; marker tidak ditampilkan.</p>}
     {volcanoSource?.error && !volcanoSource.data.isFallback && <p className="ppb-source-note">Gunung Api PVMBG: data terakhir tersedia; pembaruan gagal.</p>}
     {(latestSource.loading || historySource.loading) && <p className="ppb-source-note">Memuat marker gempa...</p>}

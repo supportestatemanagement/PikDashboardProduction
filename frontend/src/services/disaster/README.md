@@ -22,6 +22,13 @@ using explicit UTC/WIB offsets, regardless of the browser's timezone.
 
 ## Public endpoints and polling
 
+Nowcasting is an optional, default-OFF overlay backed by the verified
+`production/nowcasting_public/MapServer/2` GeoJSON query, refreshing every five
+minutes only while enabled. Empty responses and failures are labeled per layer;
+expired warnings are hidden. See [nowcasting verification](NOWCASTING_SOURCE_VERIFICATION.md)
+for exact fields, CORS observations and the limitation that verification returned
+zero records, so current nonempty warning data has not been confirmed.
+
 - Latest earthquake: `https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json` (60 seconds).
 - M5+ history: `https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json` (60 seconds).
 - Weather: `https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=...` (30 minutes).
