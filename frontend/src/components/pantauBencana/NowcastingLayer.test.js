@@ -67,7 +67,7 @@ test('expired polygons disappear between requests and failed refresh hides cache
 
 test('empty response is not presented as all-clear and fetch time is not a source update', () => {
   render(<NowcastingStatus state={{ data: { features: [], rawCount: 0, fetchedAt: '2026-09-24T02:33:07Z', latestIssuedAt: null }, visibleCount: 0 }} />);
-  expect(screen.getByRole('status')).toHaveTextContent('Tidak ada area peringatan yang dikembalikan oleh sumber saat ini.');
+  expect(screen.getByRole('status')).toHaveTextContent('Tidak ada area peringatan aktif yang dikembalikan sumber saat ini.');
   expect(screen.getByRole('status')).toHaveTextContent('Terakhir berhasil diambil');
   expect(screen.getByRole('status')).not.toHaveTextContent('dibuat BMKG');
 });

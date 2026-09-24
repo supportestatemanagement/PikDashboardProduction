@@ -1,4 +1,4 @@
-import { getEnsoCategory, ensoImpact } from './bmkgEnso';
+import { getEnsoCategory, ensoImpact } from './noaaEnsoService';
 import { maritimeDate, normalizeMaritime, MARITIME_LOCATIONS } from './bmkgMaritime';
 import { fetchRdca, normalizeRdca } from './bmkgRdca';
 import { haversineKm, countNearby, sourceStatus, combinedStatus } from './monitoring';
@@ -10,7 +10,7 @@ test('ENSO honors official classification, handles boundaries and never turns mi
   expect(getEnsoCategory(NaN)).toBeNull();
   expect(getEnsoCategory(0.5)).toBe('El Niño');
   expect(getEnsoCategory(-0.5)).toBe('La Niña');
-  expect(getEnsoCategory(0)).toBe('Netral');
+  expect(getEnsoCategory(0)).toBe('Neutral');
   expect(getEnsoCategory(0.9, 'Netral')).toBe('Netral');
   expect(ensoImpact('El Nino kuat').attention).toContain('Kekeringan');
   expect(ensoImpact(null)).toBeNull();

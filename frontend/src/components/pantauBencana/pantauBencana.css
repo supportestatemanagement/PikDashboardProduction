@@ -152,3 +152,44 @@
   .ppb-root .ppb-weather-right { gap: 12px; }
   .ppb-root .ppb-legend { font-size: 10px; min-width: 140px; padding: 8px; }
 }
+
+/* Information hierarchy; WebGIS behavior and marker animations stay unchanged. */
+.ppb-dashboard-header{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:24px}
+.ppb-root .ppb-h1{background:none;color:var(--ppb-text);font-size:32px}
+.ppb-refresh{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--ppb-text-dim);flex-shrink:0}
+.ppb-refresh strong{font-size:18px;color:var(--ppb-text)}
+.ppb-refresh small{display:flex;align-items:center;gap:8px}
+.ppb-weather-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.ppb-weather-grid .ppb-weather{margin-top:0;padding:20px;align-content:start;gap:16px}
+.ppb-root .ppb-weather-title,.ppb-root .ppb-weather-loc{color:var(--ppb-text)}
+.ppb-root .ppb-panel-head{flex-wrap:wrap;justify-content:space-between}
+.ppb-root .ppb-panel-title{margin:0}
+.ppb-root .ppb-panel-head .ppb-muted{margin:6px 0 0}
+.ppb-root .ppb-main-grid{grid-template-columns:minmax(0,2fr) minmax(280px,1fr)}
+.ppb-root .ppb-panel,.ppb-root .ppb-weather{min-width:0;overflow:visible;border-radius:16px}
+.ppb-root .ppb-summary .ppb-situation{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0}
+.ppb-root .ppb-summary .ppb-situation>div{display:block;border:0;padding:0;min-width:0}
+.ppb-root .ppb-summary .ppb-situation dt{font-size:13px;color:var(--ppb-text);margin-bottom:8px}
+.ppb-root .ppb-summary .ppb-situation dd{margin:0;font-size:12px;line-height:1.6}
+.ppb-root .ppb-summary .ppb-situation dd p{margin:8px 0}
+.ppb-data-type{position:relative;display:inline-block;max-width:100%;font-size:9px;font-weight:700;letter-spacing:.05em;color:#b4c1d3;background:#172335;border:1px solid #334155;border-radius:5px;padding:3px 6px;cursor:help;line-height:1.5}
+.ppb-type-tooltip{display:none;position:absolute;top:100%;left:0;width:250px;max-width:65vw;padding:12px;font-size:12px;letter-spacing:normal;font-weight:400;background:#172335;border:1px solid #52647c;border-radius:8px;box-shadow:0 8px 24px #0008;z-index:1100;white-space:normal}
+.ppb-data-type:hover .ppb-type-tooltip,.ppb-data-type:focus .ppb-type-tooltip{display:block}
+.ppb-data-type:focus-visible{outline:2px solid #b4c1d3;outline-offset:2px}
+.ppb-panel-head .ppb-type-tooltip{left:auto;right:0}
+.ppb-layer-guide{display:flex;flex-wrap:wrap;gap:10px;padding:16px 20px;font-size:11px;color:var(--ppb-text-dim)}
+.ppb-status-section{margin-top:24px}
+.ppb-root .ppb-source-status{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding:20px;margin:0}
+.ppb-source-status>div{display:flex;flex-direction:column;align-items:start;gap:6px;min-width:0}
+.ppb-source-status strong{font-size:10px;letter-spacing:.05em;color:#cbd5e1}
+.ppb-source-status strong[data-status="Connected"]{color:#39c98d}
+.ppb-source-status strong[data-status="Error"]{color:#f7943c}
+.ppb-source-status small{color:var(--ppb-text-dim);font-size:11px}
+.ppb-retry{background:#172335;border:1px solid #52647c;border-radius:6px;color:#e7edf6;padding:5px 9px;cursor:pointer}
+.ppb-root .ppb-card-body{font-size:13px;line-height:1.65;overflow-wrap:anywhere}
+.ppb-sparkline{max-width:240px;margin:14px 0;color:#a8b9d3}
+.ppb-sparkline svg{width:100%;height:52px}
+.ppb-sparkline figcaption{font-size:11px}
+@media(max-width:1000px){.ppb-root .ppb-summary .ppb-situation,.ppb-root .ppb-source-status{grid-template-columns:repeat(2,minmax(0,1fr))}.ppb-root .ppb-main-grid{grid-template-columns:1fr}}
+@media(max-width:640px){.ppb-wrap{padding:22px 14px 40px}.ppb-dashboard-header{align-items:start;flex-direction:column;gap:16px}.ppb-weather-grid,.ppb-root .ppb-summary .ppb-situation,.ppb-root .ppb-source-status{grid-template-columns:1fr}.ppb-refresh{flex-direction:row;align-items:center;flex-wrap:wrap;gap:12px}.ppb-weather-left{min-width:0}.ppb-weather-right{gap:12px}.ppb-root .ppb-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.ppb-type-tooltip{left:auto;right:0;max-width:65vw}}
+@media(max-width:640px){.ppb-root .ppb-type-tooltip{position:fixed;left:16px;right:16px;bottom:16px;top:auto;width:auto;max-width:none}}

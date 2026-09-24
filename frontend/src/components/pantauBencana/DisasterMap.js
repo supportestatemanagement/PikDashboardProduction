@@ -1,3 +1,4 @@
+import DataTypeBadge from './DataTypeBadge';
 import { memo, useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup, LayersControl, LayerGroup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -44,10 +45,15 @@ function DisasterMap({ latestSource, historySource, feltSource = EMPTY_SOURCE, h
       </LayersControl>
     </MapContainer><div className="ppb-legend"><div className="ppb-legend-title">LEGENDA</div>{[['#f0475a', 'Gempa terbaru'], ['#f7943c', 'Gempa M >= 5'], ['#f472b6', 'Gempa dirasakan'], ['#3fd4f2', 'Hotspot BMKG'], ['#a3e635', 'RDCA']].map(([color, label]) => <div className="ppb-legend-row" key={label}><span className="ppb-swatch ppb-circle" style={{ background: color }} />{label}</div>)}</div></div>
     {nowcastingEnabled && <div className="ppb-source-note" aria-label="Legenda peringatan dini cuaca">{Object.entries(NOWCASTING_AREA_CONFIG).map(([label, config]) => <span key={label} style={{ marginRight: 16 }}><span className="ppb-swatch" style={{ background: config.color }} /> {label}</span>)}</div>}
+    <div className="ppb-layer-guide">
+      <span>Hotspot <DataTypeBadge type="OBSERVATION" description="Titik panas yang terdeteksi berdasarkan pengamatan satelit. Hotspot merupakan indikasi anomali panas dan tidak otomatis berarti terjadi kebakaran." /></span>
+      <span>Peringatan Dini Cuaca <DataTypeBadge type="NOWCAST" description="Informasi cuaca jangka sangat pendek dari BMKG untuk wilayah yang berpotensi mengalami cuaca signifikan berdasarkan analisis meteorologis terkini." /></span>
+      <span>RDCA - Rapidly Developing Cumulus Area <DataTypeBadge type="NEAR REAL-TIME ANALYSIS" description="Area awan cumulus yang teridentifikasi berkembang dengan cepat. Informasi ini digunakan sebagai indikator meteorologis untuk memantau perkembangan awan konvektif yang dapat berkaitan dengan cuaca signifikan." /></span>
+    </div>
     <NowcastingStatus state={{ ...nowcastingSource, visibleCount: visibleNowcasting(nowcastingSource.data?.features || []).length }} />
     {(latestSource.error || historySource.error || feltSource.error) && <p className="ppb-source-note">Pembaruan gempa gagal. Data terakhir tersedia; waktu kejadian tercantum pada popup.</p>}
-    <p className="ppb-source-note">{hotspotSource.error ? 'Hotspot sementara tidak tersedia; marker disembunyikan.' : hotspotSource.data ? `Hotspot tanggal observasi ${hotspotSource.data.observationDate || 'tidak tersedia'}: ${hotspotSource.data.hotspots.length} titik nasional. ${hotspotSource.data.timestampLabel}: ${formatWib(hotspotSource.data.updatedAt)}.` : 'Memuat hotspot BMKG...'}</p>
-    <p className="ppb-source-note">{rdcaSource.error ? 'RDCA sementara tidak tersedia; titik disembunyikan.' : rdcaSource.data ? `RDCA: ${rdcaSource.data.points.length} titik dikembalikan sumber. ${rdcaSource.data.updatedAt ? `Created At terbaru: ${formatWib(rdcaSource.data.updatedAt)}.` : 'Waktu observasi tidak tersedia.'} Terakhir diambil: ${formatWib(rdcaSource.data.fetchedAt)}.` : 'Memuat RDCA BMKG...'} RDCA bukan peringatan bencana.</p>
+    <p className="ppb-source-note">{hotspotSource.error ? 'Hotspot sementara tidak tersedia; marker disembunyikan.' : hotspotSource.data ? hotspotSource.data.hotspots.length === 0 ? 'Tidak ada hotspot yang dikembalikan sumber pada periode ini.' : `Hotspot tanggal observasi ${hotspotSource.data.observationDate || 'tidak tersedia'}: ${hotspotSource.data.hotspots.length} titik nasional. ${hotspotSource.data.timestampLabel}: ${formatWib(hotspotSource.data.updatedAt)}.` : 'Memuat hotspot BMKG...'}</p>
+    <p className="ppb-source-note">{rdcaSource.error ? 'RDCA sementara tidak tersedia; titik disembunyikan.' : rdcaSource.data ? rdcaSource.data.points.length === 0 ? 'Tidak ada area RDCA aktif yang dikembalikan sumber saat ini.' : `RDCA: ${rdcaSource.data.points.length} titik dikembalikan sumber. ${rdcaSource.data.updatedAt ? `Created At terbaru: ${formatWib(rdcaSource.data.updatedAt)}.` : 'Waktu observasi tidak tersedia.'} Terakhir diambil: ${formatWib(rdcaSource.data.fetchedAt)}.` : 'Memuat RDCA BMKG...'} RDCA bukan peringatan bencana dan tidak menyatakan bahwa hujan lebat atau badai pasti terjadi.</p>
   </section>;
 }
 export default memo(DisasterMap);

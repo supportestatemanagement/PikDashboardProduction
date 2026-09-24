@@ -1,3 +1,4 @@
+import DataTypeBadge from './DataTypeBadge';
 import { formatWib } from '../../services/disaster/client';
 import { validEarthquakeCoordinates } from './earthquakeMap';
 export function EarthquakeDetails({ quake, isLatest = false }) {
@@ -17,7 +18,7 @@ export default function EarthquakePanel({ latestSource, historySource, feltSourc
   const latest = latestSource.data?.latest;
   const active = (quake, kind) => selection?.id === quake.id && selection?.kind === kind;
   return <section className="ppb-panel" aria-label="Gempa BMKG">
-    <div className="ppb-panel-head"><h2 className="ppb-panel-title"><span className="ppb-ind" />Gempa BMKG</h2></div>
+    <div className="ppb-panel-head"><h2 className="ppb-panel-title"><span className="ppb-ind" />Gempa BMKG</h2><DataTypeBadge type="NEAR REAL-TIME" /></div>
     <div className="ppb-list-label">GEMPA TERBARU</div>
     {latestSource.error && <p className="ppb-source-note">Pembaruan gagal.{latest && ' Data terakhir tersedia.'}</p>}
     {latest ? <button type="button" className={`ppb-quake-highlight ppb-quake-action${active(latest, 'latest') ? ' ppb-quake-active' : ''}`} aria-pressed={active(latest, 'latest')}
@@ -35,5 +36,6 @@ export default function EarthquakePanel({ latestSource, historySource, feltSourc
         <span className="ppb-num">{quake.magnitude ?? '-'}</span><span className="ppb-txt"><b>{quake.region}</b><span>{formatWib(quake.datetime)}</span>{!validEarthquakeCoordinates(quake.coordinates) && <span>Koordinat tidak tersedia</span>}</span>
       </button>)}</div>
     </div>)}
+    <p className="ppb-source-note"><a href="https://data.bmkg.go.id/gempabumi/" target="_blank" rel="noreferrer">Source: BMKG</a></p>
   </section>;
 }

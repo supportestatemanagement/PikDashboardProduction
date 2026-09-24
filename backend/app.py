@@ -15,12 +15,14 @@ from collections import defaultdict
 from dashboard_auth import register_dashboard_auth
 from firebase_admin_service import create_dashboard_token
 from disaster_maritime import register_maritime_routes
+from disaster_enso import register_enso_routes
 
 # Menggunakan RapidOCR (Ringan, Cepat, dan Akurat untuk Angka CCTV)
 from rapidocr_onnxruntime import RapidOCR
 
 app = Flask(__name__)
 register_maritime_routes(app)
+register_enso_routes(app)
 
 # --- KONFIGURASI CORS & PAYLOAD ---
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)

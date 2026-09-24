@@ -5,7 +5,7 @@ import { MARITIME_LOCATIONS } from '../../services/disaster/bmkgMaritime';
 
 test('unavailable official sources display no invented climate or maritime values', () => {
   render(<><EnsoCard source={{ unavailable: true }} /><MaritimeConditionCard location={MARITIME_LOCATIONS[1]} source={{ error: true }} /></>);
-  expect(screen.getByText('Data ENSO resmi sementara tidak tersedia.')).toBeVisible();
+  expect(screen.getByText('Data ENSO terbaru sementara tidak tersedia.')).toBeVisible();
   expect(screen.getByText('Data maritim resmi sementara tidak tersedia.')).toBeVisible();
   expect(screen.getByText('Referensi: Pelabuhan Tanjung Pasir')).toBeVisible();
   expect(screen.queryByText('Netral', { exact: true })).not.toBeInTheDocument();

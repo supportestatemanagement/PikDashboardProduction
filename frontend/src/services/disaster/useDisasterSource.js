@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 export default function useDisasterSource(loader, interval, enabled = true) {
   const [state, setState] = useState({ data: null, loading: enabled, error: false });
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt(value => value + 1), []);
   useEffect(() => {
     if (!enabled) return;
     setState(previous => ({ ...previous, loading: !previous.data }));
@@ -11,7 +13,7 @@ export default function useDisasterSource(loader, interval, enabled = true) {
       busy = true;
       try {
         const data = await loader(controller.signal);
-        if (!controller.signal.aborted) setState({ data, loading: false, error: false });
+        if (!controller.signal.aborted) setState({ data, loading: false, error: false, refreshedAt: Date.now() });
       } catch {
         if (!controller.signal.aborted) setState(previous => ({ ...previous, loading: false, error: true }));
       } finally { busy = false; }
@@ -19,6 +21,6 @@ export default function useDisasterSource(loader, interval, enabled = true) {
     refresh();
     const timer = setInterval(refresh, interval);
     return () => { controller.abort(); clearInterval(timer); };
-  }, [loader, interval, enabled]);
-  return state;
+  }, [loader, interval, enabled, attempt]);
+  return useMemo(() => ({ ...state, retry }), [state, retry]);
 }

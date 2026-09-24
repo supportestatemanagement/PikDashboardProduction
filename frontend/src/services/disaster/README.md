@@ -16,7 +16,7 @@ and Leaflet remain. No illustrative values or replacement numbers are supplied.
 | RDCA | https://datacuaca.bmkg.go.id/arcgis/rest/services/production/rdca/FeatureServer/1/query | 5 min | Meteorological indicator; verified empty GeoJSON, active/current detections not confirmed |
 | Maritime PIK 1 reference | https://maritim.bmkg.go.id/api/pelabuhan?slug=pelabuhan-muara-angke | 30 min | FORECAST; verified port XJ003, Pelabuhan Muara Angke |
 | Maritime PIK 2 reference | https://maritim.bmkg.go.id/api/pelabuhan?slug=pelabuhan-tanjung-pasir | 30 min | FORECAST; verified port XI003, Pelabuhan Tanjung Pasir |
-| ENSO | https://www.bmkg.go.id/iklim/dinamika-atmosfer | Disabled; future adapter 12 h | PERIODIC/CLIMATE source, integration UNAVAILABLE: no verified structured index feed |
+| ENSO | https://www.cpc.ncep.noaa.gov/data/indices/wksst9120.for | 6 h | CLIMATE INDICATOR; official weekly anomaly via backend proxy |
 
 All existing BMKG weather/earthquake/ArcGIS sources use direct fetch. Data loads
 once per source/cadence at page level for the situation summary, independently of
@@ -92,16 +92,42 @@ the real upstream returned HTTP 200 with the expected XJ003/XI003 identities and
 source-issued timestamps. This verifies the proxy code, not deployment or browser
 authentication/network configuration.
 
-## ENSO
+## ENSO / NOAA CPC
 
-Official publications include numerical ENSO analyses, but a stable structured
-BMKG Niño 3.4 feed was not verified. No article values are hard-coded or scraped.
-The card shows "Data ENSO resmi sementara tidak tersedia." and a link to BMKG.
-`getEnsoCategory` keeps official classification authoritative; only without one
-will a numeric value use <= -0.5 La Niña, >= +0.5 El Niño, otherwise Netral. Missing
-values are never classified as neutral. No unsupported intensity is inferred.
-The card is ready for a verified adapter with value, officialCategory, period,
-and updatedAt; it distinguishes Niño 3.4 from other indices/averaging periods.
+Official index catalog https://www.cpc.ncep.noaa.gov/data/indices/ links the
+weekly OISST v2.1 (1991-2020) feed at
+https://www.cpc.ncep.noaa.gov/data/indices/wksst9120.for . This is conventional
+Niño 3.4 SSTA, not relative Niño 3.4 or the three-month ONI.
+Verified HTTP 200 on 24 September 2026, no Access-Control-Allow-Origin header.
+The local Flask route `/api/disaster/enso` was also verified against the actual
+upstream with HTTP 200. Latest returned period: 16 September 2026, anomaly
++3.0 degrees C; previous +2.9. These are verification results, never defaults.
+
+The header explicitly says **week centered**, so the UI does not mislabel it
+as week ending. No publication timestamp is provided; browser fetch time is
+not shown as a source update. Parser validates header, eight numeric columns,
+ordered dates and anomaly range; reads Nino34 SSTA (sixth numeric column).
+Only the last twelve actual weekly rows are returned. Backend caches successful
+responses for six hours per worker; frontend polls every six hours. Failed
+refreshes keep labeled last-successful data with its period. No extra env vars.
+Restart/deploy backend to register the route; upstream verification does not
+prove deployed browser connectivity.
+
+Basic category uses <= -0.5 La Niña / >= +0.5 El Niño / otherwise Neutral.
+It is explicitly not an official NOAA ENSO event declaration. Trend uses signed
+latest-minus-previous anomaly: absolute change below 0.05 degrees C is Stable,
+otherwise rising/falling. This is index direction, not La Niña event strength.
+Actual weekly rows drive the compact sparkline. Missing data produces no values.
+
+## Dashboard information design
+
+Reusable DataTypeBadge has keyboard-focus and hover descriptions. Summary is
+above local forecasts and the existing WebGIS; maritime and climate follow;
+source status is last. Refresh time means last successful retrieval, not source
+event/valid time. Empty successful responses are NO ACTIVE DATA; errors remain
+ERROR even when a labeled prior response is shown. Retry is source-specific.
+Map focus helper, radar animation, dark tiles, layer toggles and earthquake
+selection are retained. RDCA is still official point geometry, not invented areas.
 
 ## Monitoring references and configuration
 
@@ -116,7 +142,7 @@ REACT_APP_API_URL continues to configure the backend. No new backend env is requ
 
 Monitoring references reuse `HeatmapMap.js` AREA_CONFIG: PIK 1 uses **BGM**
 [-6.1100, 106.7427], PIK 2 uses [-6.051, 106.694]. These are existing map reference
-points, not newly surveyed PIK centers; the UI exposes their labels/coordinates.
+points, not newly surveyed PIK centers; the UI identifies the existing-map reference.
 Haversine with mean Earth radius 6371.0088 km counts hotspot/RDCA points within the
 configured radius of each reference. Overlapping radii may count the same point
 for both references. Counts are dated, never declared current without evidence.
@@ -129,3 +155,38 @@ errors and empty responses. Official network verification was read-only. A full
 production browser session with deployed backend, current nonempty warning/RDCA
 records and all credentials is separate from these tests. Build output has no
 new dependencies; all new status and layout styling is scoped to this dashboard.
+
+## Verification after information-design update (24 September 2026)
+
+Read-only upstream requests with Origin http://localhost:3000:
+- Weather (both ADM4): HTTP 200, Access-Control-Allow-Origin *.
+- Latest/history/felt earthquakes: HTTP 200, Access-Control-Allow-Origin *.
+- Hotspot count query: HTTP 200, origin reflected; populated national archive.
+  This confirms availability, not the freshness of every observation.
+- Nowcasting GeoJSON: HTTP 200, origin reflected, zero features.
+- RDCA GeoJSON: HTTP 200, origin reflected, zero features.
+- Muara Angke XJ003 and Tanjung Pasir XI003: HTTP 200, no CORS;
+  issued 2026-09-23 12:00 UTC. Existing backend proxy remains necessary.
+- NOAA feed and local isolated Flask route: HTTP 200; see period details above.
+No partial/unavailable upstream occurred in this verification. This is not a
+claim that the newly added route is already deployed to the production backend.
+
+Changed files in this update:
+- components/pantauBencana: PusatPantauBencana.js, CurrentSituationCard.js,
+  WeatherBanner.js, MaritimeConditionCard.js, EnsoCard.js, SourceStatus.js,
+  DisasterMap.js, EarthquakePanel.js, NowcastingLayer.js, pantauBencana.css.
+- New component: DataTypeBadge.js (reusable purpose tooltip/badge).
+- Services: new noaaEnsoService.js and ensoClassification.js; removed the disabled
+  bmkgEnso.js adapter; updated useDisasterSource.js (successful refresh time,
+  source retry, stable memoized reference) and README.md.
+- Backend: new disaster_enso.py; registered route in app.py.
+- Tests: new noaaEnsoService.test.js and backend/test_disaster_enso.py;
+  updated dashboardSources.test.js, ConditionCards.test.js, NowcastingLayer.test.js.
+- No environment variables or dependencies added by this update.
+
+QA: 34 relevant frontend tests passed; six backend tests passed. The broader
+frontend run before the two added ENSO tests passed 103 tests, with unrelated
+CCTV jsdom stylesheet console messages. Scoped ESLint has no violations.
+Production build succeeds with pre-existing warnings in CallCenterDashboard.js
+and PerparkiranDashboard.js. Browser visual/console and deployed Network QA are
+not performed here; responsive CSS is provided but not screenshot-verified.

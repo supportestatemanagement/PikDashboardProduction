@@ -46,7 +46,7 @@ export function NowcastingStatus({ state }) {
   if (!state) return null;
   return <div className="ppb-source-note" role="status">
     <strong>Peringatan Dini Cuaca BMKG: </strong>
-    {state.error ? 'Layer sementara tidak tersedia; polygon disembunyikan.' : !state.data ? 'Memuat area peringatan...' : state.data.rawCount === 0 ? 'Tidak ada area peringatan yang dikembalikan oleh sumber saat ini.' : `${state.visibleCount} area tersedia dari ${state.data.rawCount} record sumber.`}
+    {state.error ? 'Layer sementara tidak tersedia; polygon disembunyikan.' : !state.data ? 'Memuat area peringatan...' : state.data.rawCount === 0 ? 'Tidak ada area peringatan aktif yang dikembalikan sumber saat ini.' : `${state.visibleCount} area tersedia dari ${state.data.rawCount} record sumber.`}
     {state.data && <>
       {' '}Terakhir berhasil diambil: {formatWib(state.data.fetchedAt)}.
       {state.data.latestIssuedAt && <> Laporan terbaru dalam respons dibuat BMKG: {formatWib(state.data.latestIssuedAt)}.</>}
