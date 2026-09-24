@@ -5,6 +5,7 @@ import { normalizeNowcasting, NOWCASTING_LAYER_NAME } from '../../services/disas
 
 let mockEvents;
 const mockMap = { getContainer: jest.fn(), invalidateSize: jest.fn() };
+jest.mock('./EarthquakeLayer', () => () => null);
 jest.mock('react-leaflet', () => {
   const Container = ({ children }) => <div>{children}</div>;
   const LayersControl = Container;

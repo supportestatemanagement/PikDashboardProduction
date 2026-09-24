@@ -84,9 +84,48 @@
 .ppb-root .ppb-weather > .ppb-source-note { flex-basis: 100%; padding: 0; }
 .ppb-root .ppb-weather-icon img { width: 48px; height: 48px; object-fit: contain; }
 .ppb-root .ppb-weather small { color: var(--ppb-text-dim); }
-.ppb-root .leaflet-popup-content { color: #203653; line-height: 1.5; }
+.ppb-root .leaflet-popup-content { color: var(--ppb-text); line-height: 1.5; }
 .ppb-root .leaflet-popup-content p { margin: 6px 0; }
-.ppb-root .leaflet-control-layers { color: #203653; }
+.ppb-root .leaflet-control-layers { color: var(--ppb-text); background:rgba(14,23,41,.96); border:1px solid #34445b; }
+.ppb-root .leaflet-control-layers-toggle{filter:invert(.85)}
+.ppb-root .ppb-dark-tiles{filter:invert(1) hue-rotate(180deg) saturate(.35) brightness(.7) contrast(.95)}
+.ppb-root .leaflet-popup-content-wrapper,.ppb-root .leaflet-popup-tip{background:#101c30;box-shadow:0 5px 22px #0008}
+.ppb-root .leaflet-popup-content-wrapper{border:1px solid #34445b;border-radius:12px}
+.ppb-root .leaflet-popup-close-button{color:#ccd8e7}
+.ppb-root .leaflet-popup-content a{color:#67d9f4}
+.ppb-root .leaflet-bar a{background:#101c30;color:#e7edf6;border-color:#34445b}
+.ppb-root .leaflet-bar a:hover{background:#26374d}
+.ppb-root .leaflet-control-attribution{background:rgba(14,23,41,.94);color:#c5cfde}
+.ppb-root .leaflet-control-attribution a{color:#67d9f4}
+.ppb-root .ppb-legend{color:#ccd5e3;background:rgba(10,16,28,.94);border-color:#34445b}
+.ppb-earthquake-marker{--quake-color:#f7943c;background:transparent;border:0}
+.ppb-earthquake-latest{--quake-color:#ff6476}
+.ppb-earthquake-felt{--quake-color:#f472b6}
+.ppb-earthquake-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:var(--quake-color);border:2px solid #ffe9df;box-shadow:0 0 8px var(--quake-color)}
+.ppb-earthquake-halo{position:absolute;inset:9px;border:1px solid var(--quake-color);border-radius:50%;opacity:.35}
+.ppb-earthquake-latest .ppb-earthquake-core{box-shadow:0 0 14px #ff6476,0 0 24px #ff647655}
+.ppb-earthquake-latest .ppb-earthquake-halo{animation:ppbQuakeRipple 3s ease-out infinite}
+.ppb-earthquake-selected .ppb-earthquake-core{outline:2px solid #fff;outline-offset:5px;box-shadow:0 0 18px var(--quake-color)}
+.ppb-earthquake-selected .ppb-earthquake-halo{border-color:#fff;opacity:.75}
+@keyframes ppbQuakeRipple{0%{transform:scale(.65);opacity:.7}85%,100%{transform:scale(1.7);opacity:0}}
+@media(prefers-reduced-motion:reduce){.ppb-earthquake-latest .ppb-earthquake-halo{animation:none;opacity:.45}}
+.ppb-quake-action{display:block;color:var(--ppb-text);font:inherit;text-align:left;cursor:pointer;border:1px solid transparent}
+.ppb-quake-action.ppb-quake-highlight{width:calc(100% - 32px)}
+.ppb-quake-action.ppb-quake-item{display:flex;width:100%;background:transparent}
+.ppb-quake-action:hover{border-color:#7b91ad;background-color:#18283d}
+.ppb-quake-action.ppb-quake-active{border-color:#b4e9f5;background-color:#1b3045}
+.ppb-quake-action:focus-visible{outline:2px solid var(--ppb-cyan);outline-offset:-2px}
+.ppb-quake-action:disabled{cursor:default;opacity:.6}
+.ppb-inline-map-action{border:0;border-radius:6px;padding:4px;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer}
+.ppb-inline-map-action:hover,.ppb-inline-map-action:focus-visible{background:#1b3045;outline:1px solid #b4e9f5}
+.ppb-inline-map-action:disabled{cursor:default;opacity:.6}
+.ppb-quake-action .ppb-quake-loc{display:block}
+.ppb-map-action-label{display:block;margin-top:12px;color:#9ae5f7;font-size:12px;font-weight:700}
+.ppb-popup-magnitude{font-size:27px;font-weight:800;margin-top:8px;color:#ff8995}
+.ppb-popup-location{font-weight:600}
+.ppb-quake-popup dl{margin:12px 0}
+.ppb-quake-popup dt{font-size:11px;color:#aabbd2;margin-top:8px}
+.ppb-quake-popup dd{margin:0;overflow-wrap:anywhere}
 .ppb-root .ppb-footer a { color: var(--ppb-cyan); }
 .ppb-root .ppb-main-grid > *, .ppb-root .ppb-weather-left > div { min-width: 0; }
 .ppb-section-title{font-size:18px;margin:24px 0 12px}

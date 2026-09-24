@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import DisasterMap from './DisasterMap';
 import WeatherBanner from './WeatherBanner';
 import EarthquakePanel from './EarthquakePanel';
@@ -6,6 +6,7 @@ import MaritimeConditionCard from './MaritimeConditionCard';
 import EnsoCard from './EnsoCard';
 import CurrentSituationCard from './CurrentSituationCard';
 import SourceStatus from './SourceStatus';
+import { validEarthquakeCoordinates } from './earthquakeMap';
 import { fetchLatestEarthquake, fetchEarthquakeHistory, fetchFeltEarthquakes, EARTHQUAKE_REFRESH_INTERVAL } from '../../services/disaster/bmkgEarthquake';
 import { weatherLoaders, WEATHER_LOCATIONS, WEATHER_REFRESH_INTERVAL } from '../../services/disaster/bmkgWeather';
 import { fetchHotspots, HOTSPOT_REFRESH_INTERVAL } from '../../services/disaster/bmkgHotspot';
@@ -31,6 +32,13 @@ export default function PusatPantauBencana() {
   const ensoState = useDisasterSource(fetchEnso, ENSO_REFRESH_INTERVAL, ENSO_AVAILABLE);
   const enso = { ...ensoState, unavailable: !ENSO_AVAILABLE };
   const [now, setNow] = useState(Date.now);
+  const [quakeSelection, setQuakeSelection] = useState(null);
+  const [quakeFocus, setQuakeFocus] = useState(null);
+  const selectEarthquake = useCallback((quake, kind, navigate = true) => {
+    if (!validEarthquakeCoordinates(quake.coordinates)) return;
+    setQuakeSelection({ id: quake.id, kind });
+    if (navigate) setQuakeFocus({ id: quake.id, kind });
+  }, []);
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 15000); return () => clearInterval(timer); }, []);
   const weather = [weatherPik1, weatherPik2], maritime = [maritimePik1, maritimePik2];
   const sources = { latest, history, felt, weather, hotspot, nowcasting, rdca, maritime, enso };
@@ -43,8 +51,8 @@ export default function PusatPantauBencana() {
       <h2 className="ppb-section-title">Cuaca Lokal</h2>
       {WEATHER_LOCATIONS.map((location, index) => <WeatherBanner key={location.id} label={location.label} source={weather[index]} configured={Boolean(location.adm4)} />)}
     </header>
-    <div className="ppb-main-grid"><DisasterMap latestSource={latest} historySource={history} feltSource={felt} hotspotSource={hotspot} nowcastingSource={nowcasting} rdcaSource={rdca} />
-      <div className="ppb-side-stack"><CurrentSituationCard sources={sources} /><EarthquakePanel latestSource={latest} historySource={history} /></div>
+    <div className="ppb-main-grid"><DisasterMap latestSource={latest} historySource={history} feltSource={felt} hotspotSource={hotspot} nowcastingSource={nowcasting} rdcaSource={rdca} selection={quakeSelection} focusRequest={quakeFocus} onEarthquakeSelect={selectEarthquake} />
+      <div className="ppb-side-stack"><CurrentSituationCard sources={sources} onEarthquakeSelect={selectEarthquake} /><EarthquakePanel latestSource={latest} historySource={history} feltSource={felt} selection={quakeSelection} onSelect={selectEarthquake} /></div>
     </div>
     <h2 className="ppb-section-title">Kondisi Maritim</h2>
     <div className="ppb-maritime-grid">{MARITIME_LOCATIONS.map((location, index) => <MaritimeConditionCard key={location.id} location={location} source={maritime[index]} />)}</div>
