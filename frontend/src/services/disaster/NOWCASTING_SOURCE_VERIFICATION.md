@@ -93,8 +93,7 @@ from this observation. Empty data is handled as a legitimate service response,
 field support are verified from metadata; nonempty rendering uses synthetic test
 fixtures until an official warning is available.
 
-- Overlay defaults **OFF**. Enabling fetches immediately; refresh is every five
-  minutes while ON. Disabling unmounts the layer and aborts requests/timers.
+- Overlay defaults **OFF**. The dashboard loads one shared source every five minutes for its situation summary. Toggling changes map visibility only; leaving the page aborts requests/timers.
 - Known future/expired warnings are hidden; expiry is rechecked locally every
   15 seconds without extra network calls. The browser clock is used for validity
   filtering, not official update timestamps.
@@ -113,4 +112,3 @@ fixtures until an official warning is available.
 - Service availability/SLA and public freshness guarantees were not documented in
   the inspected metadata. No claim of continuous/live coverage is made.
 
-PVMBG/MAGMA endpoints and modules were not revisited or modified for this task.

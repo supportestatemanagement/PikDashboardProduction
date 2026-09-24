@@ -1,5 +1,5 @@
 import { fetchJson, numberValue, sourceDate, validCoordinates } from './client';
-export const EARTHQUAKE_REFRESH_INTERVAL = 60 * 1000;
+export const EARTHQUAKE_REFRESH_INTERVAL = 5 * 60 * 1000;
 const BASE = 'https://data.bmkg.go.id/DataMKG/TEWS/';
 export function parseCoordinates(value) {
   const parts = typeof value === 'string' ? value.split(',') : [];
@@ -16,7 +16,7 @@ export function normalizeEarthquake(row) {
   return { id: `${datetime || row.Tanggal + row.Jam}-${coordinates?.join(',') || row.Wilayah}`,
     date: row.Tanggal || '', time: row.Jam || '', datetime,
     magnitude: numberValue(row.Magnitude), depth: numberValue(String(row.Kedalaman ?? '').replace(/\s*km/i, '')),
-    region: row.Wilayah || '', coordinates, latitude: coordinates?.[0] ?? null, longitude: coordinates?.[1] ?? null,
+    region: row.Wilayah || '', potential: row.Potensi || '', coordinates, latitude: coordinates?.[0] ?? null, longitude: coordinates?.[1] ?? null,
     felt: row.Dirasakan && row.Dirasakan !== '-' ? row.Dirasakan : '',
     shakemap: /^[\w.-]+\.jpg$/.test(row.Shakemap || '') ? `https://static.bmkg.go.id/${row.Shakemap}` : null };
 }
@@ -32,4 +32,10 @@ export async function fetchEarthquakeHistory(signal) {
   const unique = new Map(data.Infogempa.gempa.map(normalizeEarthquake).filter(row => row.magnitude >= 5).map(row => [row.id, row]));
   const history = [...unique.values()].sort((a, b) => (Date.parse(b.datetime) || 0) - (Date.parse(a.datetime) || 0));
   return { history, updatedAt: history[0]?.datetime || new Date().toISOString(), timestampLabel: history[0]?.datetime ? 'Kejadian M5+ terbaru' : 'Terakhir diambil' };
+}
+export async function fetchFeltEarthquakes(signal) {
+  const data = await fetchJson(BASE + 'gempadirasakan.json', signal);
+  if (!Array.isArray(data.Infogempa?.gempa)) throw new Error('Invalid felt earthquake response');
+  const history = [...new Map(data.Infogempa.gempa.map(normalizeEarthquake).map(row => [row.id, row])).values()];
+  return { history, updatedAt: history[0]?.datetime || null, timestampLabel: 'Kejadian dirasakan terbaru' };
 }

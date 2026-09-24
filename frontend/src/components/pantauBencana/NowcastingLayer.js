@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { GeoJSON, Pane, Popup, useMapEvents } from 'react-leaflet';
-import useDisasterSource from '../../services/disaster/useDisasterSource';
 import { formatWib } from '../../services/disaster/client';
-import { fetchNowcasting, NOWCASTING_LAYER_NAME, NOWCASTING_LAYER_URL, NOWCASTING_REFRESH_INTERVAL, nowcastingStyle, visibleNowcasting } from '../../services/disaster/bmkgNowcasting';
+import { NOWCASTING_LAYER_NAME, NOWCASTING_LAYER_URL, nowcastingStyle, visibleNowcasting } from '../../services/disaster/bmkgNowcasting';
 
-export function NowcastingEvents({ onToggle }) {
+export function NowcastingEvents({ onToggle, onLayerToggle }) {
   useMapEvents({
-    overlayadd: event => { if (event.name === NOWCASTING_LAYER_NAME) onToggle(true); },
-    overlayremove: event => { if (event.name === NOWCASTING_LAYER_NAME) onToggle(false); },
+    overlayadd: event => { if (event.name === NOWCASTING_LAYER_NAME) onToggle(true); onLayerToggle?.(event.name, true); },
+    overlayremove: event => { if (event.name === NOWCASTING_LAYER_NAME) onToggle(false); onLayerToggle?.(event.name, false); },
   });
   return null;
 }
@@ -28,20 +27,14 @@ export function NowcastingDetails({ warning }) {
   </div>;
 }
 
-// Mounted only while the overlay is enabled: OFF aborts requests and polling.
-export default function NowcastingLayer({ onState }) {
-  const source = useDisasterSource(fetchNowcasting, NOWCASTING_REFRESH_INTERVAL);
+// Presentation only; the dashboard owns one shared source for map and summary.
+export default function NowcastingLayer({ source }) {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 15000);
     return () => clearInterval(timer);
   }, []);
   const warnings = visibleNowcasting(source.data?.features || [], Math.max(now, Date.now()));
-  const visibleCount = warnings.length;
-  useEffect(() => {
-    onState({ ...source, visibleCount });
-  }, [source, visibleCount, onState]);
-  useEffect(() => () => onState(null), [onState]);
   // Failed refreshes hide warning polygons, so old areas cannot look current.
   if (source.error || !source.data) return null;
   return <Pane name="ppb-nowcasting" style={{ zIndex: 390 }}>{warnings.map(feature => <GeoJSON key={`${source.data.fetchedAt}-${feature.id}`} data={feature} style={nowcastingStyle}>
@@ -53,7 +46,7 @@ export function NowcastingStatus({ state }) {
   if (!state) return null;
   return <div className="ppb-source-note" role="status">
     <strong>Peringatan Dini Cuaca BMKG: </strong>
-    {state.error ? 'Layer sementara tidak tersedia; polygon disembunyikan.' : !state.data ? 'Memuat area peringatan...' : state.data.rawCount === 0 ? 'Sumber mengembalikan 0 area. Ini bukan konfirmasi bahwa seluruh wilayah bebas peringatan.' : `${state.visibleCount} area ditampilkan dari ${state.data.rawCount} record sumber.`}
+    {state.error ? 'Layer sementara tidak tersedia; polygon disembunyikan.' : !state.data ? 'Memuat area peringatan...' : state.data.rawCount === 0 ? 'Tidak ada area peringatan yang dikembalikan oleh sumber saat ini.' : `${state.visibleCount} area tersedia dari ${state.data.rawCount} record sumber.`}
     {state.data && <>
       {' '}Terakhir berhasil diambil: {formatWib(state.data.fetchedAt)}.
       {state.data.latestIssuedAt && <> Laporan terbaru dalam respons dibuat BMKG: {formatWib(state.data.latestIssuedAt)}.</>}

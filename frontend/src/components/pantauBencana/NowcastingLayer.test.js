@@ -1,13 +1,10 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import NowcastingLayer, { NowcastingDetails, NowcastingEvents, NowcastingStatus } from './NowcastingLayer';
 import DisasterMap from './DisasterMap';
-import useDisasterSource from '../../services/disaster/useDisasterSource';
-import { fetchNowcasting, normalizeNowcasting, NOWCASTING_LAYER_NAME } from '../../services/disaster/bmkgNowcasting';
+import { normalizeNowcasting, NOWCASTING_LAYER_NAME } from '../../services/disaster/bmkgNowcasting';
 
 let mockEvents;
 const mockMap = { getContainer: jest.fn(), invalidateSize: jest.fn() };
-jest.mock('../../services/disaster/useDisasterSource');
-jest.mock('./VolcanoLayer', () => () => null);
 jest.mock('react-leaflet', () => {
   const Container = ({ children }) => <div>{children}</div>;
   const LayersControl = Container;
@@ -25,16 +22,16 @@ const makeWarning = (until = Date.now() + 60000) => normalizeNowcasting({ type: 
 });
 beforeEach(() => {
   jest.clearAllMocks();
-  useDisasterSource.mockReturnValue({ data: null, loading: false, error: false });
 });
 afterEach(() => jest.useRealTimers());
 
 test('map overlay defaults OFF and its events enable only nowcasting', () => {
   render(<DisasterMap latestSource={{}} historySource={{}} />);
   expect(screen.getByTestId(NOWCASTING_LAYER_NAME)).toHaveAttribute('data-checked', 'false');
-  expect(useDisasterSource.mock.calls.some(([loader]) => loader === fetchNowcasting)).toBe(false);
+  expect(screen.getByTestId('Gempa terbaru')).toHaveAttribute('data-checked', 'true');
+  expect(screen.getByTestId('Gempa M >= 5')).toHaveAttribute('data-checked', 'false');
+  expect(screen.getByTestId('Gempa dirasakan')).toHaveAttribute('data-checked', 'false');
   act(() => mockEvents.overlayadd({ name: NOWCASTING_LAYER_NAME }));
-  expect(useDisasterSource.mock.calls.some(([loader]) => loader === fetchNowcasting)).toBe(true);
   expect(screen.getByText('Memuat area peringatan...', { exact: false })).toBeVisible();
   act(() => mockEvents.overlayremove({ name: NOWCASTING_LAYER_NAME }));
   expect(screen.queryByLabelText('Legenda peringatan dini cuaca')).not.toBeInTheDocument();
@@ -57,14 +54,11 @@ test('expired polygons disappear between requests and failed refresh hides cache
   jest.useFakeTimers();
   const warning = makeWarning(Date.now() + 10000);
   const data = { features: [warning], fetchedAt: new Date().toISOString(), rawCount: 1, invalidCount: 0 };
-  useDisasterSource.mockReturnValue({ data, error: false });
-  const onState = jest.fn();
-  const view = render(<NowcastingLayer onState={onState} />);
+  const view = render(<NowcastingLayer source={{ data, error: false }} />);
   expect(screen.getByTestId('polygon-1')).toBeInTheDocument();
   act(() => jest.advanceTimersByTime(15000));
   expect(screen.queryByTestId('polygon-1')).not.toBeInTheDocument();
-  useDisasterSource.mockReturnValue({ data: { ...data, features: [makeWarning()] }, error: true });
-  view.rerender(<NowcastingLayer onState={onState} />);
+  view.rerender(<NowcastingLayer source={{ data: { ...data, features: [makeWarning()] }, error: true }} />);
   expect(screen.queryByTestId('polygon-1')).not.toBeInTheDocument();
   view.unmount();
   expect(jest.getTimerCount()).toBe(0);
@@ -72,7 +66,7 @@ test('expired polygons disappear between requests and failed refresh hides cache
 
 test('empty response is not presented as all-clear and fetch time is not a source update', () => {
   render(<NowcastingStatus state={{ data: { features: [], rawCount: 0, fetchedAt: '2026-09-24T02:33:07Z', latestIssuedAt: null }, visibleCount: 0 }} />);
-  expect(screen.getByRole('status')).toHaveTextContent('bukan konfirmasi');
+  expect(screen.getByRole('status')).toHaveTextContent('Tidak ada area peringatan yang dikembalikan oleh sumber saat ini.');
   expect(screen.getByRole('status')).toHaveTextContent('Terakhir berhasil diambil');
   expect(screen.getByRole('status')).not.toHaveTextContent('dibuat BMKG');
 });

@@ -1,5 +1,5 @@
 import { fetchJson, numberValue, validCoordinates } from './client';
-export const HOTSPOT_REFRESH_INTERVAL = 30 * 60 * 1000;
+export const HOTSPOT_REFRESH_INTERVAL = 15 * 60 * 1000;
 const QUERY = 'https://datacuaca.bmkg.go.id/arcgis/rest/services/production/geohotspot/FeatureServer/0/query';
 export function normalizeHotspot(feature) {
   const p = feature.properties || {};
@@ -41,4 +41,3 @@ export async function fetchHotspots(signal) {
   const timestamps = hotspots.map(row => row.updatedAt).filter(Boolean).sort();
   return { hotspots, observationDate: date, updatedAt: timestamps[timestamps.length - 1] || new Date().toISOString(), timestampLabel: timestamps.length ? 'Pembaruan sumber hotspot' : 'Terakhir diambil' };
 }
-// TODO: Verify nowcasting_public and RDCA layer metadata before adding services.

@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, LayersControl, LayerGroup, Pane, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, LayersControl, LayerGroup, Pane, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import useDisasterSource from '../../services/disaster/useDisasterSource';
-import { fetchHotspots, HOTSPOT_REFRESH_INTERVAL } from '../../services/disaster/bmkgHotspot';
 import { formatWib } from '../../services/disaster/client';
 import { EarthquakeDetails } from './EarthquakePanel';
-import VolcanoLayer from './VolcanoLayer';
-import { VOLCANO_STATUS_CONFIG } from '../../services/disaster/pvmbgVolcano';
 import NowcastingLayer, { NowcastingEvents, NowcastingStatus } from './NowcastingLayer';
-import { NOWCASTING_AREA_CONFIG, NOWCASTING_LAYER_NAME } from '../../services/disaster/bmkgNowcasting';
+import { NOWCASTING_AREA_CONFIG, NOWCASTING_LAYER_NAME, visibleNowcasting } from '../../services/disaster/bmkgNowcasting';
+import { RDCA_LAYER_NAME } from '../../services/disaster/bmkgRdca';
+const EMPTY_SOURCE = { data: null, loading: false, error: false };
 function ResizeMap() {
   const map = useMap();
   useEffect(() => {
@@ -19,41 +17,31 @@ function ResizeMap() {
   }, [map]);
   return null;
 }
-function HotspotEvents({ onToggle }) {
-  useMapEvents({ overlayadd: event => { if (event.name === 'Hotspot BMKG') onToggle(true); }, overlayremove: event => { if (event.name === 'Hotspot BMKG') onToggle(false); } });
-  return null;
-}
-function HotspotLayer({ onState, enabled }) {
-  const source = useDisasterSource(fetchHotspots, HOTSPOT_REFRESH_INTERVAL, enabled);
-  useEffect(() => { onState(enabled ? source : null); return () => onState(null); }, [source, onState, enabled]);
-  if (source.error) return null;
-  return (source.data?.hotspots || []).map(hotspot => <CircleMarker key={hotspot.id} center={hotspot.coordinates} radius={4} pathOptions={{ color: '#3fd4f2', weight: 1, fillOpacity: 0.7 }}><Popup><b>HOTSPOT</b>{[['Provinsi', hotspot.province], ['Kabupaten', hotspot.district], ['Kecamatan', hotspot.subdistrict], ['Tanggal observasi', hotspot.date], ['Waktu sumber', hotspot.time]].filter(([, value]) => value !== null && value !== undefined && value !== '').map(([label, value]) => <p key={label}>{label}: {value}</p>)}</Popup></CircleMarker>);
-}
 const radius = magnitude => magnitude >= 6 ? 12 : magnitude >= 5 ? 9 : 6;
-export default function DisasterMap({ latestSource, historySource, volcanoes = [], volcanoSource, volcanoFocus, onVolcanoSelect }) {
-  const [hotspotState, setHotspotState] = useState(null);
-  const [hotspotEnabled, setHotspotEnabled] = useState(false);
+function QuakeMarkers({ earthquakes, color }) {
+  return earthquakes.filter(quake => quake.coordinates).map(quake => <CircleMarker key={quake.id} center={quake.coordinates} radius={radius(quake.magnitude)} pathOptions={{ color, fillOpacity: 0.7, weight: 2 }}><Popup><EarthquakeDetails quake={quake} /></Popup></CircleMarker>);
+}
+export default function DisasterMap({ latestSource, historySource, feltSource = EMPTY_SOURCE, hotspotSource = EMPTY_SOURCE, nowcastingSource = EMPTY_SOURCE, rdcaSource = EMPTY_SOURCE }) {
   const [nowcastingEnabled, setNowcastingEnabled] = useState(false);
-  const [nowcastingState, setNowcastingState] = useState(null);
+  const [overlays, setOverlays] = useState({});
   const latest = latestSource.data?.latest;
-  const history = (historySource.data?.history || []).filter(quake => quake.coordinates && quake.id !== latest?.id);
   return <section className="ppb-panel">
     <div className="ppb-panel-head"><div className="ppb-panel-title"><span className="ppb-ind" />WebGIS Peta Bencana Indonesia</div></div>
-    <div className="ppb-map-frame"><MapContainer center={[-2.5, 118]} zoom={5} scrollWheelZoom preferCanvas className="ppb-leaflet-map"><ResizeMap /><HotspotEvents onToggle={setHotspotEnabled} />
-      <NowcastingEvents onToggle={setNowcastingEnabled} />
+    <div className="ppb-map-frame"><MapContainer center={[-2.5, 118]} zoom={5} scrollWheelZoom preferCanvas className="ppb-leaflet-map"><ResizeMap />
+      <NowcastingEvents onToggle={setNowcastingEnabled} onLayerToggle={(name, visible) => setOverlays(previous => ({ ...previous, [name]: visible }))} />
       <LayersControl position="topright"><LayersControl.BaseLayer checked name="OpenStreetMap"><TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" /></LayersControl.BaseLayer>
-        <LayersControl.Overlay checked name="Gempa Terkini"><LayerGroup><Pane name="ppb-latest-quake" style={{ zIndex: 450 }}>{latest?.coordinates && <CircleMarker center={latest.coordinates} radius={radius(latest.magnitude)} pathOptions={{ color: '#f0475a', fillOpacity: 0.8, weight: 2 }}><Popup maxWidth={260}><EarthquakeDetails quake={latest} /></Popup></CircleMarker>}</Pane></LayerGroup></LayersControl.Overlay>
-        <LayersControl.Overlay checked name="Riwayat Gempa M≥5"><LayerGroup>{history.map(quake => <CircleMarker key={quake.id} center={quake.coordinates} radius={radius(quake.magnitude)} pathOptions={{ color: '#f7943c', fillOpacity: 0.65, weight: 1 }}><Popup><EarthquakeDetails quake={quake} /></Popup></CircleMarker>)}</LayerGroup></LayersControl.Overlay>
-        <LayersControl.Overlay name="Hotspot BMKG"><LayerGroup><HotspotLayer onState={setHotspotState} enabled={hotspotEnabled} /></LayerGroup></LayersControl.Overlay>
-        <LayersControl.Overlay name={NOWCASTING_LAYER_NAME}><LayerGroup>{nowcastingEnabled && <NowcastingLayer onState={setNowcastingState} />}</LayerGroup></LayersControl.Overlay>
-        <LayersControl.Overlay checked name="Gunung Api PVMBG"><VolcanoLayer volcanoes={volcanoes} isFallback={volcanoSource?.data?.isFallback ?? true} focusRequest={volcanoFocus} onSelect={onVolcanoSelect} /></LayersControl.Overlay>
+        <LayersControl.Overlay checked name="Gempa terbaru"><LayerGroup><Pane name="ppb-latest-quake" style={{ zIndex: 450 }}><QuakeMarkers earthquakes={latest ? [latest] : []} color="#f0475a" /></Pane></LayerGroup></LayersControl.Overlay>
+        <LayersControl.Overlay name="Gempa M >= 5"><LayerGroup><QuakeMarkers earthquakes={overlays['Gempa M >= 5'] ? historySource.data?.history || [] : []} color="#f7943c" /></LayerGroup></LayersControl.Overlay>
+        <LayersControl.Overlay name="Gempa dirasakan"><LayerGroup><QuakeMarkers earthquakes={overlays['Gempa dirasakan'] ? feltSource.data?.history || [] : []} color="#f472b6" /></LayerGroup></LayersControl.Overlay>
+        <LayersControl.Overlay name="Hotspot BMKG"><LayerGroup>{overlays['Hotspot BMKG'] && !hotspotSource.error && (hotspotSource.data?.hotspots || []).map(point => <CircleMarker key={point.id} center={point.coordinates} radius={4} pathOptions={{ color: '#3fd4f2', weight: 1, fillOpacity: 0.7 }}><Popup><b>HOTSPOT BMKG</b>{[['Provinsi', point.province], ['Kabupaten', point.district], ['Kecamatan', point.subdistrict], ['Tanggal observasi', point.date], ['Waktu sumber', point.time]].filter(([, value]) => value != null && value !== '').map(([label, value]) => <p key={label}>{label}: {value}</p>)}<p>Deteksi hotspot, bukan konfirmasi kebakaran.</p></Popup></CircleMarker>)}</LayerGroup></LayersControl.Overlay>
+        <LayersControl.Overlay name={NOWCASTING_LAYER_NAME}><LayerGroup>{nowcastingEnabled && <NowcastingLayer source={nowcastingSource} />}</LayerGroup></LayersControl.Overlay>
+        <LayersControl.Overlay name={RDCA_LAYER_NAME}><LayerGroup>{overlays[RDCA_LAYER_NAME] && !rdcaSource.error && (rdcaSource.data?.points || []).map(point => <CircleMarker key={point.id} center={point.coordinates} radius={5} pathOptions={{ color: '#a3e635', fillOpacity: 0.35, weight: 2 }}><Popup><b>RDCA — Pertumbuhan Awan Cepat</b><p>Indikator meteorologis, bukan peringatan bencana.</p><p>Koordinat: {point.coordinates.join(', ')}</p>{point.updatedAt && <p>Created At (sumber): {formatWib(point.updatedAt)}</p>}<p>Sumber: BMKG</p></Popup></CircleMarker>)}</LayerGroup></LayersControl.Overlay>
       </LayersControl>
-    </MapContainer><div className="ppb-legend"><div className="ppb-legend-title">LEGENDA (INDONESIA)</div>{[['#f0475a', 'Gempa Terkini'], ['#f7943c', 'Riwayat Gempa M5+'], ['#3fd4f2', 'Hotspot BMKG']].map(([color, label]) => <div className="ppb-legend-row" key={label}><span className="ppb-swatch ppb-circle" style={{ background: color }} />{label}</div>)}<div className="ppb-legend-title">Gunung Api</div>{Object.entries(VOLCANO_STATUS_CONFIG).map(([status, config]) => <div className="ppb-legend-row" key={status}><span style={{ color: config.color }}>▲</span>{status[0] + status.slice(1).toLowerCase()}</div>)}</div></div>
-    {nowcastingEnabled && <div className="ppb-source-note" aria-label="Legenda peringatan dini cuaca">{Object.entries(NOWCASTING_AREA_CONFIG).map(([label, config]) => <span key={label} style={{ marginRight: 16 }}><span className="ppb-swatch" style={{ background: config.color }} /> {label}</span>)}<NowcastingStatus state={nowcastingState} /></div>}
-    {volcanoSource?.data?.isFallback && <p className="ppb-source-note">Gunung Api PVMBG: sumber belum terhubung; marker tidak ditampilkan.</p>}
-    {volcanoSource?.error && !volcanoSource.data.isFallback && <p className="ppb-source-note">Gunung Api PVMBG: data terakhir tersedia; pembaruan gagal.</p>}
-    {(latestSource.loading || historySource.loading) && <p className="ppb-source-note">Memuat marker gempa...</p>}
-    {(latestSource.error || historySource.error) && <p className="ppb-source-note">Sebagian data gempa gagal diperbarui. Peta tetap tersedia.</p>}
-    {hotspotState && <p className="ppb-source-note">{hotspotState.error ? 'Layer hotspot sementara tidak tersedia.' : !hotspotState.data ? 'Memuat hotspot BMKG...' : <>Hotspot tanggal {hotspotState.data.observationDate || '-'} ({hotspotState.data.hotspots.length} titik). {hotspotState.data.timestampLabel}: {formatWib(hotspotState.data.updatedAt)}</>}</p>}
+    </MapContainer><div className="ppb-legend"><div className="ppb-legend-title">LEGENDA</div>{[['#f0475a', 'Gempa terbaru'], ['#f7943c', 'Gempa M >= 5'], ['#f472b6', 'Gempa dirasakan'], ['#3fd4f2', 'Hotspot BMKG'], ['#a3e635', 'RDCA']].map(([color, label]) => <div className="ppb-legend-row" key={label}><span className="ppb-swatch ppb-circle" style={{ background: color }} />{label}</div>)}</div></div>
+    {nowcastingEnabled && <div className="ppb-source-note" aria-label="Legenda peringatan dini cuaca">{Object.entries(NOWCASTING_AREA_CONFIG).map(([label, config]) => <span key={label} style={{ marginRight: 16 }}><span className="ppb-swatch" style={{ background: config.color }} /> {label}</span>)}</div>}
+    <NowcastingStatus state={{ ...nowcastingSource, visibleCount: visibleNowcasting(nowcastingSource.data?.features || []).length }} />
+    {(latestSource.error || historySource.error || feltSource.error) && <p className="ppb-source-note">Pembaruan gempa gagal. Data terakhir tersedia; waktu kejadian tercantum pada popup.</p>}
+    <p className="ppb-source-note">{hotspotSource.error ? 'Hotspot sementara tidak tersedia; marker disembunyikan.' : hotspotSource.data ? `Hotspot tanggal observasi ${hotspotSource.data.observationDate || 'tidak tersedia'}: ${hotspotSource.data.hotspots.length} titik nasional. ${hotspotSource.data.timestampLabel}: ${formatWib(hotspotSource.data.updatedAt)}.` : 'Memuat hotspot BMKG...'}</p>
+    <p className="ppb-source-note">{rdcaSource.error ? 'RDCA sementara tidak tersedia; titik disembunyikan.' : rdcaSource.data ? `RDCA: ${rdcaSource.data.points.length} titik dikembalikan sumber. ${rdcaSource.data.updatedAt ? `Created At terbaru: ${formatWib(rdcaSource.data.updatedAt)}.` : 'Waktu observasi tidak tersedia.'} Terakhir diambil: ${formatWib(rdcaSource.data.fetchedAt)}.` : 'Memuat RDCA BMKG...'} RDCA bukan peringatan bencana.</p>
   </section>;
 }

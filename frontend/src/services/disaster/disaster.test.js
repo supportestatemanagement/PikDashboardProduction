@@ -46,7 +46,7 @@ test('weather locations request their own ADM4 and keep updating when another lo
     useDisasterSource(weatherLoaders[0], WEATHER_REFRESH_INTERVAL),
     useDisasterSource(weatherLoaders[1], WEATHER_REFRESH_INTERVAL),
   ]);
-  await act(async () => {});
+  await waitFor(() => expect(result.current.every(source => source.data)).toBe(true));
   expect(global.fetch.mock.calls.map(([url]) => new URL(url).searchParams.get('adm4'))).toEqual(WEATHER_LOCATIONS.map(location => location.adm4));
   expect(result.current.map(source => source.data.temperature)).toEqual([29, 31]);
   failFirst = true;
@@ -76,8 +76,7 @@ test('source retains successful data on refresh failure and cleans up polling on
   jest.useFakeTimers();
   const loader = jest.fn().mockResolvedValueOnce({ value: 1 }).mockRejectedValue(new Error('Offline'));
   const { result, unmount } = renderHook(() => useDisasterSource(loader, 60000));
-  await act(async () => {});
-  expect(result.current.data).toEqual({ value: 1 });
+  await waitFor(() => expect(result.current.data).toEqual({ value: 1 }));
   await act(async () => { jest.advanceTimersByTime(60000); });
   expect(result.current.error).toBe(true);
   expect(result.current.data).toEqual({ value: 1 });

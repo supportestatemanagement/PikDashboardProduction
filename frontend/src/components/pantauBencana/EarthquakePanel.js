@@ -1,6 +1,6 @@
 import { formatWib } from '../../services/disaster/client';
 export function EarthquakeDetails({ quake }) {
-  return <><b>GEMPA BUMI - M {quake.magnitude ?? '-'}</b><p>{quake.region}</p><p>{formatWib(quake.datetime)}</p>{quake.depth !== null && <p>Kedalaman: {quake.depth} km</p>}{quake.coordinates && <p>Koordinat: {quake.coordinates.join(', ')}</p>}{quake.felt && <p>DIRASAKAN: {quake.felt}</p>}</>;
+  return <><b>GEMPA BUMI - M {quake.magnitude ?? '-'}</b><p>{quake.region}</p><p>{formatWib(quake.datetime)}</p>{quake.depth !== null && <p>Kedalaman: {quake.depth} km</p>}{quake.coordinates && <p>Koordinat: {quake.coordinates.join(', ')}</p>}{quake.felt && <p>DIRASAKAN: {quake.felt}</p>}{quake.potential && <p>Potensi: {quake.potential}</p>}</>;
 }
 export default function EarthquakePanel({ latestSource, historySource }) {
   const history = historySource.data?.history || [];

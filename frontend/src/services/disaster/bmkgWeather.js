@@ -16,7 +16,9 @@ export function normalizeWeather(payload, now = Date.now()) {
   const image = /^https:\/\/([\w-]+\.)*bmkg\.go\.id\//.test(row.image || '') ? row.image : null;
   return { temperature: numberValue(row.t), description: row.weather_desc || '', humidity: numberValue(row.hu),
     windSpeed: numberValue(row.ws), windDirection: directions[row.wd] || row.wd || '', localDatetime: time, image,
-    location: [location?.desa, location?.kotkab, location?.provinsi].filter(Boolean).join(', '),
+    visibility: typeof row.vs_text === 'string' && row.vs_text.trim() ? row.vs_text : null,
+    cloudCover: numberValue(row.tcc),
+    location: [location?.desa, location?.kecamatan, location?.kotkab, location?.provinsi].filter(Boolean).join(', '),
     updatedAt: sourceDate(row.analysis_date) || new Date(now).toISOString(), timestampLabel: row.analysis_date ? 'Produksi prakiraan' : 'Terakhir diambil' };
 }
 export async function fetchWeather(adm4, signal) {
