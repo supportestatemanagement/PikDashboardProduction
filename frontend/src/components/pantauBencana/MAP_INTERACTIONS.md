@@ -9,8 +9,9 @@ The existing dashboard layout and data sources remain unchanged.
 - CARTO's current official documentation requires a raster API key, so an
   unauthenticated CARTO raster URL was not introduced:
   https://docs.carto.com/faqs/carto-basemaps
-- Earthquake icons use small cached DivIcons. Only the latest has a 3-second
-  transform/opacity pulse. History/felt have static glow. Selection adds a white
+- Earthquake icons use small cached DivIcons. The latest has a 2.8-second radar
+  pulse; history/felt have a softer 3.6-second pulse. Cores brighten/dim and rings
+  expand using only transform/opacity animation. Selection adds a white
   ring. Reduced-motion preference disables pulse and animated navigation.
 - Hotspot uses a soft translucent canvas stroke, not thousands of DOM animations.
   RDCA and warning geometry keep static fills/outlines. Existing RDCA points are

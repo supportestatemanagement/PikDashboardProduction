@@ -88,7 +88,8 @@
 .ppb-root .leaflet-popup-content p { margin: 6px 0; }
 .ppb-root .leaflet-control-layers { color: var(--ppb-text); background:rgba(14,23,41,.96); border:1px solid #34445b; }
 .ppb-root .leaflet-control-layers-toggle{filter:invert(.85)}
-.ppb-root .ppb-dark-tiles{filter:invert(1) hue-rotate(180deg) saturate(.35) brightness(.7) contrast(.95)}
+.ppb-root .ppb-dark-tiles{filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) saturate(.85)}
+.ppb-root .ppb-leaflet-map{background:#1e424a}
 .ppb-root .leaflet-popup-content-wrapper,.ppb-root .leaflet-popup-tip{background:#101c30;box-shadow:0 5px 22px #0008}
 .ppb-root .leaflet-popup-content-wrapper{border:1px solid #34445b;border-radius:12px}
 .ppb-root .leaflet-popup-close-button{color:#ccd8e7}
@@ -98,17 +99,17 @@
 .ppb-root .leaflet-control-attribution{background:rgba(14,23,41,.94);color:#c5cfde}
 .ppb-root .leaflet-control-attribution a{color:#67d9f4}
 .ppb-root .ppb-legend{color:#ccd5e3;background:rgba(10,16,28,.94);border-color:#34445b}
-.ppb-earthquake-marker{--quake-color:#f7943c;background:transparent;border:0}
-.ppb-earthquake-latest{--quake-color:#ff6476}
+.ppb-earthquake-marker{--quake-color:#f7943c;--radar-period:3.6s;--radar-strength:.45;background:transparent;border:0}
+.ppb-earthquake-latest{--quake-color:#ff6476;--radar-period:2.8s;--radar-strength:.85}
 .ppb-earthquake-felt{--quake-color:#f472b6}
-.ppb-earthquake-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:var(--quake-color);border:2px solid #ffe9df;box-shadow:0 0 8px var(--quake-color)}
-.ppb-earthquake-halo{position:absolute;inset:9px;border:1px solid var(--quake-color);border-radius:50%;opacity:.35}
+.ppb-earthquake-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:var(--quake-color);border:2px solid #ffe9df;box-shadow:0 0 8px var(--quake-color);animation:ppbRadarLight var(--radar-period) ease-in-out infinite}
+.ppb-earthquake-halo{position:absolute;inset:9px;border:2px solid var(--quake-color);border-radius:50%;opacity:.35;box-shadow:0 0 7px var(--quake-color);animation:ppbQuakeRipple var(--radar-period) ease-out infinite}
 .ppb-earthquake-latest .ppb-earthquake-core{box-shadow:0 0 14px #ff6476,0 0 24px #ff647655}
-.ppb-earthquake-latest .ppb-earthquake-halo{animation:ppbQuakeRipple 3s ease-out infinite}
 .ppb-earthquake-selected .ppb-earthquake-core{outline:2px solid #fff;outline-offset:5px;box-shadow:0 0 18px var(--quake-color)}
 .ppb-earthquake-selected .ppb-earthquake-halo{border-color:#fff;opacity:.75}
-@keyframes ppbQuakeRipple{0%{transform:scale(.65);opacity:.7}85%,100%{transform:scale(1.7);opacity:0}}
-@media(prefers-reduced-motion:reduce){.ppb-earthquake-latest .ppb-earthquake-halo{animation:none;opacity:.45}}
+@keyframes ppbRadarLight{0%,100%{opacity:.3;transform:translate(-50%,-50%) scale(.88)}18%,32%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}65%{opacity:.4;transform:translate(-50%,-50%) scale(.94)}}
+@keyframes ppbQuakeRipple{0%{transform:scale(.55);opacity:0}18%{opacity:var(--radar-strength)}80%,100%{transform:scale(1.85);opacity:0}}
+@media(prefers-reduced-motion:reduce){.ppb-earthquake-core,.ppb-earthquake-halo{animation:none}.ppb-earthquake-core{opacity:1}.ppb-earthquake-halo{opacity:.45}}
 .ppb-quake-action{display:block;color:var(--ppb-text);font:inherit;text-align:left;cursor:pointer;border:1px solid transparent}
 .ppb-quake-action.ppb-quake-highlight{width:calc(100% - 32px)}
 .ppb-quake-action.ppb-quake-item{display:flex;width:100%;background:transparent}
