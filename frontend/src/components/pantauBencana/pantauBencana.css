@@ -6,7 +6,7 @@
   --ppb-cyan:#3fd4f2; --ppb-blue:#5b8bf7;
   --ppb-grad:linear-gradient(90deg,#3fd4f2 0%,#5b8bf7 100%);
   --ppb-danger:#f0475a; --ppb-warn:#f7943c; --ppb-ok:#39c98d;
-  font-family:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-family:inherit;
   background:
     radial-gradient(1100px 620px at 12% -8%, rgba(63,212,242,0.10), transparent 60%),
     radial-gradient(900px 500px at 100% 0%, rgba(91,139,247,0.08), transparent 55%),
@@ -62,7 +62,7 @@
 .ppb-quake-highlight{margin:16px;padding:16px;border-radius:12px;
   background:linear-gradient(180deg, rgba(240,71,90,.14), rgba(240,71,90,.05));border:1px solid rgba(240,71,90,.35)}
 .ppb-quake-highlight-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.ppb-quake-mag{font-size:26px;font-weight:800;color:var(--ppb-danger);font-family:ui-monospace,monospace}
+.ppb-quake-mag{font-size:26px;font-weight:800;color:var(--ppb-danger);font-family:inherit}
 .ppb-quake-loc{margin:8px 0 10px;font-weight:600;line-height:1.4;font-size:14.5px}
 .ppb-quake-meta{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--ppb-text-dim)}
 .ppb-quake-warn{margin-top:10px;font-size:12px;font-weight:800;color:var(--ppb-danger)}
@@ -71,15 +71,15 @@
 .ppb-quake-item{display:flex;gap:12px;align-items:flex-start;padding:11px 10px;border-radius:10px}
 .ppb-quake-item:hover{background:rgba(255,255,255,.03)}
 .ppb-num{width:34px;height:34px;border-radius:50%;flex:none;background:#3a2510;color:var(--ppb-warn);
-  font-family:ui-monospace,monospace;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+  font-family:inherit;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
 .ppb-txt b{font-size:13.5px;font-weight:600;display:block;line-height:1.35}
 .ppb-txt span{font-size:11.5px;color:var(--ppb-text-faint)}
 .ppb-footer{margin-top:26px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
   color:var(--ppb-text-faint);font-size:12px;padding:0 4px}
-.ppb-clock{color:var(--ppb-text-dim);font-family:ui-monospace,monospace}
+.ppb-clock{color:var(--ppb-text-dim);font-family:inherit}
 .ppb-root .ppb-leaflet-map { height: 100%; width: 100%; z-index: 0; font-family: inherit; }
 .ppb-root .ppb-map-frame { isolation: isolate; }
-.ppb-root .ppb-legend { bottom: 30px; pointer-events: none; }
+.ppb-root .ppb-legend { bottom: 30px; pointer-events: auto; }
 .ppb-root .ppb-source-note { padding: 10px 16px; color: var(--ppb-text-dim); font-size: 11px; line-height: 1.5; }
 .ppb-root .ppb-weather > .ppb-source-note { flex-basis: 100%; padding: 0; }
 .ppb-root .ppb-weather-icon img { width: 48px; height: 48px; object-fit: contain; }
@@ -100,11 +100,11 @@
 .ppb-root .leaflet-control-attribution a{color:#67d9f4}
 .ppb-root .ppb-legend{color:#ccd5e3;background:rgba(10,16,28,.94);border-color:#34445b}
 .ppb-earthquake-marker{--quake-color:#f7943c;--radar-period:3.6s;--radar-strength:.45;background:transparent;border:0}
-.ppb-earthquake-latest{--quake-color:#ff6476;--radar-period:2.8s;--radar-strength:.85}
+.ppb-earthquake-latest{--quake-color:#ff1616;--radar-period:2.8s;--radar-strength:.85}
 .ppb-earthquake-felt{--quake-color:#f472b6}
 .ppb-earthquake-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:var(--quake-color);border:2px solid #ffe9df;box-shadow:0 0 8px var(--quake-color);animation:ppbRadarLight var(--radar-period) ease-in-out infinite}
 .ppb-earthquake-halo{position:absolute;inset:9px;border:2px solid var(--quake-color);border-radius:50%;opacity:.35;box-shadow:0 0 7px var(--quake-color);animation:ppbQuakeRipple var(--radar-period) ease-out infinite}
-.ppb-earthquake-latest .ppb-earthquake-core{box-shadow:0 0 14px #ff6476,0 0 24px #ff647655}
+.ppb-earthquake-latest .ppb-earthquake-core{animation:none;opacity:1;box-shadow:0 0 14px #ff1616,0 0 24px #ff161655}
 .ppb-earthquake-selected .ppb-earthquake-core{outline:2px solid #fff;outline-offset:5px;box-shadow:0 0 18px var(--quake-color)}
 .ppb-earthquake-selected .ppb-earthquake-halo{border-color:#fff;opacity:.75}
 @keyframes ppbRadarLight{0%,100%{opacity:.3;transform:translate(-50%,-50%) scale(.88)}18%,32%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}65%{opacity:.4;transform:translate(-50%,-50%) scale(.94)}}
@@ -193,3 +193,9 @@
 @media(max-width:1000px){.ppb-root .ppb-summary .ppb-situation,.ppb-root .ppb-source-status{grid-template-columns:repeat(2,minmax(0,1fr))}.ppb-root .ppb-main-grid{grid-template-columns:1fr}}
 @media(max-width:640px){.ppb-wrap{padding:22px 14px 40px}.ppb-dashboard-header{align-items:start;flex-direction:column;gap:16px}.ppb-weather-grid,.ppb-root .ppb-summary .ppb-situation,.ppb-root .ppb-source-status{grid-template-columns:1fr}.ppb-refresh{flex-direction:row;align-items:center;flex-wrap:wrap;gap:12px}.ppb-weather-left{min-width:0}.ppb-weather-right{gap:12px}.ppb-root .ppb-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.ppb-type-tooltip{left:auto;right:0;max-width:65vw}}
 @media(max-width:640px){.ppb-root .ppb-type-tooltip{position:fixed;left:16px;right:16px;bottom:16px;top:auto;width:auto;max-width:none}}
+
+.ppb-root button,.ppb-root select{font-family:inherit}
+.ppb-metric-icon{display:inline-flex;align-items:center;color:#ff913c;cursor:help;flex-shrink:0}
+.ppb-map-symbol{display:grid;place-items:center;filter:drop-shadow(0 1px 2px #000);background:transparent;border:0}
+.ppb-legend-row svg{flex-shrink:0}
+.ppb-facts dt{display:flex;align-items:center;gap:8px}

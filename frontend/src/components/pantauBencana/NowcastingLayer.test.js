@@ -11,7 +11,7 @@ jest.mock('react-leaflet', () => {
   const LayersControl = Container;
   LayersControl.Overlay = ({ children, name, checked }) => <div data-testid={name} data-checked={Boolean(checked)}>{children}</div>;
   LayersControl.BaseLayer = Container;
-  return { MapContainer: Container, LayerGroup: Container, Pane: Container, Popup: Container, CircleMarker: Container,
+  return { MapContainer: Container, LayerGroup: Container, Pane: Container, Popup: Container, CircleMarker: Container, Marker: Container,
     LayersControl, TileLayer: () => null, useMap: () => mockMap,
     useMapEvents: handlers => { mockEvents = handlers; },
     GeoJSON: ({ children, data }) => <div data-testid={`polygon-${data.id}`}>{children}</div>,
@@ -26,16 +26,28 @@ beforeEach(() => {
 });
 afterEach(() => jest.useRealTimers());
 
-test('map overlay defaults OFF and its events enable only nowcasting', () => {
+test('all overlays default ON and empty data has no legend', () => {
   render(<DisasterMap latestSource={{}} historySource={{}} />);
-  expect(screen.getByTestId(NOWCASTING_LAYER_NAME)).toHaveAttribute('data-checked', 'false');
+  expect(screen.getByTestId(NOWCASTING_LAYER_NAME)).toHaveAttribute('data-checked', 'true');
   expect(screen.getByTestId('Gempa terbaru')).toHaveAttribute('data-checked', 'true');
-  expect(screen.getByTestId('Gempa M >= 5')).toHaveAttribute('data-checked', 'false');
-  expect(screen.getByTestId('Gempa dirasakan')).toHaveAttribute('data-checked', 'false');
-  act(() => mockEvents.overlayadd({ name: NOWCASTING_LAYER_NAME }));
-  expect(screen.getByText('Memuat area peringatan...', { exact: false })).toBeVisible();
+  expect(screen.getByTestId('Gempa M >= 5')).toHaveAttribute('data-checked', 'true');
+  expect(screen.getByTestId('Gempa dirasakan')).toHaveAttribute('data-checked', 'true');
+  expect(screen.getByTestId('Hotspot BMKG')).toHaveAttribute('data-checked', 'true');
+  expect(screen.queryByLabelText('Legenda peta')).not.toBeInTheDocument();
+});
+
+test('warning legend follows availability, visibility and expiration', () => {
+  jest.useFakeTimers();
+  const warning = makeWarning(Date.now() + 10000);
+  render(<DisasterMap latestSource={{}} historySource={{}} nowcastingSource={{ data: { features: [warning] } }} />);
+  expect(screen.getByLabelText('Legenda peta')).toHaveTextContent('Area Terjadi');
+  expect(screen.getByLabelText('Legenda peta')).not.toHaveTextContent('RDCA');
   act(() => mockEvents.overlayremove({ name: NOWCASTING_LAYER_NAME }));
-  expect(screen.queryByLabelText('Legenda peringatan dini cuaca')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Legenda peta')).not.toBeInTheDocument();
+  act(() => mockEvents.overlayadd({ name: NOWCASTING_LAYER_NAME }));
+  expect(screen.getByLabelText('Legenda peta')).toBeInTheDocument();
+  act(() => jest.advanceTimersByTime(15000));
+  expect(screen.queryByLabelText('Legenda peta')).not.toBeInTheDocument();
 });
 
 test('only matching layer events toggle and popup never invents weather potential', () => {

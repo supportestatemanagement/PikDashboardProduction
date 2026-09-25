@@ -1,12 +1,21 @@
 import { fetchJson, numberValue, validCoordinates } from './client';
 export const HOTSPOT_REFRESH_INTERVAL = 15 * 60 * 1000;
 const QUERY = 'https://datacuaca.bmkg.go.id/arcgis/rest/services/production/geohotspot/FeatureServer/0/query';
+export const HOTSPOT_LEVELS = {
+  low: { color: '#39d353', label: 'Rendah' }, medium: { color: '#ffe600', label: 'Sedang' },
+  high: { color: '#ff2424', label: 'Tinggi' }, unknown: { color: '#b8c2d1', label: 'Tidak tersedia' },
+};
+export function hotspotConfidence(value) {
+  // This public feed currently has no confidence field; do not infer levels.
+  return ({ low: 'low', rendah: 'low', medium: 'medium', nominal: 'medium', sedang: 'medium', high: 'high', tinggi: 'high' })[String(value ?? '').trim().toLowerCase()] || 'unknown';
+}
 export function normalizeHotspot(feature) {
   const p = feature.properties || {};
   const coords = feature.geometry?.type === 'Point' ? feature.geometry.coordinates : [];
   const coordinates = validCoordinates(numberValue(coords?.[1]), numberValue(coords?.[0]));
   return { id: String(feature.id ?? p.objectid ?? `${coordinates}-${p.date}-${p.time}`), coordinates,
     province: p.provinsi, district: p.kabupaten, subdistrict: p.kecamatan, date: p.date, time: p.time,
+    confidence: hotspotConfidence(p.confidence),
     updatedAt: numberValue(p.system_date) !== null ? new Date(Number(p.system_date)).toISOString() : null };
 }
 export async function fetchHotspots(signal) {

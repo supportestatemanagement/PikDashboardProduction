@@ -20,7 +20,7 @@ export function focusMapToEarthquake(map, marker, group) {
 }
 const iconCache = new Map();
 export function earthquakeIcon(kind, magnitude, selected) {
-  const size = magnitude >= 6 ? 18 : magnitude >= 5 ? 15 : 12;
+  const size = kind === 'latest' ? 28 : magnitude >= 6 ? 18 : magnitude >= 5 ? 15 : 12;
   const key = `${kind}-${size}-${selected}`;
   if (!iconCache.has(key)) iconCache.set(key, divIcon({
     className: `ppb-earthquake-marker ppb-earthquake-${kind}${selected ? ' ppb-earthquake-selected' : ''}`,

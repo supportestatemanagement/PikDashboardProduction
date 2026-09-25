@@ -1,0 +1,5 @@
+.ppb-info-button{display:grid;place-items:center;min-width:32px;min-height:32px;background:rgba(255,255,255,.15);border:0;border-radius:6px;color:white;cursor:pointer}
+.ppb-info-dialog{position:fixed;inset:0;margin:auto;width:min(620px,90vw);max-height:80dvh;box-sizing:border-box;padding:24px;border:1px solid #dbe3ee;border-radius:16px;background:#fff;color:#24364c;font-family:inherit;box-shadow:0 24px 80px #0005}
+.ppb-info-dialog::backdrop{background:#0b172bb3;backdrop-filter:blur(3px)}
+.ppb-info-dialog header{display:flex;align-items:center;justify-content:space-between;gap:16px}.ppb-info-dialog h2{margin:0;font-size:20px}.ppb-info-dialog header button{font:inherit;font-size:26px;background:transparent;border:0;cursor:pointer;color:inherit}
+.ppb-info-dialog dl>div{padding:12px 0;border-bottom:1px solid #e4eaf2}.ppb-info-dialog dt{font-weight:700}.ppb-info-dialog dt a{font-size:12px;margin-left:8px;color:#285ac2}.ppb-info-dialog dd{margin:6px 0 0;font-size:13px;line-height:1.5}.ppb-info-dialog>p{font-size:12px;color:#64748b;line-height:1.5}

@@ -1,4 +1,4 @@
-import DataTypeBadge from './DataTypeBadge';
+import DisasterIcon from './DisasterIcon';
 import { formatWib } from '../../services/disaster/client';
 export default function MaritimeConditionCard({ location, source }) {
   const data = source.data;
@@ -10,17 +10,14 @@ export default function MaritimeConditionCard({ location, source }) {
     ['Visibility', data.visibility, 'km'], ['Cuaca', data.weather, ''],
   ].filter(([, value]) => value !== null && value !== undefined && value !== '') : [];
   return <section className="ppb-panel" aria-label={`Kondisi Maritim Sekitar ${location.label}`}>
-    <div className="ppb-panel-head"><h2 className="ppb-panel-title">Kondisi Maritim Sekitar {location.label}</h2><DataTypeBadge type="FORECAST" description="Data merupakan prakiraan kondisi maritim pada titik referensi pelabuhan BMKG terdekat dan bukan hasil sensor langsung di kawasan PIK." /></div>
+    <div className="ppb-panel-head"><h2 className="ppb-panel-title">Kondisi Maritim Sekitar {location.label}</h2></div>
     <div className="ppb-card-body"><p><strong>Referensi: {location.port}</strong></p>
-      <p className="ppb-muted">Prakiraan pelabuhan referensi, bukan sensor langsung {location.label}.</p>
       {!data && <p role="status">{source.loading ? 'Memuat prakiraan maritim...' : 'Data maritim resmi sementara tidak tersedia.'}</p>}
       {data && <>
         {(source.error || outside) && <p role="status">Data terakhir tersedia — {source.error ? 'pembaruan gagal' : 'di luar periode berlaku saat ini'}.</p>}
-        <dl className="ppb-facts">{fields.map(([label, value, unit]) => <div key={label}><dt>{label}</dt><dd>{value} {unit}</dd></div>)}</dl>
-        <p className="ppb-muted">Pasut mengikuti datum sumber; tidak dibandingkan dengan sensor lokal.</p>
+        <dl className="ppb-facts">{fields.map(([label, value, unit]) => <div key={label}><dt title={label}><DisasterIcon type={label.includes("angin") || label === "Angin dari" ? "wind" : label.includes("arus") || label === "Arus ke" || label.includes("gelombang") || label.includes("Pasut") ? "wave" : label === "Visibility" ? "eye" : "cloud"} label={label} color="#ff913c" /><span className="ppb-metric-name">{label}</span></dt><dd>{value} {unit}</dd></div>)}</dl>
         <p>Valid: {formatWib(data.validAt)}<br />Periode: {formatWib(data.validFrom)} — {formatWib(data.validUntil)}<br />Update sumber: {formatWib(data.updatedAt)}</p>
       </>}
-      <a href={`https://maritim.bmkg.go.id/cuaca/pelabuhan/${location.slug}`} target="_blank" rel="noreferrer">Source: BMKG Maritim</a>
     </div>
   </section>;
 }

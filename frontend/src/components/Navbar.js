@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import SourceInfo from './pantauBencana/SourceInfo';
 
 function MenuIcon({ type }) {
   if (type === "water") return <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M12 3S5 11 5 15a7 7 0 0 0 14 0c0-4-7-12-7-12Z" /><path d="M9 15a3 3 0 0 0 3 3" /></svg>;
@@ -264,6 +265,7 @@ export default function Navbar({
             </div>
           )}
 
+          {activeTab === 'pantau-bencana-develop' && <SourceInfo />}
           {!isMobile && (
             <div style={{ 
               display: "flex", 

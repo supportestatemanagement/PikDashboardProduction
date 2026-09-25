@@ -23,9 +23,9 @@ afterEach(() => window.history.replaceState(null, '', '/'));
 test('opens the prototype by direct URL and restores it after remount', () => {
   window.history.replaceState(null, '', '/#/pantau-bencana-develop');
   const view = render(<App />);
-  expect(screen.getByRole('heading', { name: 'Pusat Pantau Bencana' })).toBeInTheDocument();
+  expect(screen.getByRole('region', { name: 'Pantau Bencana' })).toBeInTheDocument();
   expect(screen.getByText('WebGIS Peta Bencana Indonesia')).toBeInTheDocument();
-  expect(screen.getByRole('region', { name: 'Situasi Terkini' })).toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'Situasi Terkini' })).not.toBeInTheDocument();
   expect(screen.getByRole('region', { name: 'ENSO / El Niño-La Niña' })).toBeInTheDocument();
   expect(screen.getByText('Referensi: Pelabuhan Muara Angke')).toBeInTheDocument();
   expect(screen.getByText('Referensi: Pelabuhan Tanjung Pasir')).toBeInTheDocument();
@@ -34,22 +34,22 @@ test('opens the prototype by direct URL and restores it after remount', () => {
   expect(localStorage.getItem('cc_activeTab')).toBe('pantau-bencana-develop');
   view.unmount();
   render(<App />);
-  expect(screen.getByRole('heading', { name: 'Pusat Pantau Bencana' })).toBeInTheDocument();
+  expect(screen.getByRole('region', { name: 'Pantau Bencana' })).toBeInTheDocument();
 });
 
 test('responds to direct hash navigation and browser history without replacing existing tabs', async () => {
   render(<App />);
-  expect(screen.queryByRole('heading', { name: 'Pusat Pantau Bencana' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'Pantau Bencana' })).not.toBeInTheDocument();
   act(() => {
     window.history.pushState({ dashboardTab: 'pantau-bencana-develop' }, '', '/#/pantau-bencana-develop');
     window.dispatchEvent(new PopStateEvent('popstate'));
   });
-  expect(await screen.findByRole('heading', { name: 'Pusat Pantau Bencana' })).toBeInTheDocument();
+  expect(await screen.findByRole('region', { name: 'Pantau Bencana' })).toBeInTheDocument();
   act(() => {
     window.history.replaceState({ dashboardTab: 'dashboard' }, '', '/');
     window.dispatchEvent(new PopStateEvent('popstate'));
   });
-  await waitFor(() => expect(screen.queryByRole('heading', { name: 'Pusat Pantau Bencana' })).not.toBeInTheDocument());
+  await waitFor(() => expect(screen.queryByRole('region', { name: 'Pantau Bencana' })).not.toBeInTheDocument());
   expect(screen.getByText('Traffic content')).toBeVisible();
 });
 
@@ -57,9 +57,9 @@ test('sidebar opens the shareable route and leaving it restores the normal URL',
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: 'Pantau Bencana Develop' }));
   expect(window.location.hash).toBe('#/pantau-bencana-develop');
-  expect(await screen.findByRole('heading', { name: 'Pusat Pantau Bencana' })).toBeInTheDocument();
+  expect(await screen.findByRole('region', { name: 'Pantau Bencana' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Pantau Bencana Develop' })).toHaveAttribute('aria-current', 'page');
   fireEvent.click(screen.getByRole('button', { name: 'Traffic', exact: true }));
   expect(window.location.hash).toBe('');
-  await waitFor(() => expect(screen.queryByRole('heading', { name: 'Pusat Pantau Bencana' })).not.toBeInTheDocument());
+  await waitFor(() => expect(screen.queryByRole('region', { name: 'Pantau Bencana' })).not.toBeInTheDocument());
 });
