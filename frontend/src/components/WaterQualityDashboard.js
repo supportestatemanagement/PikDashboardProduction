@@ -37,7 +37,7 @@ export function tdsNumber(value) {
 }
 export function tdsStatus(value) {
   const number = tdsNumber(value);
-  return number === null ? "unknown" : number < 300 ? "green" : number < 500 ? "orange" : "red";
+  return number === null ? "unknown" : number < 300 ? "green" : "red";
 }
 function areaName(value) {
   const area = String(value || "").trim().replace(/\s+/g, " ").toUpperCase();
@@ -49,7 +49,12 @@ export function phNumber(value) {
   return tdsNumber(match ? match[1] : text);
 }
 const normalize = value => String(value ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
-const bands = [['green', '< 300'], ['orange', '300-499'], ['red', '500+']];
+export function phStatus(value) {
+  const number = phNumber(value);
+  return number === null ? 'unknown' : number >= 6.5 && number <= 8.5 ? 'green' : 'red';
+}
+const bands = [['green', '< 300'], ['red', '≥ 300']];
+const phBands = [['green', '6.5–8.5'], ['red', '< 6.5 / > 8.5']];
 const accents = ['#285ac2', '#008493', '#5945be', '#287c69', '#a56127'];
 function cellValue(row, key) {
   if (key === 'TANGGAL') return formatWaterDate(row[key]);
@@ -163,7 +168,7 @@ export default function WaterQualityDashboard({ dateRange }) {
     const samples = dated.filter(row => areaName(row.AREA) === name);
     const values = samples.map(row => tdsNumber(row.TDS)).filter(value => value !== null);
     const statistics = summarizeMeasurements(samples);
-    const counts = samples.reduce((result, row) => { result[tdsStatus(row.TDS)]++; return result; }, { green: 0, orange: 0, red: 0, unknown: 0 });
+    const counts = samples.reduce((result, row) => { result[tdsStatus(row.TDS)]++; return result; }, { green: 0, red: 0, unknown: 0 });
     const times = samples.map(sampleTime).filter(value => value !== null);
     return { ...statistics, name, logo, accent: accents[index], samples: samples.length, counts,
       locations: new Set(samples.map(row => normalize(row['LOKASI SAMPLING'])).filter(Boolean)).size,
@@ -178,6 +183,7 @@ export default function WaterQualityDashboard({ dateRange }) {
       const filter = filters[key];
       if (!filter) return true;
       if (key === 'TDS') return tdsStatus(row.TDS) === filter;
+      if (key === 'KETERANGAN') return phStatus(row.KETERANGAN) === filter;
       if (options[key]) return (normalize(row[key]) || 'Not recorded') === filter;
       if (key === 'TANGGAL') return parseWaterDate(row.TANGGAL) === parseWaterDate(filter);
       return normalize(cellValue(row, key)).includes(normalize(filter));
@@ -213,6 +219,7 @@ export default function WaterQualityDashboard({ dateRange }) {
           <div className="water-filter-grid"><label className="water-search">Search records<input type="search" value={search} placeholder="Enter a search keyword" onChange={event => setSearch(event.target.value)} /></label>
           {columns.map(([key, label]) => <label key={key}>{label}
             {key === 'TDS' ? <select aria-label="Filter TDS" value={filters[key] || ''} onChange={event => setFilter(key, event.target.value)}><option value="">All TDS</option>{bands.map(([status, band]) => <option key={status} value={status}>{status[0].toUpperCase() + status.slice(1)}: {band}</option>)}</select>
+            : key === 'KETERANGAN' ? <select aria-label="Filter pH" value={filters[key] || ''} onChange={event => setFilter(key, event.target.value)}><option value="">All pH</option>{phBands.map(([status, band]) => <option key={status} value={status}>{status === 'green' ? 'Green' : 'Red'}: {band}</option>)}</select>
             : options[key] ? <select aria-label={'Filter ' + label} value={filters[key] || ''} onChange={event => setFilter(key, event.target.value)}><option value="">All</option>{options[key].map(value => <option key={value} value={value}>{key === 'AREA' ? value.toUpperCase() : value[0].toUpperCase() + value.slice(1)}</option>)}</select>
             : <input aria-label={'Filter ' + label} type={key === 'TANGGAL' ? 'date' : 'text'} placeholder={key === 'JAM' ? 'Enter time (HH:MM)' : key === 'KETERANGAN' ? 'Enter pH value' : key === 'LOKASI SAMPLING' ? 'Enter sampling location' : 'Select a date'} value={filters[key] || ''} onChange={event => setFilter(key, event.target.value)} />}
           </label>)}</div>

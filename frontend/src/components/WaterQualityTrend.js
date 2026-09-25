@@ -37,8 +37,8 @@ export default function WaterQualityTrend({ metric, points, areas, loading = fal
     const rawMin = values.length ? Math.min(...values) : 0;
     const rawMax = values.length ? Math.max(...values) : 1;
     const padding = Math.max((rawMax - rawMin) * 0.15, 0.2);
-    const minimum = metric === 'pH' ? Math.max(0, rawMin - padding) : 0;
-    const maximum = metric === 'pH' ? rawMax + padding : Math.max(600, rawMax) * 1.05;
+    const minimum = metric === 'pH' ? Math.max(0, Math.min(6, rawMin - padding)) : 0;
+    const maximum = metric === 'pH' ? Math.max(9, rawMax + padding) : Math.max(600, rawMax) * 1.05;
     // Inset both ends so the first point and its label clear the vertical axis.
     const x = time => end === start ? (left + right) / 2 : left + 42 + (time - start) / (end - start) * (right - left - 84);
     const y = value => bottom - (value - minimum) / (maximum - minimum) * (bottom - top);
@@ -63,11 +63,14 @@ export default function WaterQualityTrend({ metric, points, areas, loading = fal
       {loading ? <div className="water-chart-loading" role="status"><div className="water-loading-grid" aria-hidden="true" /><span>Loading {metric} trend...</span></div> : error ? <div className="water-trend-empty">Trend data could not be loaded.</div> : visible.length ? <div className="water-trend-scroll"><svg className="water-trend-plot" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${metric} ${statistic.toLowerCase()} by date`}>
         <text x="20" y="22" className="water-axis-title">{statistic} {metric}</text>
         {metric === 'TDS' && <g pointerEvents="none">
-          <rect x={left} y={y(500)} width={right - left} height={y(300) - y(500)} fill="#ffd6bf" />
-          <rect x={left} y={top} width={right - left} height={y(500) - top} fill="#f8c7c7" />
+          <rect x={left} y={top} width={right - left} height={y(300) - top} fill="#f8c7c7" />
+        </g>}
+        {metric === 'pH' && <g pointerEvents="none">
+          <rect x={left} y={top} width={right - left} height={y(8.5) - top} fill="#f8c7c7" />
+          <rect x={left} y={y(6.5)} width={right - left} height={bottom - y(6.5)} fill="#f8c7c7" />
         </g>}
         {Array.from({ length: 5 }, (_, index) => minimum + (maximum - minimum) * index / 4).map(value => <g key={value}><line x1={left} x2={right} y1={y(value)} y2={y(value)} stroke="#e7edf5" /><text x={left - 10} y={y(value) + 4} textAnchor="end">{metric === 'pH' ? value.toFixed(2) : Math.round(value)}</text></g>)}
-        {metric === 'TDS' && [300, 500].map(value => <g key={value}><line x1={left} x2={right} y1={y(value)} y2={y(value)} stroke={value === 300 ? '#dc962d' : '#d95454'} strokeDasharray="5 5" /><text className="water-tds-threshold-label" x={right + 6} y={y(value)} dominantBaseline="middle" style={{ fill: value === 300 ? '#c66a0a' : '#c62828' }}>{value}</text></g>)}
+        {(metric === 'TDS' ? [300] : [6.5, 8.5]).map(value => <g key={value}><line x1={left} x2={right} y1={y(value)} y2={y(value)} stroke="#d95454" strokeDasharray="5 5" /><text className="water-threshold-label" x={right + 6} y={y(value)} dominantBaseline="middle">{value}</text></g>)}
         {areas.map((name, index) => {
           const series = visible.filter(point => point.area === name);
           return <g key={name}><polyline fill="none" stroke={colors[index]} strokeWidth="1.8" points={series.map(point => `${x(point.time)},${y(point.value)}`).join(' ')} />{series.map(point => <g key={point.id}>
@@ -80,7 +83,7 @@ export default function WaterQualityTrend({ metric, points, areas, loading = fal
       </svg></div> : <div className="water-trend-empty">No measurements with a valid date and {metric} value.</div>}
       <div className="water-trend-detail">
         <div role="status">{active ? `${active.area} / ${timestamp(active.time)} / ${statistic} ${metric}: ${displayValue(active.value)} / ${active.count} samples` : 'Hover or focus on a point to see its daily value and sample count.'}</div>
-        {metric === 'TDS' && <div className="water-trend-source">Parameter wajib air minum: <a href="https://peraturan.bpk.go.id/Details/245563/permenkes-no-2-tahun-2023" target="_blank" rel="noopener noreferrer">JDIH BPK — Permenkes No. 2 Tahun 2023</a></div>}
+        <div className="water-trend-source">Parameter wajib air minum ({metric === 'TDS' ? 'TDS <300' : 'pH 6.5–8.5'}): <a href="https://peraturan.bpk.go.id/Details/245563/permenkes-no-2-tahun-2023" target="_blank" rel="noopener noreferrer">JDIH BPK — Permenkes No. 2 Tahun 2023</a></div>
       </div>
     </>;
   };

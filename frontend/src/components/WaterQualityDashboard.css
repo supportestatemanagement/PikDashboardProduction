@@ -17,7 +17,7 @@
 .water-area-primary span { color: #526984; font-size: 10px; }
 .water-area-primary strong { color: var(--area-accent); font-size: 24px; font-weight: 700; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
 .water-area-primary small { grid-column: 1 / -1; color: #61758c; font-size: 9px; }
-.water-area-bands { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; border-top: 1px solid #e4eaf2; margin-top: 12px; padding-top: 10px; }
+.water-area-bands { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; border-top: 1px solid #e4eaf2; margin-top: 12px; padding-top: 10px; }
 .water-area-bands > div { display: flex; flex-direction: column; gap: 5px; }
 .water-area-bands span { color: #687d96; font-size: 11px; white-space: nowrap; }
 .water-area-bands i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
@@ -75,9 +75,9 @@
 .water-trend .water-trend-plot { display: block; width: 100%; min-width: 540px; }
 .water-trend svg text { fill: #718198; font-size: 11px; }
 .water-trend svg .water-axis-title { fill: #344b69; font-weight: 600; }
-.water-trend-source { margin-top: 6px; }
+.water-trend-source { margin-top: 6px; font-weight: 700; }
 .water-trend-source a { color: #285ac2; text-decoration: underline; text-underline-offset: 2px; }
-.water-trend svg .water-tds-threshold-label { font-size: 16px; font-weight: 800; }
+.water-trend svg .water-threshold-label { font-size: 16px; font-weight: 800; fill: #c62828; }
 .water-trend svg .water-data-label { font-size: 10px; font-weight: 700; paint-order: stroke; stroke: white; stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
 .water-trend-actions { display: flex; align-items: flex-end; gap: 10px; }
 .water-trend-actions button { display: grid; place-items: center; min-height: 36px; }

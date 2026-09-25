@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import WaterQualityDashboard, { parseWaterDate, tdsStatus, phNumber, summarizeMeasurements, measurementPoints, dailyMeasurementPoints, compareMeasurements, formatWaterDate, formatWaterTime } from "./WaterQualityDashboard";
 
-test.each([[0, "green"], [299, "green"], [300, "orange"], [499, "orange"], [500, "red"], [501, "red"], ["", "unknown"], [null, "unknown"], ["-", "unknown"], ["299,5", "green"]])("classifies TDS %s as %s", (value, expected) => {
+test.each([[0, "green"], [299, "green"], [300, "red"], [499, "red"], [500, "red"], [501, "red"], ["", "unknown"], [null, "unknown"], ["-", "unknown"], ["299,5", "green"]])("classifies TDS %s as %s", (value, expected) => {
   expect(tdsStatus(value)).toBe(expected);
 });
 test("parses actual sheet date variants consistently", () => {
@@ -12,6 +12,36 @@ test("parses actual sheet date variants consistently", () => {
 });
 const originalFetch = global.fetch;
 afterEach(() => { global.fetch = originalFetch; });
+
+test('counts two TDS bands and filters inclusive pH boundaries without classifying missing values', async () => {
+  const data = [
+    ['Below', '299.9', '6.49'], ['Lower', '300', '6.5'],
+    ['Upper', '499', '8.5'], ['Above', '500', '8.51'], ['Missing', '', ''],
+  ].map(([location, TDS, KETERANGAN]) => ({ 'LOKASI SAMPLING': location, TDS, KETERANGAN, AREA: 'BGM', TANGGAL: '22-Sep-26' }));
+  global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ status: 'success', data }) });
+  render(<WaterQualityDashboard />);
+  const table = within(screen.getByRole('table'));
+  await table.findByText('Lower');
+  const card = screen.getByRole('article', { name: 'BGM water quality' });
+  expect(card.querySelector('.water-count-green')).toHaveTextContent('1');
+  expect(card.querySelector('.water-count-red')).toHaveTextContent('3');
+  expect(card.querySelectorAll('.water-area-bands > div')).toHaveLength(2);
+  fireEvent.change(screen.getByLabelText('Filter pH'), { target: { value: 'green' } });
+  expect(table.getByText('Lower')).toBeInTheDocument();
+  expect(table.getByText('Upper')).toBeInTheDocument();
+  expect(table.queryByText('Below')).not.toBeInTheDocument();
+  expect(table.queryByText('Above')).not.toBeInTheDocument();
+  expect(table.queryByText('Missing')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Filter pH'), { target: { value: 'red' } });
+  expect(table.getByText('Below')).toBeInTheDocument();
+  expect(table.getByText('Above')).toBeInTheDocument();
+  expect(table.queryByText('Lower')).not.toBeInTheDocument();
+  expect(table.queryByText('Upper')).not.toBeInTheDocument();
+  expect(table.queryByText('Missing')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Filter TDS'), { target: { value: 'red' } });
+  expect(table.queryByText('Below')).not.toBeInTheDocument();
+  expect(table.getByText('Above')).toBeInTheDocument();
+});
 
 test('summarizes extrema with tied locations and computes median from valid pH values', () => {
   const result = summarizeMeasurements([
@@ -68,7 +98,7 @@ test('supports page sizes, sortable headers and independent trend area filters',
   expect(screen.getByRole('region', { name: 'pH Trend' }).querySelectorAll('circle')).toHaveLength(2);
   expect(screen.getByRole('button', { name: 'Sort TDS' }).querySelector('svg')).toBeInTheDocument();
   expect(screen.getByPlaceholderText('Enter time (HH:MM)')).toBeInTheDocument();
-  expect(screen.getByRole('option', { name: 'Orange: 300-499' })).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: 'Red: ≥ 300' })).toBeInTheDocument();
 });
 
 test('daily trends aggregate by calendar date and area with valid values only', () => {
