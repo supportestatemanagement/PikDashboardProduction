@@ -1,15 +1,22 @@
 .vehicle-tracker-dashboard { display: flex; flex-direction: column; }
-.vehicle-tracker-modes { display: flex; gap: 8px; padding: 8px 12px; background: #0f172a; }
+.vehicle-tracker-modes { position: absolute; top: 14px; right: 14px; z-index: 800; display: flex; gap: 6px; padding: 6px; width: 336px; box-sizing: border-box; background: #0f172af5; border: 1px solid #334155; border-radius: 10px; box-shadow: 0 6px 24px #0005; }
+.vehicle-tracker-modes button { flex: 1; }
 .vehicle-tracker-modes button, .history-filters button { border: 1px solid #475569; border-radius: 6px; padding: 8px 12px; background: #1e293b; color: #e2e8f0; cursor: pointer; }
 .vehicle-tracker-modes button[aria-pressed="true"] { background: #075985; border-color: #38bdf8; color: #fff; }
 .vehicle-tracker-content { position: relative; flex: 1; min-height: 0; }
 .vehicle-history { height: 100%; display: flex; flex-direction: column; }
-.history-toolbar { background: #0f172a; color: #e2e8f0; padding: 8px 12px; font-size: 12px; }
+.history-toolbar { position: absolute; top: 72px; right: 14px; z-index: 800; width: 336px; box-sizing: border-box; max-height: calc(100% - 100px); overflow-y: auto; background: #0f172af5; border: 1px solid #334155; border-radius: 12px; box-shadow: 0 8px 28px #0006; color: #e2e8f0; padding: 16px; font-size: 12px; }
+.history-panel-heading { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.history-panel-heading span { display: block; font-size: 11px; font-weight: 400; color: #94a3b8; margin-top: 4px; }
+.history-toolbar [role="status"] { padding: 12px; background: #1e293b; border-radius: 6px; line-height: 1.5; }
 .history-filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 8px; }
-.history-filters label { display: flex; flex-direction: column; gap: 4px; }
+.history-filters label { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4px; }
+.history-filters button { width: 100%; }
 .history-filters select, .history-filters input { color-scheme: dark; background: #1e293b; color: #fff; padding: 6px 8px; border: 1px solid #475569; border-radius: 5px; min-height: 34px; }
-.history-summary { display: flex; gap: 6px 16px; flex-wrap: wrap; }
+.history-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid #334155; padding-top: 12px; }
+.history-summary span { font-size: 11px; color: #94a3b8; }
+.history-summary b { display: block; font-size: 13px; color: #f8fafc; margin-top: 3px; }
 .history-map { flex: 1; min-height: 0; }
 .history-endpoint span { display: block; background: #16a34a; color: white; border: 2px solid white; border-radius: 5px; text-align: center; font: bold 11px/22px sans-serif; box-shadow: 0 2px 6px #0009; }
 .history-endpoint-end span { background: #dc2626; }
-@media (max-width: 600px) { .history-toolbar { max-height: 35%; overflow-y: auto; } .vehicle-tracker-modes button { flex: 1; } }
+@media (max-width: 600px) { .vehicle-tracker-modes, .history-toolbar { right: 10px; width: min(300px, calc(100% - 70px)); } .history-toolbar { max-height: 36%; padding: 12px; } }

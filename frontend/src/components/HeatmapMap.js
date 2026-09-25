@@ -561,7 +561,7 @@ const checkpointMarkers = CHECKPOINT_ENTRANCES.map((entrance) => {
 
 
 
-export default function HeatmapMap({ traffic, isActive = true, mode = 'traffic' }) {
+export default function HeatmapMap({ traffic, isActive = true, mode = 'traffic', showLiveVehicles = true, children }) {
   const isTracker = mode === 'vehicle-tracker';
   // Ambil data kendaraan dari props, berikan default jika kosong
   const data = {
@@ -603,7 +603,8 @@ export default function HeatmapMap({ traffic, isActive = true, mode = 'traffic' 
         style={{ height: '100%', width: '100%' }}
       >
         <MapSizeController isActive={isActive} />
-        {isTracker && <VehicleTrackingLayer isActive={isActive} />}
+        {isTracker && showLiveVehicles && <VehicleTrackingLayer isActive={isActive} />}
+        {children}
         <AttributionControl position="bottomright" prefix={false} />
         <LayersControl position="topleft" collapsed={false}>
           <LayersControl.BaseLayer checked={!isTracker} name="Satelit">

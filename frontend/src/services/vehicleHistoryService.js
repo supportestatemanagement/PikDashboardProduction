@@ -2,6 +2,7 @@ import { get, ref } from 'firebase/database';
 import { getFirebaseServices } from '../config/firebase';
 
 export const HISTORY_VEHICLES = [
+  { id: 'PATROL_01', name: 'PATROL_01', area: 'Uji Coba' },
   { id: 'JAGUAR_1', name: 'JAGUAR 1', area: 'BGM' },
   { id: 'TRITON_1', name: 'TRITON 1', area: 'BGM' },
   { id: 'MACAN_GI', name: 'MACAN GI', area: 'GI' },

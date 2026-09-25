@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
+import { Polyline, Marker, Popup, useMap } from 'react-leaflet';
+import HeatmapMap from './HeatmapMap';
 import L from 'leaflet';
 import { useVehicleAuth } from './VehicleAuthProvider';
 import { HISTORY_VEHICLES, todayWib, historyTime, readVehicleHistory, historyDistance, renderHistoryPoints } from '../services/vehicleHistoryService';
@@ -10,7 +11,10 @@ const startIcon = endpointIcon('START'), endIcon = endpointIcon('END');
 function FitHistory({ points }) {
   const map = useMap();
   useEffect(() => {
-    if (points.length) map.fitBounds(points.map(point => point.position), { padding: [40, 40], maxZoom: 17 });
+    if (points.length) {
+      const desktop = map.getSize().x > 600;
+      map.fitBounds(points.map(point => point.position), { paddingTopLeft: [40, desktop ? 40 : 290], paddingBottomRight: [desktop ? 380 : 40, 40], maxZoom: 17 });
+    }
   }, [map, points]);
   return null;
 }
@@ -56,21 +60,21 @@ export default function VehicleHistoryTracking({ isActive }) {
     else if (result.status === 'ready') message = points.length ? '' : 'No tracking history found for selected date.';
   }
   return <div className="vehicle-history">
-    <div className="history-toolbar">
+    <section className="history-toolbar" aria-label="History tracking panel">
+      <div className="history-panel-heading">History Tracking<span>Riwayat perjalanan kendaraan</span></div>
       <div className="history-filters">
-        <label>Vehicle<select value={vehicle} onChange={event => setVehicle(event.target.value)}>{['BGM', 'GI', 'RWI'].map(area => <optgroup key={area} label={area}>{HISTORY_VEHICLES.filter(item => item.area === area).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</optgroup>)}</select></label>
+        <label>Vehicle<select value={vehicle} onChange={event => setVehicle(event.target.value)}>{[...new Set(HISTORY_VEHICLES.map(item => item.area))].map(area => <optgroup key={area} label={area}>{HISTORY_VEHICLES.filter(item => item.area === area).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</optgroup>)}</select></label>
         <label>Date<input type="date" value={date} onChange={event => setDate(event.target.value)} /></label>
         <button type="button" onClick={() => authStatus === 'error' ? retryAuth() : setAttempt(value => value + 1)}>Refresh</button>
       </div>
       {first && <div className="history-summary" aria-label="History summary"><span>Vehicle: <b>{name}</b></span><span>Date: <b>{date}</b></span><span>Start: <b>{historyTime(first.timestamp)} WIB</b></span><span>End: <b>{historyTime(last.timestamp)} WIB</b></span><span>Duration: <b>{Math.floor(minutes / 60)}h {minutes % 60}m</b></span><span>Distance: <b>{distance.toFixed(1)} km</b></span><span>Points: <b>{points.length.toLocaleString('en-US')}</b></span></div>}
       {message && <div role="status">{message}</div>}
-    </div>
-    <div className="history-map"><MapContainer center={[-6.05, 106.7]} zoom={12} preferCanvas style={{ height: '100%', width: '100%' }}>
-      <TileLayer url="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution='Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community' maxNativeZoom={19} maxZoom={22} />
+    </section>
+    <div className="history-map"><HeatmapMap mode="vehicle-tracker" isActive={isActive} showLiveVehicles={false}>
       <FitHistory points={points} />
       {points.length > 1 && <Polyline positions={positions} pathOptions={{ color: '#38bdf8', weight: 5, opacity: 1 }} />}
       {first && <Endpoint point={first} label="START" vehicle={name} />}
       {last && <Endpoint point={last} label="END" vehicle={name} />}
-    </MapContainer></div>
+    </HeatmapMap></div>
   </div>;
 }

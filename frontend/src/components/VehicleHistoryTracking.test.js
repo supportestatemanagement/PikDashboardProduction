@@ -1,10 +1,10 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import VehicleTrackerDashboard from './VehicleTrackerDashboard';
 import { readVehicleHistory } from '../services/vehicleHistoryService';
-const mockMap = { fitBounds: jest.fn() };
+const mockMap = { fitBounds: jest.fn(), getSize: () => ({ x: 1200, y: 800 }) };
 const mockUser = { uid: 'dashboard' };
 jest.mock('./VehicleAuthProvider', () => ({ useVehicleAuth: () => ({ status: 'ready', user: mockUser }) }));
-jest.mock('./HeatmapMap', () => () => <div>Existing live map</div>);
+jest.mock('./HeatmapMap', () => ({ children, showLiveVehicles }) => <div data-testid="map">{showLiveVehicles !== false && 'Existing live map'}{children}</div>);
 jest.mock('../services/vehicleHistoryService', () => ({ ...jest.requireActual('../services/vehicleHistoryService'), readVehicleHistory: jest.fn() }));
 jest.mock('react-leaflet', () => ({
   MapContainer: ({ children }) => <div data-testid="map">{children}</div>, TileLayer: () => null,
@@ -22,8 +22,9 @@ test('defaults to live, loads history, fits once and preserves live mode', async
   fireEvent.click(screen.getByRole('button', { name: 'History Tracking' }));
   await screen.findByLabelText('History summary');
   expect(screen.getByTestId('path')).toHaveTextContent('2');
-  expect(screen.getByLabelText('START: JAGUAR 1')).toBeInTheDocument();
-  expect(screen.getByLabelText('END: JAGUAR 1')).toBeInTheDocument();
+  expect(screen.getByLabelText('START: PATROL_01')).toBeInTheDocument();
+  expect(screen.getByLabelText('END: PATROL_01')).toBeInTheDocument();
+  expect(readVehicleHistory).toHaveBeenCalledWith('PATROL_01', expect.any(String), mockUser);
   expect(screen.getByText('1h 0m')).toBeInTheDocument();
   expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button', { name: 'Live Tracking' }));
