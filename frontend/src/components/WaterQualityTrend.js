@@ -68,10 +68,6 @@ export default function WaterQualityTrend({ metric, points, areas, loading = fal
         </g>}
         {Array.from({ length: 5 }, (_, index) => minimum + (maximum - minimum) * index / 4).map(value => <g key={value}><line x1={left} x2={right} y1={y(value)} y2={y(value)} stroke="#e7edf5" /><text x={left - 10} y={y(value) + 4} textAnchor="end">{metric === 'pH' ? value.toFixed(2) : Math.round(value)}</text></g>)}
         {metric === 'TDS' && [300, 500].map(value => <g key={value}><line x1={left} x2={right} y1={y(value)} y2={y(value)} stroke={value === 300 ? '#dc962d' : '#d95454'} strokeDasharray="5 5" /><text className="water-tds-threshold-label" x={right + 6} y={y(value)} dominantBaseline="middle" style={{ fill: value === 300 ? '#c66a0a' : '#c62828' }}>{value}</text></g>)}
-        {metric === 'TDS' && <g className="water-tds-zone-label" pointerEvents="none">
-          <text x={right - 10} y={y(500) + 19} textAnchor="end" style={{ fill: '#92400e' }}>Air tidak layak diminum</text>
-          <text x={right - 10} y={top + 19} textAnchor="end" style={{ fill: '#991b1b' }}>Air tidak layak diminum</text>
-        </g>}
         {areas.map((name, index) => {
           const series = visible.filter(point => point.area === name);
           return <g key={name}><polyline fill="none" stroke={colors[index]} strokeWidth="1.8" points={series.map(point => `${x(point.time)},${y(point.value)}`).join(' ')} />{series.map(point => <g key={point.id}>
@@ -82,7 +78,10 @@ export default function WaterQualityTrend({ metric, points, areas, loading = fal
         {dates.filter((time, index) => index % dateStep === 0 || index === dates.length - 1).map(time => <text key={time} x={x(time)} y={bottom + 24} textAnchor="middle">{timestamp(time)}</text>)}
         <text x={(left + right) / 2} y={height - 18} textAnchor="middle" className="water-axis-title">Date</text>
       </svg></div> : <div className="water-trend-empty">No measurements with a valid date and {metric} value.</div>}
-      <div className="water-trend-detail" role="status">{active ? `${active.area} / ${timestamp(active.time)} / ${statistic} ${metric}: ${displayValue(active.value)} / ${active.count} samples` : 'Hover or focus on a point to see its daily value and sample count.'}</div>
+      <div className="water-trend-detail">
+        <div role="status">{active ? `${active.area} / ${timestamp(active.time)} / ${statistic} ${metric}: ${displayValue(active.value)} / ${active.count} samples` : 'Hover or focus on a point to see its daily value and sample count.'}</div>
+        {metric === 'TDS' && <div className="water-trend-source">Parameter wajib air minum: <a href="https://peraturan.bpk.go.id/Details/245563/permenkes-no-2-tahun-2023" target="_blank" rel="noopener noreferrer">JDIH BPK — Permenkes No. 2 Tahun 2023</a></div>}
+      </div>
     </>;
   };
   return <>

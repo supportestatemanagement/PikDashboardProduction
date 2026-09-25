@@ -75,7 +75,8 @@
 .water-trend .water-trend-plot { display: block; width: 100%; min-width: 540px; }
 .water-trend svg text { fill: #718198; font-size: 11px; }
 .water-trend svg .water-axis-title { fill: #344b69; font-weight: 600; }
-.water-trend svg .water-tds-zone-label text { font-weight: 600; }
+.water-trend-source { margin-top: 6px; }
+.water-trend-source a { color: #285ac2; text-decoration: underline; text-underline-offset: 2px; }
 .water-trend svg .water-tds-threshold-label { font-size: 16px; font-weight: 800; }
 .water-trend svg .water-data-label { font-size: 10px; font-weight: 700; paint-order: stroke; stroke: white; stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
 .water-trend-actions { display: flex; align-items: flex-end; gap: 10px; }
