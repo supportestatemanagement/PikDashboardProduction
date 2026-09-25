@@ -48,12 +48,11 @@ function DisasterMap({ latestSource, historySource, feltSource = EMPTY_SOURCE, n
     ['Distribusi Air', 'water', '#38bdf8', waterLocations.some(location => validEarthquakeCoordinates(location.position))],
     [RDCA_LAYER_NAME, 'cloud', '#a3e635', rdca.length > 0],
   ].filter(([name, , , available]) => available && enabled(name));
-  return <section className="ppb-panel" aria-label="WebGIS Peta Bencana Indonesia">
-    <div className="ppb-panel-head"><h2 className="ppb-panel-title"><DisasterIcon type="alert" color="#ff913c" />WebGIS Peta Bencana Indonesia</h2></div>
+  return <section className="ppb-map-surface" aria-label="Peta Bencana Indonesia">
     <div className="ppb-map-frame"><MapContainer center={[-2.5, 118]} zoom={5} scrollWheelZoom preferCanvas className="ppb-leaflet-map"><ResizeMap />
       <NowcastingEvents onToggle={() => {}} onLayerToggle={(name, visible) => setOverlays(previous => ({ ...previous, [name]: visible }))} />
       <TileLayer className="ppb-dark-tiles" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <LayersControl position="topright">
+      <LayersControl position="topleft">
         <LayersControl.Overlay checked name="Distribusi Air"><WaterLocationsLayer locations={waterLocations} /></LayersControl.Overlay>
         <LayersControl.Overlay checked name="Gempa terbaru"><EarthquakeLayer kind="latest" earthquakes={latestQuakes} selection={selection} focusRequest={focusRequest} onSelect={onEarthquakeSelect} /></LayersControl.Overlay>
         <LayersControl.Overlay checked name="Gempa M >= 5"><EarthquakeLayer kind="history" earthquakes={history} selection={selection} focusRequest={focusRequest} onSelect={onEarthquakeSelect} /></LayersControl.Overlay>
@@ -67,8 +66,10 @@ function DisasterMap({ latestSource, historySource, feltSource = EMPTY_SOURCE, n
         {enabled(NOWCASTING_LAYER_NAME) && Object.entries(NOWCASTING_AREA_CONFIG).filter(([label]) => warnings.some(feature => feature.properties.areaType === label)).map(([label, config]) => <div className="ppb-legend-row" key={label}><DisasterIcon type="alert" color={config.color} size={18} />{label}</div>)}
       </div>}
     </div>
+    <div className="ppb-map-notices">
     {(latestSource.error || historySource.error || feltSource.error || nowcastingSource.error || rdcaSource.error) && <p className="ppb-source-note" role="status">Sebagian sumber gagal diperbarui.</p>}
     {waterSource.error && <p className="ppb-source-note" role="status">Lokasi Distribusi Air gagal diperbarui.{waterLocations.length > 0 && ' Menampilkan data terakhir.'} <button onClick={waterSource.retry}>Coba lagi</button></p>}
+    </div>
   </section>;
 }
 export default memo(DisasterMap);

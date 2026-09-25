@@ -35,12 +35,13 @@ export default function PusatPantauBencana() {
     if (navigate) setQuakeFocus({ id: quake.id, kind });
   }, []);
   const weather = [weatherPik1, weatherPik2], maritime = [maritimePik1, maritimePik2];
-  return <div className="ppb-root" role="region" aria-label="Pantau Bencana"><div className="ppb-wrap">
-    <div className="ppb-weather-grid">{WEATHER_LOCATIONS.map((location, index) => <WeatherBanner key={location.id} label={location.label} source={weather[index]} configured={Boolean(location.adm4)} />)}</div>
-    <div className="ppb-main-grid"><DisasterMap latestSource={latest} historySource={history} feltSource={felt} nowcastingSource={nowcasting} rdcaSource={rdca} waterSource={waterLocations} selection={quakeSelection} focusRequest={quakeFocus} onEarthquakeSelect={selectEarthquake} />
-      <div className="ppb-side-stack"><EarthquakePanel latestSource={latest} historySource={history} feltSource={felt} selection={quakeSelection} onSelect={selectEarthquake} /></div>
-    </div>
-    <div className="ppb-maritime-grid">{MARITIME_LOCATIONS.map((location, index) => <MaritimeConditionCard key={location.id} location={location} source={maritime[index]} />)}</div>
-    <div className="ppb-climate-section"><EnsoCard source={enso} /></div>
-  </div></div>;
+  return <div className="ppb-root ppb-map-dashboard" role="region" aria-label="Pantau Bencana">
+    <DisasterMap latestSource={latest} historySource={history} feltSource={felt} nowcastingSource={nowcasting} rdcaSource={rdca} waterSource={waterLocations} selection={quakeSelection} focusRequest={quakeFocus} onEarthquakeSelect={selectEarthquake} />
+    <aside className="ppb-data-sidebar" aria-label="Panel data bencana" tabIndex={0}>
+      {WEATHER_LOCATIONS.map((location, index) => <WeatherBanner key={location.id} label={location.label} source={weather[index]} configured={Boolean(location.adm4)} />)}
+      <EarthquakePanel latestSource={latest} historySource={history} feltSource={felt} selection={quakeSelection} onSelect={selectEarthquake} />
+      {MARITIME_LOCATIONS.map((location, index) => <MaritimeConditionCard key={location.id} location={location} source={maritime[index]} />)}
+      <EnsoCard source={enso} />
+    </aside>
+  </div>;
 }

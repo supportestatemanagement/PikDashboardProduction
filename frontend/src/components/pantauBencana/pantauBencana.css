@@ -199,3 +199,28 @@
 .ppb-map-symbol{display:grid;place-items:center;filter:drop-shadow(0 1px 2px #000);background:transparent;border:0}
 .ppb-legend-row svg{flex-shrink:0}
 .ppb-facts dt{display:flex;align-items:center;gap:8px}
+
+.ppb-root.ppb-map-dashboard{position:relative;width:100%;height:calc(100vh - 60px);height:calc(100dvh - 60px);min-height:0;overflow:hidden;isolation:isolate}
+.ppb-map-dashboard .ppb-map-surface{position:absolute;inset:0}
+.ppb-map-dashboard .ppb-map-frame{height:100%;width:100%}
+.ppb-data-sidebar{position:absolute;z-index:4;top:14px;right:14px;bottom:24px;width:clamp(300px,30%,390px);display:flex;flex-direction:column;gap:14px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#536784 #101a29;padding:2px 8px 2px 2px;scrollbar-gutter:stable}
+.ppb-data-sidebar>*{flex-shrink:0;box-shadow:0 6px 24px #0003}
+.ppb-data-sidebar .ppb-weather{margin:0;padding:16px;gap:14px}
+.ppb-data-sidebar .ppb-weather-title{font-size:16px}
+.ppb-data-sidebar .ppb-weather-left{min-width:0;gap:10px}
+.ppb-data-sidebar .ppb-weather-left>div{min-width:0}
+.ppb-data-sidebar .ppb-weather-icon{width:44px;height:44px}
+.ppb-data-sidebar .ppb-weather-right{gap:12px;font-size:12px}
+.ppb-data-sidebar .ppb-weather-loc{font-size:12px;overflow-wrap:anywhere}
+.ppb-data-sidebar .ppb-weather-temp{font-size:24px}
+.ppb-data-sidebar .ppb-panel-head{padding:14px 16px}
+.ppb-data-sidebar .ppb-card-body{padding:14px 16px}
+.ppb-data-sidebar .ppb-quake-list{max-height:none;overflow:visible}
+.ppb-map-dashboard .ppb-legend{left:14px;right:auto;bottom:24px;max-width:calc(100% - 340px)}
+.ppb-map-notices{position:absolute;z-index:3;top:14px;left:64px;max-width:calc(100% - 470px)}
+.ppb-map-notices .ppb-source-note{background:#0e1729eF;border-radius:8px;padding:8px 12px;margin:0 0 8px}
+@media(max-width:700px){
+  .ppb-data-sidebar{top:auto;right:8px;bottom:24px;max-height:48%;width:min(330px,calc(100% - 70px));gap:10px}
+  .ppb-map-dashboard .ppb-legend{top:14px;bottom:auto;left:auto;right:8px;max-width:calc(100% - 80px);max-height:30%;overflow:auto}
+  .ppb-map-notices{top:100px;left:10px;max-width:calc(100% - 20px)}
+}
