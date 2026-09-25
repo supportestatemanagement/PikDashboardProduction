@@ -51,19 +51,19 @@ test('warning legend follows availability, visibility and expiration', () => {
   expect(screen.queryByLabelText('Legenda peta')).not.toBeInTheDocument();
 });
 
-test('WebGIS includes Distribusi Air by default with its location popup and conditional legend', () => {
-  const view = render(<DisasterMap latestSource={{}} historySource={{}} waterSource={{ data: [{ id: 'water-1', name: 'Pos Air', position: [-6.11, 106.75] }, { id: 'invalid', name: 'Invalid', position: [100, 106] }] }} />);
-  expect(screen.getByTestId('Distribusi Air')).toHaveAttribute('data-checked', 'true');
-  expect(screen.getByTitle('Distribusi Air: Pos Air')).toHaveTextContent('-6.11, 106.75');
-  fireEvent.click(screen.getByTitle('Distribusi Air: Pos Air'));
+test('WebGIS includes Distribusi Air Bersih by default with its location popup and conditional legend', () => {
+  const view = render(<DisasterMap latestSource={{}} historySource={{}} waterSource={{ data: [{ id: 'water-1', name: 'Pos Air', position: [-6.11, 106.75], distributions: [{ id: 'row-1', date: '2026-09-09', location: 'Pos Air' }] }, { id: 'invalid', name: 'Invalid', position: [100, 106] }] }} />);
+  expect(screen.getByTestId('Distribusi Air Bersih')).toHaveAttribute('data-checked', 'true');
+  expect(screen.getByTitle('Distribusi Air Bersih: Pos Air')).toHaveTextContent('-6.11, 106.75');
+  fireEvent.click(screen.getByTitle('Distribusi Air Bersih: Pos Air'));
   expect(mockMap.flyTo).toHaveBeenCalledWith([-6.11, 106.75], 15, expect.any(Object));
   expect(mockOpenPopup).toHaveBeenCalled();
-  expect(screen.queryByTitle('Distribusi Air: Invalid')).not.toBeInTheDocument();
-  expect(screen.getByLabelText('Legenda peta')).toHaveTextContent('Distribusi Air');
-  act(() => mockEvents.overlayremove({ name: 'Distribusi Air' }));
+  expect(screen.queryByTitle('Distribusi Air Bersih: Invalid')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Legenda peta')).toHaveTextContent('Distribusi Air Bersih');
+  act(() => mockEvents.overlayremove({ name: 'Distribusi Air Bersih' }));
   expect(screen.queryByLabelText('Legenda peta')).not.toBeInTheDocument();
   view.rerender(<DisasterMap latestSource={{}} historySource={{}} waterSource={{ data: [] }} />);
-  expect(screen.queryByTitle('Distribusi Air: Pos Air')).not.toBeInTheDocument();
+  expect(screen.queryByTitle('Distribusi Air Bersih: Pos Air')).not.toBeInTheDocument();
 });
 
 test('only matching layer events toggle and popup never invents weather potential', () => {
