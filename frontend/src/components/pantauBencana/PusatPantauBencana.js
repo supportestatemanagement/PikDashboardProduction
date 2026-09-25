@@ -12,9 +12,11 @@ import { fetchRdca, RDCA_REFRESH_INTERVAL } from '../../services/disaster/bmkgRd
 import { maritimeLoaders, MARITIME_LOCATIONS, MARITIME_REFRESH_INTERVAL } from '../../services/disaster/bmkgMaritime';
 import { fetchEnso, ENSO_REFRESH_INTERVAL } from '../../services/disaster/noaaEnsoService';
 import useDisasterSource from '../../services/disaster/useDisasterSource';
+import { fetchWaterLocations } from '../../services/trafficService';
 import './pantauBencana.css';
 
 export default function PusatPantauBencana() {
+  const waterLocations = useDisasterSource(fetchWaterLocations, 30 * 60 * 1000);
   const latest = useDisasterSource(fetchLatestEarthquake, EARTHQUAKE_REFRESH_INTERVAL);
   const history = useDisasterSource(fetchEarthquakeHistory, EARTHQUAKE_REFRESH_INTERVAL);
   const felt = useDisasterSource(fetchFeltEarthquakes, EARTHQUAKE_REFRESH_INTERVAL);
@@ -35,7 +37,7 @@ export default function PusatPantauBencana() {
   const weather = [weatherPik1, weatherPik2], maritime = [maritimePik1, maritimePik2];
   return <div className="ppb-root" role="region" aria-label="Pantau Bencana"><div className="ppb-wrap">
     <div className="ppb-weather-grid">{WEATHER_LOCATIONS.map((location, index) => <WeatherBanner key={location.id} label={location.label} source={weather[index]} configured={Boolean(location.adm4)} />)}</div>
-    <div className="ppb-main-grid"><DisasterMap latestSource={latest} historySource={history} feltSource={felt} nowcastingSource={nowcasting} rdcaSource={rdca} selection={quakeSelection} focusRequest={quakeFocus} onEarthquakeSelect={selectEarthquake} />
+    <div className="ppb-main-grid"><DisasterMap latestSource={latest} historySource={history} feltSource={felt} nowcastingSource={nowcasting} rdcaSource={rdca} waterSource={waterLocations} selection={quakeSelection} focusRequest={quakeFocus} onEarthquakeSelect={selectEarthquake} />
       <div className="ppb-side-stack"><EarthquakePanel latestSource={latest} historySource={history} feltSource={felt} selection={quakeSelection} onSelect={selectEarthquake} /></div>
     </div>
     <div className="ppb-maritime-grid">{MARITIME_LOCATIONS.map((location, index) => <MaritimeConditionCard key={location.id} location={location} source={maritime[index]} />)}</div>

@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, LayersControl, LayerGroup, useM
 import 'leaflet/dist/leaflet.css';
 import { formatWib } from '../../services/disaster/client';
 import EarthquakeLayer from './EarthquakeLayer';
+import WaterLocationsLayer from './WaterLocationsLayer';
 import { validEarthquakeCoordinates } from './earthquakeMap';
 import DisasterIcon, { iconPaths } from './DisasterIcon';
 import NowcastingLayer, { NowcastingEvents } from './NowcastingLayer';
@@ -28,18 +29,20 @@ function ResizeMap() {
   }, [map]);
   return null;
 }
-function DisasterMap({ latestSource, historySource, feltSource = EMPTY_SOURCE, nowcastingSource = EMPTY_SOURCE, rdcaSource = EMPTY_SOURCE, selection, focusRequest, onEarthquakeSelect }) {
+function DisasterMap({ latestSource, historySource, feltSource = EMPTY_SOURCE, nowcastingSource = EMPTY_SOURCE, rdcaSource = EMPTY_SOURCE, waterSource = EMPTY_SOURCE, selection, focusRequest, onEarthquakeSelect }) {
   const [overlays, setOverlays] = useState({});
   const [now, setNow] = useState(Date.now);
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 15000); return () => clearInterval(timer); }, []);
   const enabled = name => overlays[name] !== false;
   const latest = latestSource.data?.latest;
+  const waterLocations = waterSource.data || [];
   const latestQuakes = useMemo(() => latest ? [latest] : [], [latest]);
   const history = historySource.data?.history || EMPTY_QUAKES;
   const felt = feltSource.data?.history || EMPTY_QUAKES;
   const rdca = rdcaSource.error ? [] : (rdcaSource.data?.points || []).filter(point => validEarthquakeCoordinates(point.coordinates));
   const warnings = nowcastingSource.error ? [] : visibleNowcasting(nowcastingSource.data?.features || [], Math.max(now, Date.now()));
   const legend = [
+    ['Berbagi Air', 'water', '#38bdf8', waterLocations.some(location => validEarthquakeCoordinates(location.position))],
     ['Gempa terbaru', 'quake', '#ff1616', latestQuakes.some(q => validEarthquakeCoordinates(q.coordinates))],
     ['Gempa M >= 5', 'quake', '#f7943c', history.some(q => validEarthquakeCoordinates(q.coordinates))],
     ['Gempa dirasakan', 'quake', '#f472b6', felt.some(q => validEarthquakeCoordinates(q.coordinates))],
@@ -51,6 +54,7 @@ function DisasterMap({ latestSource, historySource, feltSource = EMPTY_SOURCE, n
       <NowcastingEvents onToggle={() => {}} onLayerToggle={(name, visible) => setOverlays(previous => ({ ...previous, [name]: visible }))} />
       <TileLayer className="ppb-dark-tiles" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <LayersControl position="topright">
+        <LayersControl.Overlay checked name="Berbagi Air"><WaterLocationsLayer locations={waterLocations} /></LayersControl.Overlay>
         <LayersControl.Overlay checked name="Gempa terbaru"><EarthquakeLayer kind="latest" earthquakes={latestQuakes} selection={selection} focusRequest={focusRequest} onSelect={onEarthquakeSelect} /></LayersControl.Overlay>
         <LayersControl.Overlay checked name="Gempa M >= 5"><EarthquakeLayer kind="history" earthquakes={history} selection={selection} focusRequest={focusRequest} onSelect={onEarthquakeSelect} /></LayersControl.Overlay>
         <LayersControl.Overlay checked name="Gempa dirasakan"><EarthquakeLayer kind="felt" earthquakes={felt} selection={selection} focusRequest={focusRequest} onSelect={onEarthquakeSelect} /></LayersControl.Overlay>
@@ -64,6 +68,7 @@ function DisasterMap({ latestSource, historySource, feltSource = EMPTY_SOURCE, n
       </div>}
     </div>
     {(latestSource.error || historySource.error || feltSource.error || nowcastingSource.error || rdcaSource.error) && <p className="ppb-source-note" role="status">Sebagian sumber gagal diperbarui.</p>}
+    {waterSource.error && <p className="ppb-source-note" role="status">Lokasi Berbagi Air gagal diperbarui.{waterLocations.length > 0 && ' Menampilkan data terakhir.'} <button onClick={waterSource.retry}>Coba lagi</button></p>}
   </section>;
 }
 export default memo(DisasterMap);

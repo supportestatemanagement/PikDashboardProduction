@@ -31,6 +31,7 @@ export default function SourceInfo() {
     {open && createPortal(<dialog ref={dialogRef} className="ppb-info-dialog" aria-labelledby="ppb-info-title" onCancel={() => setOpen(false)} onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
       <header><h2 id="ppb-info-title">Informasi sumber data</h2><button autoFocus aria-label="Tutup informasi sumber" onClick={() => setOpen(false)}>×</button></header>
       <dl>{sources.map(([title, name, url, description]) => <div key={title}><dt>{title} <a href={url} target="_blank" rel="noreferrer">{name} ↗</a></dt><dd>{description}</dd></div>)}</dl>
+      <p><strong>Berbagi Air:</strong> Nama lokasi dan koordinat dari sheet BerbagiAir, diperbarui setiap 30 menit.</p>
       <p>Pembaruan otomatis: gempa/cuaca dini/RDCA 5 menit, cuaca/maritim 30 menit, ENSO 6 jam. Waktu pada kartu mengikuti waktu kejadian atau periode sumber.</p>
     </dialog>, document.body)}
   </>;

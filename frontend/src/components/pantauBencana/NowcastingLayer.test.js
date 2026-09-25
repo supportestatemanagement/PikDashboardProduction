@@ -11,7 +11,7 @@ jest.mock('react-leaflet', () => {
   const LayersControl = Container;
   LayersControl.Overlay = ({ children, name, checked }) => <div data-testid={name} data-checked={Boolean(checked)}>{children}</div>;
   LayersControl.BaseLayer = Container;
-  return { MapContainer: Container, LayerGroup: Container, Pane: Container, Popup: Container, CircleMarker: Container, Marker: Container,
+  return { MapContainer: Container, LayerGroup: Container, Pane: Container, Popup: Container, CircleMarker: Container, Marker: ({ children, title }) => <div title={title}>{children}</div>,
     LayersControl, TileLayer: () => null, useMap: () => mockMap,
     useMapEvents: handlers => { mockEvents = handlers; },
     GeoJSON: ({ children, data }) => <div data-testid={`polygon-${data.id}`}>{children}</div>,
@@ -48,6 +48,18 @@ test('warning legend follows availability, visibility and expiration', () => {
   expect(screen.getByLabelText('Legenda peta')).toBeInTheDocument();
   act(() => jest.advanceTimersByTime(15000));
   expect(screen.queryByLabelText('Legenda peta')).not.toBeInTheDocument();
+});
+
+test('WebGIS includes Berbagi Air by default with its location popup and conditional legend', () => {
+  const view = render(<DisasterMap latestSource={{}} historySource={{}} waterSource={{ data: [{ id: 'water-1', name: 'Pos Air', position: [-6.11, 106.75] }, { id: 'invalid', name: 'Invalid', position: [100, 106] }] }} />);
+  expect(screen.getByTestId('Berbagi Air')).toHaveAttribute('data-checked', 'true');
+  expect(screen.getByTitle('Berbagi Air: Pos Air')).toHaveTextContent('-6.11, 106.75');
+  expect(screen.queryByTitle('Berbagi Air: Invalid')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Legenda peta')).toHaveTextContent('Berbagi Air');
+  act(() => mockEvents.overlayremove({ name: 'Berbagi Air' }));
+  expect(screen.queryByLabelText('Legenda peta')).not.toBeInTheDocument();
+  view.rerender(<DisasterMap latestSource={{}} historySource={{}} waterSource={{ data: [] }} />);
+  expect(screen.queryByTitle('Berbagi Air: Pos Air')).not.toBeInTheDocument();
 });
 
 test('only matching layer events toggle and popup never invents weather potential', () => {

@@ -21,12 +21,12 @@ jest.mock('react-leaflet', () => {
 });
 
 const water = [{ id: 'water-1', name: 'Pos Air', position: [-6.11, 106.75] }];
-test('Vehicle Tracker opens bright road map with GPS/water and labels without traffic counts or checkpoints', () => {
+test('Vehicle Tracker opens bright road map with GPS and labels without traffic counts or checkpoints', () => {
   render(<HeatmapMap mode="vehicle-tracker" isActive={false} waterLocations={water} traffic={{ vehicles: { bgm: 12345 } }} />);
   expect(screen.getByRole('region', { name: 'Peta Jalan' })).toHaveAttribute('data-active', 'true');
   expect(screen.getByTestId('vehicle-street-tiles')).toBeInTheDocument();
   expect(screen.getByText('Realtime GPS layer')).toBeInTheDocument();
-  expect(screen.getByTitle('Berbagi Air: Pos Air')).toBeInTheDocument();
+  expect(screen.queryByTitle('Berbagi Air: Pos Air')).not.toBeInTheDocument();
   expect(screen.getByText('BGM')).toBeInTheDocument();
   expect(screen.queryByText('12.345')).not.toBeInTheDocument();
   expect(screen.queryByText('Vehicle In')).not.toBeInTheDocument();
