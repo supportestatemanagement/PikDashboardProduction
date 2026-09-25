@@ -22,8 +22,8 @@ test('defaults to live, loads history, fits once and preserves live mode', async
   fireEvent.click(screen.getByRole('button', { name: 'History Tracking' }));
   await screen.findByLabelText('History summary');
   expect(screen.getByTestId('path')).toHaveTextContent('2');
-  expect(screen.getByLabelText('START: PATROL_01')).toBeInTheDocument();
-  expect(screen.getByLabelText('END: PATROL_01')).toBeInTheDocument();
+  expect(screen.queryByLabelText('START: PATROL_01')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('END: PATROL_01')).not.toBeInTheDocument();
   expect(readVehicleHistory).toHaveBeenCalledWith('PATROL_01', expect.any(String), mockUser);
   expect(screen.getByText('1h 0m')).toBeInTheDocument();
   expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);

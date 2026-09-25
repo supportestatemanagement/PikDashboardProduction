@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Polyline, Marker, Popup, useMap } from 'react-leaflet';
+import { Polyline, Marker, useMap } from 'react-leaflet';
 import HeatmapMap from './HeatmapMap';
 import L from 'leaflet';
 import { getVehicleColor, getVehicleType, vehicleIconSvg } from './vehicleIcons';
 import { useVehicleAuth } from './VehicleAuthProvider';
 import { HISTORY_VEHICLES, todayWib, historyTime, readVehicleHistory, historyDistance, renderHistoryPoints } from '../services/vehicleHistoryService';
-
-const endpointIcon = label => L.divIcon({ className: `history-endpoint history-endpoint-${label.toLowerCase()}`, html: `<span>${label}</span>`, iconSize: [54, 26], iconAnchor: [27, label === 'START' ? 26 : 0], popupAnchor: [0, -26] });
-const startIcon = endpointIcon('START'), endIcon = endpointIcon('END');
 
 function FitHistory({ points }) {
   const map = useMap();
@@ -18,15 +15,6 @@ function FitHistory({ points }) {
     }
   }, [map, points]);
   return null;
-}
-
-function Endpoint({ point, label, vehicle }) {
-  return <Marker position={point.position} icon={label === 'START' ? startIcon : endIcon} title={`${label}: ${vehicle}`}>
-    <Popup><strong>{label} · {vehicle}</strong><div>Time: {historyTime(point.timestamp)} WIB</div>
-      {Number.isFinite(point.speed) && <div>Speed (GPS raw): {point.speed}</div>}
-      {Number.isFinite(point.accuracy) && <div>Accuracy: {point.accuracy} m</div>}
-    </Popup>
-  </Marker>;
 }
 
 export default function VehicleHistoryTracking({ isActive }) {
@@ -130,8 +118,6 @@ export default function VehicleHistoryTracking({ isActive }) {
         <Polyline positions={playback.trail} pathOptions={{ color: playback.color, weight: 6, opacity: 1 }} />
         <Marker position={playback.position} icon={playback.icon} zIndexOffset={1000} title={`Playback: ${name}`} />
       </>}
-      {first && <Endpoint point={first} label="START" vehicle={name} />}
-      {last && <Endpoint point={last} label="END" vehicle={name} />}
     </HeatmapMap></div>
   </div>;
 }
