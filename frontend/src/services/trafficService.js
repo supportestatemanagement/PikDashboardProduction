@@ -5,7 +5,7 @@ const API_URL = process.env.REACT_APP_API_URL || "";
 export async function fetchWaterLocations(signal) {
   const response = await fetch(`${API_URL}/api/berbagi-air`, { signal });
   const payload = await response.json();
-  if (!response.ok || payload.status !== "success") throw new Error(payload.message || "Gagal mengambil lokasi berbagi air");
+  if (!response.ok || payload.status !== "success") throw new Error(payload.message || "Gagal mengambil lokasi distribusi air bersih");
   return payload.locations || [];
 }
 

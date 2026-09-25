@@ -15,7 +15,7 @@ const waterIcon = L.divIcon({
 
 export default function WaterLocationsLayer({ locations = [] }) {
   const map = useMap();
-  const waterLocations = locations.filter(location => validEarthquakeCoordinates(location.position));
+  const waterLocations = locations.filter(location => validEarthquakeCoordinates(location.position) && location.distributions?.some(entry => entry.date));
   return <LayerGroup>
         {waterLocations.map((location) => <Marker
           key={location.id}
@@ -29,10 +29,19 @@ export default function WaterLocationsLayer({ locations = [] }) {
           } }}
           zIndexOffset={600}
         >
-          <Popup className="traffic-popup" autoPan={false}>
+          <Popup className="traffic-popup" autoPan={false} maxHeight={320} minWidth={260}>
             <div className="popup-title" style={{ color: '#38bdf8' }}>Distribusi Air</div>
             <div className="popup-row"><span>Nama Lokasi</span><strong>{location.name}</strong></div>
             <div className="popup-row"><span>Koordinat</span><strong>{location.position.join(', ')}</strong></div>
+            {location.distributions.filter(entry => entry.date).map(entry => <section key={entry.id} style={{ borderTop: '1px solid #475569', marginTop: 10, paddingTop: 8 }}>
+              <div className="popup-row"><span>Tanggal</span><strong>{entry.date.split('-').reverse().join('/')}</strong></div>
+              <div className="popup-row"><span>No.</span><strong>{entry.number ?? '-'}</strong></div>
+              <div className="popup-row"><span>Lokasi</span><strong>{entry.location || '-'}</strong></div>
+              <div className="popup-row"><span>Kampung</span><strong>{entry.village || '-'}</strong></div>
+              <div className="popup-row"><span>Kecamatan</span><strong>{entry.district || '-'}</strong></div>
+              <div className="popup-row"><span>Jumlah KK</span><strong>{entry.households ?? '-'}</strong></div>
+              <div className="popup-row"><span>Jumlah Warga</span><strong>{entry.residents ?? '-'}</strong></div>
+            </section>)}
           </Popup>
         </Marker>)}
   </LayerGroup>;

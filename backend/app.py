@@ -16,6 +16,7 @@ from dashboard_auth import register_dashboard_auth
 from firebase_admin_service import create_dashboard_token
 from disaster_maritime import register_maritime_routes
 from disaster_enso import register_enso_routes
+from water_distribution import build_water_locations
 
 # Menggunakan RapidOCR (Ringan, Cepat, dan Akurat untuk Angka CCTV)
 from rapidocr_onnxruntime import RapidOCR
@@ -307,18 +308,10 @@ def parse_water_coordinates(value):
 def get_water_locations():
     try:
         try:
-            sheet = cc_spreadsheet.worksheet("BerbagiAir")
+            sheet = cc_spreadsheet.worksheet("DistribusiAirBersih")
         except gspread.WorksheetNotFound:
-            sheet = spreadsheet.worksheet("BerbagiAir")
-        locations = []
-        skipped = 0
-        for index, row in enumerate(sheet.get_all_records(), start=2):
-            name = str(record_value(row, "Nama Lokasi") or "").strip()
-            position = parse_water_coordinates(record_value(row, "Koordinat"))
-            if not name or position is None:
-                skipped += 1
-                continue
-            locations.append({"id": f"water-{index}", "name": name, "position": position})
+            sheet = spreadsheet.worksheet("DistribusiAirBersih")
+        locations, skipped = build_water_locations(sheet.get_all_records())
         return jsonify({"status": "success", "locations": locations, "meta": {"skippedRows": skipped}})
     except Exception as error:
         return jsonify({"status": "error", "message": str(error)}), 500

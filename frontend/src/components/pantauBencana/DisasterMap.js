@@ -45,7 +45,7 @@ function DisasterMap({ latestSource, historySource, feltSource = EMPTY_SOURCE, n
     ['Gempa terbaru', 'quake', '#ff1616', latestQuakes.some(q => validEarthquakeCoordinates(q.coordinates))],
     ['Gempa M >= 5', 'quake', '#f7943c', history.some(q => validEarthquakeCoordinates(q.coordinates))],
     ['Gempa dirasakan', 'quake', '#f472b6', felt.some(q => validEarthquakeCoordinates(q.coordinates))],
-    ['Distribusi Air', 'water', '#38bdf8', waterLocations.some(location => validEarthquakeCoordinates(location.position))],
+    ['Distribusi Air', 'water', '#38bdf8', waterLocations.some(location => validEarthquakeCoordinates(location.position) && location.distributions?.some(entry => entry.date))],
     [RDCA_LAYER_NAME, 'cloud', '#a3e635', rdca.length > 0],
   ].filter(([name, , , available]) => available && enabled(name));
   return <section className="ppb-map-surface" aria-label="Peta Bencana Indonesia">
