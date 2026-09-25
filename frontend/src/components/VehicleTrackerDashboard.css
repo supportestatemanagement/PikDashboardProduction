@@ -1,0 +1,15 @@
+.vehicle-tracker-dashboard { display: flex; flex-direction: column; }
+.vehicle-tracker-modes { display: flex; gap: 8px; padding: 8px 12px; background: #0f172a; }
+.vehicle-tracker-modes button, .history-filters button { border: 1px solid #475569; border-radius: 6px; padding: 8px 12px; background: #1e293b; color: #e2e8f0; cursor: pointer; }
+.vehicle-tracker-modes button[aria-pressed="true"] { background: #075985; border-color: #38bdf8; color: #fff; }
+.vehicle-tracker-content { position: relative; flex: 1; min-height: 0; }
+.vehicle-history { height: 100%; display: flex; flex-direction: column; }
+.history-toolbar { background: #0f172a; color: #e2e8f0; padding: 8px 12px; font-size: 12px; }
+.history-filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 8px; }
+.history-filters label { display: flex; flex-direction: column; gap: 4px; }
+.history-filters select, .history-filters input { color-scheme: dark; background: #1e293b; color: #fff; padding: 6px 8px; border: 1px solid #475569; border-radius: 5px; min-height: 34px; }
+.history-summary { display: flex; gap: 6px 16px; flex-wrap: wrap; }
+.history-map { flex: 1; min-height: 0; }
+.history-endpoint span { display: block; background: #16a34a; color: white; border: 2px solid white; border-radius: 5px; text-align: center; font: bold 11px/22px sans-serif; box-shadow: 0 2px 6px #0009; }
+.history-endpoint-end span { background: #dc2626; }
+@media (max-width: 600px) { .history-toolbar { max-height: 35%; overflow-y: auto; } .vehicle-tracker-modes button { flex: 1; } }

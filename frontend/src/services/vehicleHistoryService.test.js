@@ -1,0 +1,37 @@
+import { get } from 'firebase/database';
+import { getFirebaseServices } from '../config/firebase';
+import { normalizeHistory, readVehicleHistory, historyDistance, renderHistoryPoints } from './vehicleHistoryService';
+jest.mock('firebase/database', () => ({ get: jest.fn(), ref: (_, path) => path }));
+jest.mock('../config/firebase', () => ({ getFirebaseServices: jest.fn() }));
+const user = { uid: 'dashboard' };
+beforeEach(() => { jest.clearAllMocks(); getFirebaseServices.mockReturnValue({ auth: { currentUser: user }, database: {} }); });
+
+test('sorts timestamps explicitly, accepts timestamp keys and rejects corrupt records', () => {
+  const points = normalizeHistory({ later: { latitude: -6, longitude: 106, timestamp: 1790300005000 },
+    1790300000000: { latitude: '0', longitude: '0' },
+    seconds: { latitude: 1, longitude: 1, timestamp: 1790300002 },
+    bad: { latitude: 100, longitude: 0, timestamp: 1790300000000 },
+    missing: { latitude: null, longitude: 0, timestamp: 1790300000000 },
+    invalidTime: { latitude: 0, longitude: 0, timestamp: 'invalid' }, empty: null });
+  expect(points.map(point => point.timestamp)).toEqual([1790300000000, 1790300002000, 1790300005000]);
+  expect(points[0].position).toEqual([0, 0]);
+  expect(normalizeHistory(null)).toEqual([]);
+});
+test('reads only selected vehicle/date using existing Firebase identity', async () => {
+  get.mockResolvedValue({ val: () => null });
+  await expect(readVehicleHistory('MACAN_GI', '2026-09-25', user)).resolves.toEqual([]);
+  expect(get).toHaveBeenCalledWith('vehicle_history/MACAN_GI/2026-09-25');
+  await expect(readVehicleHistory('MACAN_GI', '2026-09-25', { uid: 'other' })).rejects.toThrow('authentication');
+  expect(get).toHaveBeenCalledTimes(1);
+});
+test('Haversine uses full data and skips nonfinite segments; rendering preserves endpoints', () => {
+  expect(historyDistance([{ position: [0, 0] }, { position: [0, 1] }])).toBeCloseTo(111.195, 2);
+  expect(historyDistance([{ position: [NaN, 0] }, { position: [0, 1] }])).toBe(0);
+  expect(historyDistance([])).toBe(0);
+  const points = Array.from({ length: 17000 }, (_, i) => ({ position: [0, i / 10000] }));
+  const rendered = renderHistoryPoints(points);
+  expect(rendered.length).toBeLessThanOrEqual(5001);
+  expect(rendered[0]).toEqual(points[0].position);
+  expect(rendered[rendered.length - 1]).toEqual(points[16999].position);
+  expect(points).toHaveLength(17000);
+});
