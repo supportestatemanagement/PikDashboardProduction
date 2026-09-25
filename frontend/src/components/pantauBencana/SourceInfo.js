@@ -11,7 +11,7 @@ const sources = [
   ['Peringatan Dini Cuaca', 'BMKG', NOWCASTING_LAYER_URL, 'Area terjadi dan meluas pada periode berlaku.'],
   ['RDCA', 'BMKG', RDCA_URL, 'Pertumbuhan awan cepat; bukan peringatan bencana.'],
   ['Kondisi Maritim', 'BMKG Maritim', 'https://maritim.bmkg.go.id/', 'Prakiraan Pelabuhan Muara Angke dan Tanjung Pasir. Pasut mengikuti datum sumber.'],
-  ['ENSO / El Niño–La Niña', 'NOAA/CPC', ENSO_SOURCE_URL, 'Anomali mingguan Niño 3.4: ≤−0,5°C La Niña, ≥+0,5°C El Niño. Indikator Pasifik. Tren menunjukkan perubahan indeks mingguan.'],
+  ['ENSO / El Niño–La Niña', 'NOAA/CPC', ENSO_SOURCE_URL, 'Informasi kondisi iklim regional Pasifik dan perkembangan El Niño–La Niña.'],
 ];
 export default function SourceInfo() {
   const [open, setOpen] = useState(false);
