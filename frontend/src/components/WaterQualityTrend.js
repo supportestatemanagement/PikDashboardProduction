@@ -62,8 +62,16 @@ export default function WaterQualityTrend({ metric, points, areas, loading = fal
       <div className="water-trend-legend">{areas.filter(name => area === 'All areas' || area === name).map(name => <span key={name}><i style={{ background: colors[areas.indexOf(name)] }} />{name}</span>)}</div>
       {loading ? <div className="water-chart-loading" role="status"><div className="water-loading-grid" aria-hidden="true" /><span>Loading {metric} trend...</span></div> : error ? <div className="water-trend-empty">Trend data could not be loaded.</div> : visible.length ? <div className="water-trend-scroll"><svg className="water-trend-plot" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${metric} ${statistic.toLowerCase()} by date`}>
         <text x="20" y="22" className="water-axis-title">{statistic} {metric}</text>
+        {metric === 'TDS' && <g pointerEvents="none">
+          <rect x={left} y={y(500)} width={right - left} height={y(300) - y(500)} fill="#ffd6bf" />
+          <rect x={left} y={top} width={right - left} height={y(500) - top} fill="#f8c7c7" />
+        </g>}
         {Array.from({ length: 5 }, (_, index) => minimum + (maximum - minimum) * index / 4).map(value => <g key={value}><line x1={left} x2={right} y1={y(value)} y2={y(value)} stroke="#e7edf5" /><text x={left - 10} y={y(value) + 4} textAnchor="end">{metric === 'pH' ? value.toFixed(2) : Math.round(value)}</text></g>)}
         {metric === 'TDS' && [300, 500].map(value => <g key={value}><line x1={left} x2={right} y1={y(value)} y2={y(value)} stroke={value === 300 ? '#dc962d' : '#d95454'} strokeDasharray="5 5" /><text x={right + 3} y={y(value) + 4}>{value}</text></g>)}
+        {metric === 'TDS' && <g className="water-tds-zone-label" pointerEvents="none">
+          <text x={right - 10} y={y(500) + 19} textAnchor="end" style={{ fill: '#92400e' }}>Air tidak layak diminum</text>
+          <text x={right - 10} y={top + 19} textAnchor="end" style={{ fill: '#991b1b' }}>Air tidak layak diminum</text>
+        </g>}
         {areas.map((name, index) => {
           const series = visible.filter(point => point.area === name);
           return <g key={name}><polyline fill="none" stroke={colors[index]} strokeWidth="1.8" points={series.map(point => `${x(point.time)},${y(point.value)}`).join(' ')} />{series.map(point => <g key={point.id}>
