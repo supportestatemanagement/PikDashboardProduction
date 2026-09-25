@@ -5,6 +5,7 @@ import SourceInfo from './pantauBencana/SourceInfo';
 function MenuIcon({ type }) {
   if (type === "water") return <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M12 3S5 11 5 15a7 7 0 0 0 14 0c0-4-7-12-7-12Z" /><path d="M9 15a3 3 0 0 0 3 3" /></svg>;
   const common = { width: 19, height: 19, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true };
+  if (type === "road") return <svg {...common}><path d="M7 3 3 21M17 3l4 18M12 3v3M12 10v4M12 18v3" /></svg>;
   if (type === "car") return <svg {...common}><path d="m5 11 1.5-4h11l1.5 4" /><path d="M3 13a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5H3Z" /><circle cx="7" cy="16" r="1" /><circle cx="17" cy="16" r="1" /><path d="M5 18v2M19 18v2" /></svg>;
   if (type === "call") return <svg {...common}><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c1 .4 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z" /></svg>;
   if (type === "camera") return <svg {...common}><path d="M3 7h13v10H3z" /><path d="m16 10 5-3v10l-5-3z" /><path d="M7 17v3M4 20h6" /><circle cx="7" cy="11" r="1.5" /></svg>;
@@ -339,7 +340,7 @@ export default function Navbar({
 
           <nav style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {[
-              { id: "dashboard", label: "Traffic", icon: "car" },
+              { id: "dashboard", label: "Traffic", icon: "road" },
               { id: "vehicletracker", label: "Vehicle Tracker", icon: "car" },
               { id: "callcenter", label: "Call Center", icon: "call" },
               { id: "cctv", label: "CCTV", icon: "camera" },
