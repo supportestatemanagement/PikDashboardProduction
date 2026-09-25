@@ -11,7 +11,7 @@ test('source information opens as one modal, closes with Escape and returns focu
     const button = screen.getByRole('button', { name: 'Informasi sumber data bencana' });
     fireEvent.click(button);
     const dialog = screen.getByRole('dialog', { name: 'Informasi sumber data' });
-    expect(within(dialog).getAllByRole('link')).toHaveLength(7);
+    expect(within(dialog).getAllByRole('link')).toHaveLength(6);
     expect(within(dialog).getByText('NOAA/CPC ↗')).toHaveAttribute('href', 'https://www.cpc.ncep.noaa.gov/data/indices/wksst9120.for');
     expect(document.body.style.overflow).toBe('hidden');
     fireEvent(dialog, new Event('cancel', { bubbles: true }));

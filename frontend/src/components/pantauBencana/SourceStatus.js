@@ -5,7 +5,6 @@ export default function SourceStatus({ sources: s }) {
   const statuses = [
     ['BMKG Weather', combinedStatus(s.weather), s.weather],
     ['BMKG Earthquake', combinedStatus([s.latest, s.history, s.felt]), [s.latest, s.history, s.felt]],
-    ['BMKG Hotspot', sourceStatus(s.hotspot, s.hotspot.data?.hotspots), [s.hotspot]],
     ['BMKG Nowcasting', sourceStatus(s.nowcasting, visibleNowcasting(s.nowcasting.data?.features || [])), [s.nowcasting]],
     ['BMKG RDCA', sourceStatus(s.rdca, s.rdca.data?.points), [s.rdca]],
     ['BMKG Maritime', combinedStatus(s.maritime), s.maritime], ['NOAA ENSO', sourceStatus(s.enso), [s.enso]],

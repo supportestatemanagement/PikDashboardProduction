@@ -32,7 +32,7 @@ test('all overlays default ON and empty data has no legend', () => {
   expect(screen.getByTestId('Gempa terbaru')).toHaveAttribute('data-checked', 'true');
   expect(screen.getByTestId('Gempa M >= 5')).toHaveAttribute('data-checked', 'true');
   expect(screen.getByTestId('Gempa dirasakan')).toHaveAttribute('data-checked', 'true');
-  expect(screen.getByTestId('Hotspot BMKG')).toHaveAttribute('data-checked', 'true');
+  expect(screen.queryByTestId('Hotspot BMKG')).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Legenda peta')).not.toBeInTheDocument();
 });
 
@@ -53,7 +53,7 @@ test('warning legend follows availability, visibility and expiration', () => {
 test('only matching layer events toggle and popup never invents weather potential', () => {
   const toggle = jest.fn();
   const view = render(<NowcastingEvents onToggle={toggle} />);
-  act(() => mockEvents.overlayadd({ name: 'Hotspot BMKG' }));
+  act(() => mockEvents.overlayadd({ name: 'Gempa terbaru' }));
   expect(toggle).not.toHaveBeenCalled();
   view.rerender(<NowcastingDetails warning={{ region: 'Wilayah Uji', fieldReport: '<script>unsafe</script>' }} />);
   expect(screen.getByText(/Waktu berlaku tidak lengkap/)).toBeVisible();

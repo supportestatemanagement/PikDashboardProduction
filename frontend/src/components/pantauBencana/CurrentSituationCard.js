@@ -8,7 +8,7 @@ import DataTypeBadge from './DataTypeBadge';
 const unavailable = source => source?.loading ? 'Memuat sumber...' : source?.error ? 'Pembaruan sumber gagal.' : 'Data belum tersedia.';
 const cached = source => source.error ? 'Data terakhir tersedia: ' : '';
 export default function CurrentSituationCard({ sources, onEarthquakeSelect }) {
-  const { latest, weather, hotspot, rdca, nowcasting, maritime, enso } = sources;
+  const { latest, weather, rdca, nowcasting, maritime, enso } = sources;
   const [now, setNow] = useState(Date.now);
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 15000); return () => clearInterval(timer); }, []);
   const nearby = (source, points, empty) => !source.data ? unavailable(source) : cached(source) + (points.length ? MONITORING_CENTERS.map((center, i) => `PIK ${i + 1}: ${countNearby(points, center.coordinates)} titik dalam radius monitoring`).join(' / ') : empty);
@@ -17,7 +17,6 @@ export default function CurrentSituationCard({ sources, onEarthquakeSelect }) {
     ['Gempa terbaru', 'NEAR REAL-TIME', latest.data ? `${cached(latest)}M ${latest.data.latest.magnitude ?? '-'} / ${latest.data.latest.region} / Occurred ${formatWib(latest.data.latest.datetime)}` : unavailable(latest)],
     ['Peringatan Dini Cuaca', 'NOWCAST', nowcasting.error ? 'Gagal mengambil peringatan BMKG; area disembunyikan.' : nowcasting.data ? active.length ? `${active.length} area nasional; waktu berlaku mengikuti sumber.` : 'Tidak ada area peringatan aktif yang dikembalikan sumber saat ini.' : unavailable(nowcasting)],
     ['RDCA', 'NEAR REAL-TIME ANALYSIS', nearby(rdca, rdca.data?.points || [], 'Tidak ada area RDCA aktif yang dikembalikan sumber saat ini.')],
-    ['Hotspot', 'OBSERVATION', nearby(hotspot, hotspot.data?.hotspots || [], 'Tidak ada hotspot yang dikembalikan sumber pada periode ini.') + (hotspot.data?.observationDate ? ` Observed: ${hotspot.data.observationDate}.` : '')],
     ['Prakiraan Cuaca', 'FORECAST', weather.map((source, i) => `PIK ${i + 1}: ${source.data ? `${cached(source)}${source.data.description} / Valid ${formatWib(source.data.localDatetime)}` : unavailable(source)}`).join(' / ')],
     ['Maritim', 'FORECAST', maritime.map((source, i) => `PIK ${i + 1}: ${source.data ? `${source.error || now >= Date.parse(source.data.validUntil) ? 'Data terakhir tersedia' : 'Prakiraan tersedia'} / Valid ${formatWib(source.data.validAt)}` : 'Data maritim resmi sementara tidak tersedia.'}`).join(' / ')],
     ['ENSO', 'CLIMATE INDICATOR', enso.data ? `${cached(enso)}${getEnsoCategory(enso.data.value, enso.data.officialCategory)} / ${enso.data.period}` : 'Data ENSO terbaru sementara tidak tersedia.'],

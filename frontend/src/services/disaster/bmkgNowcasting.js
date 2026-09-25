@@ -6,7 +6,7 @@ export const NOWCASTING_LAYER_URL = `${NOWCASTING_SERVICE}/2`;
 export const NOWCASTING_LAYER_NAME = 'Peringatan Dini Cuaca';
 export const NOWCASTING_REFRESH_INTERVAL = 5 * 60 * 1000;
 // Official tipearea renderer values, not severity levels. UI colors deliberately
-// differ from earthquakes and hotspots; these are not BMKG's palette.
+// differ from earthquakes; these are not BMKG's palette.
 export const NOWCASTING_AREA_CONFIG = {
   'Area Terjadi': { color: '#a855f7', dashArray: undefined },
   'Area Meluas': { color: '#6366f1', dashArray: '6 4' },

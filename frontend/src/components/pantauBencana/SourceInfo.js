@@ -8,7 +8,6 @@ import './sourceInfo.css';
 const sources = [
   ['Prakiraan Cuaca Lokal', 'BMKG', 'https://data.bmkg.go.id/prakiraan-cuaca/', 'Prakiraan wilayah Kamal Muara dan Salembaran Jati.'],
   ['Gempa BMKG', 'BMKG', 'https://data.bmkg.go.id/gempabumi/', 'Gempa terbaru, magnitudo ≥5, dan gempa dirasakan.'],
-  ['Hotspot BMKG', 'BMKG', 'https://datacuaca.bmkg.go.id/arcgis/rest/services/production/geohotspot/FeatureServer/0', 'Deteksi satelit, bukan konfirmasi kebakaran. Warna menunjukkan tingkat kepercayaan: hijau rendah, kuning sedang, merah tinggi, abu-abu tidak tersedia.'],
   ['Peringatan Dini Cuaca', 'BMKG', NOWCASTING_LAYER_URL, 'Area terjadi dan meluas pada periode berlaku.'],
   ['RDCA', 'BMKG', RDCA_URL, 'Pertumbuhan awan cepat; bukan peringatan bencana.'],
   ['Kondisi Maritim', 'BMKG Maritim', 'https://maritim.bmkg.go.id/', 'Prakiraan Pelabuhan Muara Angke dan Tanjung Pasir, bukan sensor PIK. Pasut mengikuti datum sumber.'],
@@ -32,7 +31,7 @@ export default function SourceInfo() {
     {open && createPortal(<dialog ref={dialogRef} className="ppb-info-dialog" aria-labelledby="ppb-info-title" onCancel={() => setOpen(false)} onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
       <header><h2 id="ppb-info-title">Informasi sumber data</h2><button autoFocus aria-label="Tutup informasi sumber" onClick={() => setOpen(false)}>×</button></header>
       <dl>{sources.map(([title, name, url, description]) => <div key={title}><dt>{title} <a href={url} target="_blank" rel="noreferrer">{name} ↗</a></dt><dd>{description}</dd></div>)}</dl>
-      <p>Pembaruan otomatis: gempa/cuaca dini/RDCA 5 menit, hotspot 15 menit, cuaca/maritim 30 menit, ENSO 6 jam. Waktu pada kartu mengikuti waktu kejadian atau periode sumber.</p>
+      <p>Pembaruan otomatis: gempa/cuaca dini/RDCA 5 menit, cuaca/maritim 30 menit, ENSO 6 jam. Waktu pada kartu mengikuti waktu kejadian atau periode sumber.</p>
     </dialog>, document.body)}
   </>;
 }

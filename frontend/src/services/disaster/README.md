@@ -11,7 +11,6 @@ and Leaflet remain. No illustrative values or replacement numbers are supplied.
 | Latest earthquake | https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json | 5 min | LIVE feed of latest reported event; event time is not fetch time |
 | M >= 5 | https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json | 5 min | Reported event history |
 | Felt earthquakes | https://data.bmkg.go.id/DataMKG/TEWS/gempadirasakan.json | 5 min | Verified JSON; includes coordinates, magnitude, depth, event time, felt areas |
-| Hotspot | https://datacuaca.bmkg.go.id/arcgis/rest/services/production/geohotspot/FeatureServer/0/query | 15 min | Observation dataset; latest available observation date only, may be historical |
 | Nowcasting | https://datacuaca.bmkg.go.id/arcgis/rest/services/production/nowcasting_public/MapServer/2/query | 5 min | Official warning feed; verified empty GeoJSON, active/current warnings not confirmed |
 | RDCA | https://datacuaca.bmkg.go.id/arcgis/rest/services/production/rdca/FeatureServer/1/query | 5 min | Meteorological indicator; verified empty GeoJSON, active/current detections not confirmed |
 | Maritime PIK 1 reference | https://maritim.bmkg.go.id/api/pelabuhan?slug=pelabuhan-muara-angke | 30 min | FORECAST; verified port XJ003, Pelabuhan Muara Angke |
@@ -25,7 +24,7 @@ OFF. Map toggles do not trigger duplicate requests. Intervals and requests abort
 on unmount. Successful empty data is `No data`, not `Error`. Unverified adapters
 are `Unavailable`; no fake requests or values are used to make them look connected.
 
-## Weather / earthquake / hotspot fields
+## Weather / earthquake fields
 
 Weather picks the closest forecast validity to fetch time. `weather_desc`, `t`,
 `hu`, `ws`, `wd`, `vs_text` and `tcc` are used only when present. BMKG documents
@@ -33,11 +32,7 @@ Weather picks the closest forecast validity to fetch time. `weather_desc`, `t`,
 production time in UTC. Forecasts are not observations.
 
 Earthquakes include source `Potensi` when present; no tsunami risk is inferred.
-Latest events and M5+ history are distinct feeds. Hotspot metadata exposes
-objectid, longitude, latitude, date, time, region, provinsi, kabupaten, kecamatan,
-system_date, date_full. No confidence field was advertised, so none is invented.
-Hotspot counts are explicitly tied to the source observation date and do not imply
-current fires. Source geometry and invalid records are handled per adapter.
+Latest events and M5+ history are distinct feeds. Source geometry and invalid records are handled per adapter.
 
 ## RDCA details
 
@@ -143,7 +138,7 @@ REACT_APP_API_URL continues to configure the backend. No new backend env is requ
 Monitoring references reuse `HeatmapMap.js` AREA_CONFIG: PIK 1 uses **BGM**
 [-6.1100, 106.7427], PIK 2 uses [-6.051, 106.694]. These are existing map reference
 points, not newly surveyed PIK centers; the UI identifies the existing-map reference.
-Haversine with mean Earth radius 6371.0088 km counts hotspot/RDCA points within the
+Haversine with mean Earth radius 6371.0088 km counts RDCA points within the
 configured radius of each reference. Overlapping radii may count the same point
 for both references. Counts are dated, never declared current without evidence.
 Nowcasting counts remain national; no unsupported polygon proximity claim is made.
@@ -161,7 +156,6 @@ new dependencies; all new status and layout styling is scoped to this dashboard.
 Read-only upstream requests with Origin http://localhost:3000:
 - Weather (both ADM4): HTTP 200, Access-Control-Allow-Origin *.
 - Latest/history/felt earthquakes: HTTP 200, Access-Control-Allow-Origin *.
-- Hotspot count query: HTTP 200, origin reflected; populated national archive.
   This confirms availability, not the freshness of every observation.
 - Nowcasting GeoJSON: HTTP 200, origin reflected, zero features.
 - RDCA GeoJSON: HTTP 200, origin reflected, zero features.

@@ -29,8 +29,8 @@ test('opens the prototype by direct URL and restores it after remount', () => {
   expect(screen.getByRole('region', { name: 'ENSO / El Niño-La Niña' })).toBeInTheDocument();
   expect(screen.getByText('Referensi: Pelabuhan Muara Angke')).toBeInTheDocument();
   expect(screen.getByText('Referensi: Pelabuhan Tanjung Pasir')).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: 'PIK 1 — Kamal Muara' })).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: 'PIK 2 — Salembaran Jati' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Prakiraan Cuaca PIK 1 — Kamal Muara' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Prakiraan Cuaca PIK 2 — Salembaran Jati' })).toBeInTheDocument();
   expect(localStorage.getItem('cc_activeTab')).toBe('pantau-bencana-develop');
   view.unmount();
   render(<App />);

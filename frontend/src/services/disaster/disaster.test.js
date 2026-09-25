@@ -1,7 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { normalizeEarthquake, parseCoordinates, fetchEarthquakeHistory } from './bmkgEarthquake';
 import { fetchWeather, normalizeWeather, WEATHER_LOCATIONS, weatherLoaders, WEATHER_REFRESH_INTERVAL } from './bmkgWeather';
-import { fetchHotspots, normalizeHotspot } from './bmkgHotspot';
 import { formatWib } from './client';
 import useDisasterSource from './useDisasterSource';
 
@@ -62,16 +61,6 @@ test('weather rejects missing ADM4 without fetching a fallback location', async 
   expect(global.fetch).not.toHaveBeenCalled();
 });
 
-test('hotspots page through the latest observation date and skip invalid points', async () => {
-  const feature = id => ({ id, geometry: { type: 'Point', coordinates: [120, -8] }, properties: { date: '2026-09-01', system_date: 1788268500000 } });
-  const responses = [{ features: [{ attributes: { date: '2026-09-01' } }] }, { count: 2002 }, { features: Array.from({ length: 2000 }, (_, index) => feature(index)), exceededTransferLimit: true }, { features: [feature(2000), { id: 2001, geometry: null }] }];
-  global.fetch = jest.fn().mockImplementation(async () => ({ ok: true, json: async () => responses.shift() }));
-  const result = await fetchHotspots();
-  expect(result.hotspots).toHaveLength(2001);
-  expect(new URL(global.fetch.mock.calls[3][0]).searchParams.get('resultOffset')).toBe('2000');
-  expect(new URL(global.fetch.mock.calls[2][0]).searchParams.get('where')).toBe("date='2026-09-01'");
-  expect(normalizeHotspot({ geometry: { type: 'Point', coordinates: [500, -8] } }).coordinates).toBeNull();
-});
 test('source retains successful data on refresh failure and cleans up polling on unmount', async () => {
   jest.useFakeTimers();
   const loader = jest.fn().mockResolvedValueOnce({ value: 1 }).mockRejectedValue(new Error('Offline'));
