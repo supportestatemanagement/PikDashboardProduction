@@ -42,10 +42,10 @@ function DisasterMap({ latestSource, historySource, feltSource = EMPTY_SOURCE, n
   const rdca = rdcaSource.error ? [] : (rdcaSource.data?.points || []).filter(point => validEarthquakeCoordinates(point.coordinates));
   const warnings = nowcastingSource.error ? [] : visibleNowcasting(nowcastingSource.data?.features || [], Math.max(now, Date.now()));
   const legend = [
-    ['Berbagi Air', 'water', '#38bdf8', waterLocations.some(location => validEarthquakeCoordinates(location.position))],
     ['Gempa terbaru', 'quake', '#ff1616', latestQuakes.some(q => validEarthquakeCoordinates(q.coordinates))],
     ['Gempa M >= 5', 'quake', '#f7943c', history.some(q => validEarthquakeCoordinates(q.coordinates))],
     ['Gempa dirasakan', 'quake', '#f472b6', felt.some(q => validEarthquakeCoordinates(q.coordinates))],
+    ['Distribusi Air', 'water', '#38bdf8', waterLocations.some(location => validEarthquakeCoordinates(location.position))],
     [RDCA_LAYER_NAME, 'cloud', '#a3e635', rdca.length > 0],
   ].filter(([name, , , available]) => available && enabled(name));
   return <section className="ppb-panel" aria-label="WebGIS Peta Bencana Indonesia">
@@ -54,7 +54,7 @@ function DisasterMap({ latestSource, historySource, feltSource = EMPTY_SOURCE, n
       <NowcastingEvents onToggle={() => {}} onLayerToggle={(name, visible) => setOverlays(previous => ({ ...previous, [name]: visible }))} />
       <TileLayer className="ppb-dark-tiles" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <LayersControl position="topright">
-        <LayersControl.Overlay checked name="Berbagi Air"><WaterLocationsLayer locations={waterLocations} /></LayersControl.Overlay>
+        <LayersControl.Overlay checked name="Distribusi Air"><WaterLocationsLayer locations={waterLocations} /></LayersControl.Overlay>
         <LayersControl.Overlay checked name="Gempa terbaru"><EarthquakeLayer kind="latest" earthquakes={latestQuakes} selection={selection} focusRequest={focusRequest} onSelect={onEarthquakeSelect} /></LayersControl.Overlay>
         <LayersControl.Overlay checked name="Gempa M >= 5"><EarthquakeLayer kind="history" earthquakes={history} selection={selection} focusRequest={focusRequest} onSelect={onEarthquakeSelect} /></LayersControl.Overlay>
         <LayersControl.Overlay checked name="Gempa dirasakan"><EarthquakeLayer kind="felt" earthquakes={felt} selection={selection} focusRequest={focusRequest} onSelect={onEarthquakeSelect} /></LayersControl.Overlay>
@@ -68,7 +68,7 @@ function DisasterMap({ latestSource, historySource, feltSource = EMPTY_SOURCE, n
       </div>}
     </div>
     {(latestSource.error || historySource.error || feltSource.error || nowcastingSource.error || rdcaSource.error) && <p className="ppb-source-note" role="status">Sebagian sumber gagal diperbarui.</p>}
-    {waterSource.error && <p className="ppb-source-note" role="status">Lokasi Berbagi Air gagal diperbarui.{waterLocations.length > 0 && ' Menampilkan data terakhir.'} <button onClick={waterSource.retry}>Coba lagi</button></p>}
+    {waterSource.error && <p className="ppb-source-note" role="status">Lokasi Distribusi Air gagal diperbarui.{waterLocations.length > 0 && ' Menampilkan data terakhir.'} <button onClick={waterSource.retry}>Coba lagi</button></p>}
   </section>;
 }
 export default memo(DisasterMap);

@@ -4,14 +4,15 @@ import DisasterMap from './DisasterMap';
 import { normalizeNowcasting, NOWCASTING_LAYER_NAME } from '../../services/disaster/bmkgNowcasting';
 
 let mockEvents;
-const mockMap = { getContainer: jest.fn(), invalidateSize: jest.fn() };
+const mockMap = { getContainer: jest.fn(), invalidateSize: jest.fn(), stop: jest.fn(), closePopup: jest.fn(), flyTo: jest.fn(), getZoom: () => 5 };
+const mockOpenPopup = jest.fn();
 jest.mock('./EarthquakeLayer', () => () => null);
 jest.mock('react-leaflet', () => {
   const Container = ({ children }) => <div>{children}</div>;
   const LayersControl = Container;
   LayersControl.Overlay = ({ children, name, checked }) => <div data-testid={name} data-checked={Boolean(checked)}>{children}</div>;
   LayersControl.BaseLayer = Container;
-  return { MapContainer: Container, LayerGroup: Container, Pane: Container, Popup: Container, CircleMarker: Container, Marker: ({ children, title }) => <div title={title}>{children}</div>,
+  return { MapContainer: Container, LayerGroup: Container, Pane: Container, Popup: Container, CircleMarker: Container, Marker: ({ children, title, eventHandlers }) => <div title={title} onClick={() => eventHandlers?.click({ target: { openPopup: mockOpenPopup } })}>{children}</div>,
     LayersControl, TileLayer: () => null, useMap: () => mockMap,
     useMapEvents: handlers => { mockEvents = handlers; },
     GeoJSON: ({ children, data }) => <div data-testid={`polygon-${data.id}`}>{children}</div>,
@@ -50,16 +51,19 @@ test('warning legend follows availability, visibility and expiration', () => {
   expect(screen.queryByLabelText('Legenda peta')).not.toBeInTheDocument();
 });
 
-test('WebGIS includes Berbagi Air by default with its location popup and conditional legend', () => {
+test('WebGIS includes Distribusi Air by default with its location popup and conditional legend', () => {
   const view = render(<DisasterMap latestSource={{}} historySource={{}} waterSource={{ data: [{ id: 'water-1', name: 'Pos Air', position: [-6.11, 106.75] }, { id: 'invalid', name: 'Invalid', position: [100, 106] }] }} />);
-  expect(screen.getByTestId('Berbagi Air')).toHaveAttribute('data-checked', 'true');
-  expect(screen.getByTitle('Berbagi Air: Pos Air')).toHaveTextContent('-6.11, 106.75');
-  expect(screen.queryByTitle('Berbagi Air: Invalid')).not.toBeInTheDocument();
-  expect(screen.getByLabelText('Legenda peta')).toHaveTextContent('Berbagi Air');
-  act(() => mockEvents.overlayremove({ name: 'Berbagi Air' }));
+  expect(screen.getByTestId('Distribusi Air')).toHaveAttribute('data-checked', 'true');
+  expect(screen.getByTitle('Distribusi Air: Pos Air')).toHaveTextContent('-6.11, 106.75');
+  fireEvent.click(screen.getByTitle('Distribusi Air: Pos Air'));
+  expect(mockMap.flyTo).toHaveBeenCalledWith([-6.11, 106.75], 15, expect.any(Object));
+  expect(mockOpenPopup).toHaveBeenCalled();
+  expect(screen.queryByTitle('Distribusi Air: Invalid')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Legenda peta')).toHaveTextContent('Distribusi Air');
+  act(() => mockEvents.overlayremove({ name: 'Distribusi Air' }));
   expect(screen.queryByLabelText('Legenda peta')).not.toBeInTheDocument();
   view.rerender(<DisasterMap latestSource={{}} historySource={{}} waterSource={{ data: [] }} />);
-  expect(screen.queryByTitle('Berbagi Air: Pos Air')).not.toBeInTheDocument();
+  expect(screen.queryByTitle('Distribusi Air: Pos Air')).not.toBeInTheDocument();
 });
 
 test('only matching layer events toggle and popup never invents weather potential', () => {
