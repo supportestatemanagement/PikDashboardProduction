@@ -13,7 +13,7 @@ test('Pantau Bencana Develop uses the new tab and has its own active state', () 
   expect(menu).toHaveAttribute('aria-current', 'page');
   fireEvent.click(menu);
   expect(callbacks.setActiveTab).toHaveBeenCalledWith('pantau-bencana-develop');
-  expect(screen.getByRole('button', { name: 'Pantau Bencana', exact: true })).not.toHaveAttribute('aria-current');
+  expect(screen.queryByRole('button', { name: 'Pantau Bencana', exact: true })).not.toBeInTheDocument();
 });
 
 test('Vehicle Tracker opens as a separate dashboard menu', () => {

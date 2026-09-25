@@ -20,6 +20,15 @@ beforeEach(() => {
 });
 afterEach(() => window.history.replaceState(null, '', '/'));
 
+test('migrates the removed external dashboard to the local disaster dashboard', () => {
+  localStorage.setItem('cc_activeTab', 'disaster');
+  render(<App />);
+  expect(screen.getByRole('region', { name: 'Pantau Bencana' })).toBeInTheDocument();
+  expect(screen.queryByTitle('Pantau Bencana Dashboard')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Pantau Bencana', exact: true })).not.toBeInTheDocument();
+  expect(localStorage.getItem('cc_activeTab')).toBe('pantau-bencana-develop');
+});
+
 test('opens the prototype by direct URL and restores it after remount', () => {
   window.history.replaceState(null, '', '/#/pantau-bencana-develop');
   const view = render(<App />);

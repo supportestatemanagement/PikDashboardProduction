@@ -34,7 +34,7 @@ export default function App() {
     if (typeof window !== "undefined") {
       if (window.location.hash === disasterDevelopHash) return disasterDevelopTab;
       const savedTab = localStorage.getItem("cc_activeTab");
-      return savedTab === "traffic" ? "dashboard" : (savedTab || "dashboard");
+      return savedTab === "disaster" ? disasterDevelopTab : savedTab === "traffic" ? "dashboard" : (savedTab || "dashboard");
     }
     return "dashboard";
   });
@@ -55,7 +55,7 @@ export default function App() {
     const restoreUrlTab = () => {
       if (window.location.hash === disasterDevelopHash) setActiveTab(disasterDevelopTab);
       else setActiveTab(current => current === disasterDevelopTab
-        ? window.history.state?.dashboardTab || "dashboard" : current);
+        ? (window.history.state?.dashboardTab === "disaster" ? disasterDevelopTab : window.history.state?.dashboardTab || "dashboard") : current);
     };
     window.addEventListener('hashchange', restoreUrlTab);
     window.addEventListener('popstate', restoreUrlTab);
@@ -157,9 +157,9 @@ export default function App() {
         style={{
           marginLeft: isMobile ? "0px" : (isSidebarOpen ? "260px" : "0px"),
           paddingTop: "60px",
-          paddingLeft: ["dashboard", "vehicletracker", "disaster", disasterDevelopTab].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
-          paddingRight: ["dashboard", "vehicletracker", "disaster", disasterDevelopTab].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
-          paddingBottom: ["dashboard", "vehicletracker", "disaster", disasterDevelopTab].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
+          paddingLeft: ["dashboard", "vehicletracker", disasterDevelopTab].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
+          paddingRight: ["dashboard", "vehicletracker", disasterDevelopTab].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
+          paddingBottom: ["dashboard", "vehicletracker", disasterDevelopTab].includes(displayedTab) ? "0" : (isMobile ? "10px" : "20px"),
           transition: "margin-left 0.3s ease",
           boxSizing: "border-box",
           minHeight: "100vh"
@@ -184,12 +184,6 @@ export default function App() {
         {displayedTab === "availableparking" && <AvailableParkingDashboard />}
         {displayedTab === "waterquality" && <WaterQualityDashboard dateRange={waterDateRange} />}
         {displayedTab === disasterDevelopTab && <PusatPantauBencana />}
-        {displayedTab === "disaster" && <iframe
-          title="Pantau Bencana Dashboard"
-          src="https://ninoplus.vercel.app/dashboard"
-          referrerPolicy="no-referrer"
-          style={{ display: "block", width: "100%", height: "calc(100dvh - 60px)", border: 0, background: "#07111f" }}
-        />}
 
         <div style={{ display: displayedTab === "perparkiran" ? "block" : "none" }}>
           <PerparkiranDashboard 
