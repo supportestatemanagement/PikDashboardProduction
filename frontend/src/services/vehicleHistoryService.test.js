@@ -27,6 +27,32 @@ test('does not infer stops across missing records, poor accuracy or continuous m
 });
 beforeEach(() => { jest.clearAllMocks(); getFirebaseServices.mockReturnValue({ auth: { currentUser: user }, database: {} }); });
 
+test('bridges an isolated GPS jump or brief accuracy loss without splitting a stop', () => {
+  const points = Array.from({ length: 145 }, (_, index) => ({ position: [0, 0], timestamp: 1790300000000 + index * 5000, accuracy: 5 }));
+  for (const anomaly of [{ position: [0.001, 0] }, { accuracy: 100 }]) {
+    const noisy = points.map((point, index) => index === 72 ? { ...point, ...anomaly } : point);
+    const checkpoints = historyCheckpoints(noisy);
+    expect(checkpoints).toHaveLength(1);
+    expect(checkpoints[0].duration).toBe(720000);
+  }
+});
+
+test('keeps separate visits when reliable fixes confirm departure, even at the same location', () => {
+  const points = Array.from({ length: 145 }, (_, index) => ({ position: [0, 0], timestamp: 1790300000000 + index * 5000, accuracy: 5 }));
+  points[72].position = [0.001, 0];
+  points[73].position = [0.001, 0];
+  expect(historyCheckpoints(points)).toHaveLength(2);
+});
+
+test('does not bridge prolonged accuracy loss or extend a stop through a final GPS jump', () => {
+  const points = Array.from({ length: 153 }, (_, index) => ({ position: [0, 0], timestamp: 1790300000000 + index * 5000, accuracy: index >= 72 && index <= 80 ? 100 : 5 }));
+  expect(historyCheckpoints(points)).toHaveLength(2);
+  const stopped = stopPoints(6);
+  const result = historyCheckpoints([...stopped, { ...stopped[5], timestamp: stopped[5].timestamp + 5000, position: [0.001, 0] }]);
+  expect(result).toHaveLength(1);
+  expect(result[0].end).toBe(stopped[5].timestamp);
+});
+
 test('sorts timestamps explicitly, accepts timestamp keys and rejects corrupt records', () => {
   const points = normalizeHistory({ later: { latitude: -6, longitude: 106, timestamp: 1790300005000 },
     1790300000000: { latitude: '0', longitude: '0' },

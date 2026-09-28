@@ -64,13 +64,32 @@ export function historyCheckpoints(points) {
       checkpoints.push({ position: start.position, start: start.timestamp, end: end.timestamp, duration: end.timestamp - start.timestamp });
     }
   };
-  for (const point of points) {
-    if (Number.isFinite(point.accuracy) && point.accuracy > 25) {
+  const reliable = point => !Number.isFinite(point.accuracy) || point.accuracy <= 25;
+  const nearby = (anchor, point) => historyDistance([anchor, point]) * 1000 <= 25;
+  for (let index = 0; index < points.length; index += 1) {
+    const point = points[index];
+    // Bridge a brief accuracy loss or one isolated jump only when a reliable
+    // fix returns to the original stop within 30 seconds of the last good fix.
+    // Two reliable fixes outside the radius confirm departure, even nearby.
+    if (start && (!reliable(point) || !nearby(start, point))) {
+      let outside = 0, resume = -1;
+      for (let next = index; next < points.length && points[next].timestamp - end.timestamp <= 30000; next += 1) {
+        if (!reliable(points[next])) continue;
+        if (nearby(start, points[next])) { resume = next; break; }
+        outside += 1;
+        if (outside >= 2) break;
+      }
+      if (resume !== -1) {
+        index = resume - 1;
+        continue;
+      }
+    }
+    if (!reliable(point)) {
       finish();
       start = end = null;
       continue;
     }
-    if (!start || point.timestamp - end.timestamp > 120000 || historyDistance([start, point]) * 1000 > 25) {
+    if (!start || point.timestamp - end.timestamp > 120000 || !nearby(start, point)) {
       finish();
       start = point;
     }

@@ -139,7 +139,7 @@ export default function VehicleHistoryTracking({ isActive }) {
       {first && <div className="history-summary" aria-label="History summary"><span>Vehicle: <b>{name}</b></span><span>Date: <b>{date}</b></span><span>Start: <b>{historyTime(first.timestamp)} WIB</b></span><span>End: <b>{historyTime(last.timestamp)} WIB</b></span><span>Duration: <b>{Math.floor(minutes / 60)}h {minutes % 60}m</b></span><span>Distance: <b>{distance.toFixed(1)} km</b></span><span title="Total jarak dibagi durasi perjalanan, termasuk waktu berhenti">Avg speed: <b>{averageSpeed === null ? '—' : `${averageSpeed.toFixed(1)} km/jam`}</b></span><span>Checkpoint berhenti: <b>{checkpoints.length} kali</b></span><span title="Total durasi checkpoint berhenti dibagi jumlah checkpoint">Avg checkpoint time: <b>{averageCheckpointTime === null ? '—' : stopDuration(averageCheckpointTime)}</b></span></div>}
       {first && <section className="history-checkpoints" aria-label="Checkpoint berhenti">
         <h3>Checkpoint berhenti ({checkpoints.length})</h3>
-        <p>Minimal 5 menit dalam radius 25 m. Jeda GPS lebih dari 2 menit atau akurasi di atas 25 m memutus deteksi.</p>
+        <p>Minimal 5 menit dalam radius 25 m. Lonjakan GPS sesaat ditoleransi jika posisi kembali dalam 30 detik. Perpindahan terkonfirmasi atau jeda GPS lebih dari 2 menit memisahkan checkpoint.</p>
         {checkpoints.length ? <ol>{checkpoints.map((checkpoint, index) => <li key={checkpoint.start}>
           <button type="button" onClick={() => { setElapsed(checkpoint.start - first.timestamp); setStarted(true); setPlaying(false); }}>
             <strong>Checkpoint {index + 1} · {stopDuration(checkpoint.duration)}</strong>
