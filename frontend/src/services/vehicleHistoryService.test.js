@@ -36,6 +36,18 @@ test('distance preserves local movement when reported speed contradicts a statio
   expect(estimatedHistoryDistance(moving)).toBe(historyDistance(moving));
 });
 
+test('movement at the end of a checkpoint does not undo correction of preceding stationary drift', () => {
+  const stationary = stopPoints(7).map((point, index) => ({ ...point, position: [0, index % 2 * 0.0001], speed: 0 }));
+  const moving = [
+    { ...stationary[6], timestamp: stationary[6].timestamp + 5000, position: [0.0001, 0], speed: 4.7 },
+    { ...stationary[6], timestamp: stationary[6].timestamp + 10000, position: [0.0001, 0.0001], speed: 4.3 },
+  ];
+  const points = [...stationary, ...moving];
+  expect(historyCheckpoints(points)).toHaveLength(1);
+  expect(estimatedHistoryDistance(points)).toBeCloseTo(historyDistance([stationary[0], ...moving]), 8);
+  expect(estimatedHistoryDistance(points)).toBeLessThan(historyDistance(points));
+});
+
 test('detects five-minute stops including GPS jitter and the final stop', () => {
   expect(historyCheckpoints([])).toEqual([]);
   expect(historyCheckpoints(stopPoints(1))).toEqual([]);

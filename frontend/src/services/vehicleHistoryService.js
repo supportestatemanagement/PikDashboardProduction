@@ -71,24 +71,32 @@ export function estimatedHistoryDistance(points) {
     filtered.push(point);
   }
   const stops = historyCheckpoints(filtered);
-  let stopIndex = 0;
-  const corrected = filtered.map(point => {
-    while (stopIndex < stops.length && point.timestamp > stops[stopIndex].end) stopIndex += 1;
-    const stop = stops[stopIndex];
-    return stop && point.timestamp >= stop.start ? { ...point, position: stop.position } : point;
-  });
-  // A reported moving speed contradicts a stationary cluster (e.g. a small loop).
-  // Preserve that cluster's original geometry instead of discarding real travel.
+  const corrected = [...filtered];
   let index = 0;
   for (const stop of stops) {
     while (index < filtered.length && filtered[index].timestamp < stop.start) index += 1;
-    const startIndex = index;
-    let moving = false;
+    let stationaryStart = null;
+    const finishStationary = endIndex => {
+      if (stationaryStart === null) return;
+      const anchor = filtered[stationaryStart];
+      if (filtered[endIndex].timestamp - anchor.timestamp >= 5 * 60000) {
+        for (let cursor = stationaryStart; cursor <= endIndex; cursor += 1) {
+          corrected[cursor] = { ...filtered[cursor], position: anchor.position };
+        }
+      }
+      stationaryStart = null;
+    };
+    // Correct only sustained stationary portions. Movement at the end of a
+    // checkpoint must not restore GPS drift from the entire preceding stop.
     while (index < filtered.length && filtered[index].timestamp <= stop.end) {
-      if (Number.isFinite(filtered[index].speed) && filtered[index].speed > 3) moving = true;
+      if (Number.isFinite(filtered[index].speed) && filtered[index].speed > 3) {
+        finishStationary(index - 1);
+      } else if (stationaryStart === null) {
+        stationaryStart = index;
+      }
       index += 1;
     }
-    if (moving) for (let restore = startIndex; restore < index; restore += 1) corrected[restore] = filtered[restore];
+    finishStationary(index - 1);
   }
   return historyDistance(corrected);
 }
