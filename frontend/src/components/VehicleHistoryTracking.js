@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Polyline, Marker, useMap } from 'react-leaflet';
+import { Polyline, Marker, Popup, useMap } from 'react-leaflet';
 import HeatmapMap from './HeatmapMap';
 import L from 'leaflet';
 import { getVehicleColor, getVehicleType, vehicleIconSvg } from './vehicleIcons';
 import { useVehicleAuth } from './VehicleAuthProvider';
-import { HISTORY_VEHICLES, todayWib, historyTime, readVehicleHistory, historyDistance, renderHistoryPoints } from '../services/vehicleHistoryService';
+import { HISTORY_VEHICLES, todayWib, historyTime, readVehicleHistory, historyDistance, renderHistoryPoints, historyCheckpoints } from '../services/vehicleHistoryService';
+
+const stopDuration = duration => `${Math.floor(duration / 60000)} menit ${Math.floor(duration / 1000) % 60} detik`;
 
 function FitHistory({ points }) {
   const map = useMap();
@@ -38,6 +40,10 @@ export default function VehicleHistoryTracking({ isActive }) {
   const points = useMemo(() => isActive && authStatus === 'ready' && user && result.key === key && result.status === 'ready' ? result.points : [], [isActive, authStatus, user, result, key]);
   const positions = useMemo(() => renderHistoryPoints(points), [points]);
   const distance = useMemo(() => historyDistance(points), [points]);
+  const checkpoints = useMemo(() => historyCheckpoints(points).map((checkpoint, index) => ({ ...checkpoint,
+    icon: L.divIcon({ className: 'history-checkpoint-icon', html: `<span>${index + 1}</span>`, iconSize: [28, 28], iconAnchor: [14, 14] }),
+  })), [points]);
+  const averageCheckpointTime = useMemo(() => checkpoints.length ? checkpoints.reduce((total, checkpoint) => total + checkpoint.duration, 0) / checkpoints.length : null, [checkpoints]);
   const name = HISTORY_VEHICLES.find(item => item.id === vehicle).name;
   const first = points[0], last = points[points.length - 1];
   const [playing, setPlaying] = useState(false);
@@ -130,12 +136,30 @@ export default function VehicleHistoryTracking({ isActive }) {
           <span>{started ? elapsed >= duration ? 'Selesai' : playing ? 'Berjalan' : 'Dihentikan' : 'Klik atau geser timeline untuk memilih waktu.'}</span>
         </div>
       </div>
-      {first && <div className="history-summary" aria-label="History summary"><span>Vehicle: <b>{name}</b></span><span>Date: <b>{date}</b></span><span>Start: <b>{historyTime(first.timestamp)} WIB</b></span><span>End: <b>{historyTime(last.timestamp)} WIB</b></span><span>Duration: <b>{Math.floor(minutes / 60)}h {minutes % 60}m</b></span><span>Distance: <b>{distance.toFixed(1)} km</b></span><span title="Total jarak dibagi durasi perjalanan, termasuk waktu berhenti">Avg speed: <b>{averageSpeed === null ? '—' : `${averageSpeed.toFixed(1)} km/jam`}</b></span></div>}
+      {first && <div className="history-summary" aria-label="History summary"><span>Vehicle: <b>{name}</b></span><span>Date: <b>{date}</b></span><span>Start: <b>{historyTime(first.timestamp)} WIB</b></span><span>End: <b>{historyTime(last.timestamp)} WIB</b></span><span>Duration: <b>{Math.floor(minutes / 60)}h {minutes % 60}m</b></span><span>Distance: <b>{distance.toFixed(1)} km</b></span><span title="Total jarak dibagi durasi perjalanan, termasuk waktu berhenti">Avg speed: <b>{averageSpeed === null ? '—' : `${averageSpeed.toFixed(1)} km/jam`}</b></span><span>Checkpoint berhenti: <b>{checkpoints.length} kali</b></span><span title="Total durasi checkpoint berhenti dibagi jumlah checkpoint">Avg checkpoint time: <b>{averageCheckpointTime === null ? '—' : stopDuration(averageCheckpointTime)}</b></span></div>}
+      {first && <section className="history-checkpoints" aria-label="Checkpoint berhenti">
+        <h3>Checkpoint berhenti ({checkpoints.length})</h3>
+        <p>Minimal 5 menit dalam radius 25 m. Jeda GPS lebih dari 2 menit atau akurasi di atas 25 m memutus deteksi.</p>
+        {checkpoints.length ? <ol>{checkpoints.map((checkpoint, index) => <li key={checkpoint.start}>
+          <button type="button" onClick={() => { setElapsed(checkpoint.start - first.timestamp); setStarted(true); setPlaying(false); }}>
+            <strong>Checkpoint {index + 1} · {stopDuration(checkpoint.duration)}</strong>
+            <span>{historyTime(checkpoint.start)} – {historyTime(checkpoint.end)} WIB</span>
+          </button>
+        </li>)}</ol> : <p>Tidak ada checkpoint berhenti terdeteksi.</p>}
+      </section>}
       {message && <div role="status">{message}</div>}
     </section>
     <div className="history-map"><HeatmapMap mode="vehicle-tracker" isActive={isActive} showLiveVehicles={false}>
       <FitHistory points={points} />
       {points.length > 1 && <Polyline positions={positions} pathOptions={{ color: '#94a3b8', weight: 4, opacity: 0.45 }} />}
+      {checkpoints.map((checkpoint, index) => <Marker key={checkpoint.start} position={checkpoint.position} icon={checkpoint.icon} title={`Checkpoint ${index + 1}`}>
+        <Popup><strong>Checkpoint {index + 1} · Berhenti</strong>
+          <div>{name} · {date}</div>
+          <div>Mulai: {historyTime(checkpoint.start)} WIB</div>
+          <div>Selesai: {historyTime(checkpoint.end)} WIB</div>
+          <div>Durasi: {stopDuration(checkpoint.duration)}</div>
+        </Popup>
+      </Marker>)}
       {playback && <>
         <Polyline positions={playback.trail} pathOptions={{ color: playback.color, weight: 6, opacity: 1 }} />
         <Marker position={playback.position} icon={playback.icon} zIndexOffset={1000} title={`Playback: ${name}`} />

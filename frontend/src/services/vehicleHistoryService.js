@@ -53,3 +53,29 @@ export function renderHistoryPoints(points, limit = 5000) {
   const stride = Math.max(1, Math.ceil(points.length / limit));
   return points.filter((point, index) => index % stride === 0 || index === points.length - 1).map(point => point.position);
 }
+
+// Use a fixed anchor so slow movement cannot accumulate into a false stop.
+// A gap in GPS records is not evidence that the vehicle remained stationary.
+export function historyCheckpoints(points) {
+  const checkpoints = [];
+  let start = null, end = null;
+  const finish = () => {
+    if (start && end.timestamp - start.timestamp >= 5 * 60000) {
+      checkpoints.push({ position: start.position, start: start.timestamp, end: end.timestamp, duration: end.timestamp - start.timestamp });
+    }
+  };
+  for (const point of points) {
+    if (Number.isFinite(point.accuracy) && point.accuracy > 25) {
+      finish();
+      start = end = null;
+      continue;
+    }
+    if (!start || point.timestamp - end.timestamp > 120000 || historyDistance([start, point]) * 1000 > 25) {
+      finish();
+      start = point;
+    }
+    end = point;
+  }
+  finish();
+  return checkpoints;
+}

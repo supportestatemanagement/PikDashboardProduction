@@ -13,7 +13,40 @@ jest.mock('react-leaflet', () => ({
   Polyline: ({ positions }) => <div data-testid="path">{positions.length}</div>,
 }));
 beforeEach(() => { jest.clearAllMocks(); });
+test('shows stop checkpoints and selects their start time from the list', async () => {
+  const stationary = Array.from({ length: 7 }, (_, index) => ({ position: [-6, 106], timestamp: 1790300060000 + index * 60000 }));
+  readVehicleHistory.mockResolvedValue([{ position: [-6.1, 106], timestamp: 1790300000000 }, ...stationary]);
+  render(<VehicleTrackerDashboard />);
+  fireEvent.click(screen.getByRole('button', { name: 'History Tracking' }));
+  await screen.findByLabelText('History summary');
+  expect(screen.getByText('Checkpoint berhenti (1)')).toBeInTheDocument();
+  expect(screen.getByLabelText('Checkpoint 1')).toHaveAttribute('data-position', '[-6,106]');
+  fireEvent.click(screen.getByRole('button', { name: /Checkpoint 1 · 6 menit 0 detik/ }));
+  expect(screen.getByRole('slider')).toHaveValue('60000');
+  expect(screen.getByLabelText('Playback: PATROL_01')).toHaveAttribute('data-position', '[-6,106]');
+  expect(screen.getByRole('button', { name: 'Stop' })).toBeDisabled();
+  readVehicleHistory.mockResolvedValue([]);
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+  await screen.findByText('No tracking history found for selected date.');
+  expect(screen.queryByLabelText('Checkpoint 1')).not.toBeInTheDocument();
+});
 const points = [{ id: 'a', position: [-6, 106], timestamp: 1790300000000 }, { id: 'b', position: [-6.1, 106.1], timestamp: 1790303600000 }];
+test('summarizes checkpoint count and mean stop duration, including no stops after refresh', async () => {
+  const stops = [
+    ...Array.from({ length: 6 }, (_, index) => ({ position: [-6, 106], timestamp: 1790300000000 + index * 60000 })),
+    ...Array.from({ length: 9 }, (_, index) => ({ position: [-6.1, 106], timestamp: 1790300360000 + index * 60000 })),
+  ];
+  readVehicleHistory.mockResolvedValueOnce(stops).mockResolvedValueOnce(points);
+  render(<VehicleTrackerDashboard />);
+  fireEvent.click(screen.getByRole('button', { name: 'History Tracking' }));
+  const summary = await screen.findByLabelText('History summary');
+  expect(summary).toHaveTextContent('Checkpoint berhenti: 2 kali');
+  expect(summary).toHaveTextContent('Avg checkpoint time: 6 menit 30 detik');
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+  const refreshed = await screen.findByLabelText('History summary');
+  expect(refreshed).toHaveTextContent('Checkpoint berhenti: 0 kali');
+  expect(refreshed).toHaveTextContent('Avg checkpoint time: —');
+});
 test('defaults to live, loads history, fits once and preserves live mode', async () => {
   readVehicleHistory.mockResolvedValue(points);
   render(<VehicleTrackerDashboard />);

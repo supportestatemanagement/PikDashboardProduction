@@ -1,9 +1,30 @@
 import { get } from 'firebase/database';
 import { getFirebaseServices } from '../config/firebase';
-import { normalizeHistory, readVehicleHistory, historyDistance, renderHistoryPoints } from './vehicleHistoryService';
+import { normalizeHistory, readVehicleHistory, historyDistance, renderHistoryPoints, historyCheckpoints } from './vehicleHistoryService';
 jest.mock('firebase/database', () => ({ get: jest.fn(), ref: (_, path) => path }));
 jest.mock('../config/firebase', () => ({ getFirebaseServices: jest.fn() }));
 const user = { uid: 'dashboard' };
+const stopPoints = (count, offset = 0) => Array.from({ length: count }, (_, index) => ({ position: [0, 0], timestamp: 1790300000000 + offset + index * 60000, accuracy: 5 }));
+
+test('detects five-minute stops including GPS jitter and the final stop', () => {
+  expect(historyCheckpoints([])).toEqual([]);
+  expect(historyCheckpoints(stopPoints(1))).toEqual([]);
+  expect(historyCheckpoints(stopPoints(5))).toEqual([]);
+  const points = stopPoints(6);
+  points[2].position = [0.00005, 0];
+  expect(historyCheckpoints(points)).toEqual([{ position: [0, 0], start: points[0].timestamp, end: points[5].timestamp, duration: 300000 }]);
+  const later = stopPoints(7, 600000).map(point => ({ ...point, position: [0.01, 0] }));
+  expect(historyCheckpoints([...points, ...later])).toHaveLength(2);
+});
+
+test('does not infer stops across missing records, poor accuracy or continuous movement', () => {
+  expect(historyCheckpoints([stopPoints(1)[0], stopPoints(1, 600000)[0]])).toEqual([]);
+  const inaccurate = stopPoints(9);
+  inaccurate[4].accuracy = 100;
+  expect(historyCheckpoints(inaccurate)).toEqual([]);
+  const moving = stopPoints(12).map((point, index) => ({ ...point, position: [index * 0.0001, 0] }));
+  expect(historyCheckpoints(moving)).toEqual([]);
+});
 beforeEach(() => { jest.clearAllMocks(); getFirebaseServices.mockReturnValue({ auth: { currentUser: user }, database: {} }); });
 
 test('sorts timestamps explicitly, accepts timestamp keys and rejects corrupt records', () => {
