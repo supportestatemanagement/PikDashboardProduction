@@ -79,3 +79,42 @@ test('ignores stale requests after filter changes and retains map on empty/error
   expect(readVehicleHistory).toHaveBeenLastCalledWith('TRITON_1', '2026-09-20', mockUser);
   expect(screen.getByTestId('map')).toBeInTheDocument();
 });
+
+test('seeks before starting, while playing and after finishing, and refresh resets playback', async () => {
+  readVehicleHistory.mockResolvedValue(points);
+  render(<VehicleTrackerDashboard />);
+  fireEvent.click(screen.getByRole('button', { name: 'History Tracking' }));
+  await screen.findByLabelText('History summary');
+  const slider = screen.getByRole('slider', { name: 'Playback progress' });
+  fireEvent.change(slider, { target: { value: '1800000' } });
+  expect(JSON.parse(screen.getByLabelText('Playback: PATROL_01').dataset.position)).toEqual([-6.05, 106.05]);
+  expect(screen.getByRole('button', { name: 'Stop' })).toBeDisabled();
+  fireEvent.keyDown(slider, { key: 'ArrowRight' });
+  expect(slider).toHaveValue('1801000');
+  fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+  fireEvent.change(slider, { target: { value: '900000' } });
+  expect(screen.getByRole('button', { name: 'Stop' })).toBeEnabled();
+  fireEvent.change(slider, { target: { value: '3600000' } });
+  expect(screen.getByText('Selesai')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Stop' })).toBeDisabled();
+  fireEvent.change(slider, { target: { value: '0' } });
+  expect(screen.getByLabelText('Playback: PATROL_01')).toHaveAttribute('data-position', JSON.stringify(points[0].position));
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+  await screen.findByLabelText('History summary');
+  expect(readVehicleHistory).toHaveBeenCalledTimes(2);
+  expect(screen.queryByLabelText('Playback: PATROL_01')).not.toBeInTheDocument();
+});
+
+test('disables seeking for empty history and a single GPS point', async () => {
+  readVehicleHistory.mockResolvedValueOnce([]).mockResolvedValueOnce([points[0]]);
+  render(<VehicleTrackerDashboard />);
+  fireEvent.click(screen.getByRole('button', { name: 'History Tracking' }));
+  await screen.findByText('No tracking history found for selected date.');
+  expect(screen.getByRole('slider')).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+  await screen.findByLabelText('History summary');
+  expect(screen.getByRole('slider')).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+  expect(screen.getByLabelText('Playback: PATROL_01')).toHaveAttribute('data-position', JSON.stringify(points[0].position));
+  expect(screen.getByText('Selesai')).toBeInTheDocument();
+});

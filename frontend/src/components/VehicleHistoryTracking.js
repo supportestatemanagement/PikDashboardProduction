@@ -98,7 +98,9 @@ export default function VehicleHistoryTracking({ isActive }) {
       <div className="history-filters">
         <label>Vehicle<select value={vehicle} onChange={event => setVehicle(event.target.value)}>{[...new Set(HISTORY_VEHICLES.map(item => item.area))].map(area => <optgroup key={area} label={area}>{HISTORY_VEHICLES.filter(item => item.area === area).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</optgroup>)}</select></label>
         <label>Date<input type="date" value={date} onChange={event => setDate(event.target.value)} /></label>
-        <button type="button" onClick={() => authStatus === 'error' ? retryAuth() : setAttempt(value => value + 1)}>Refresh</button>
+        <button type="button" className="history-refresh" aria-label="Refresh" title="Refresh history" onClick={() => authStatus === 'error' ? retryAuth() : setAttempt(value => value + 1)}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 7v5h-5" /><path d="M20 12a8 8 0 1 0-2.3 5.7M20 7v5l-5-5" /></svg>
+        </button>
       </div>
       <div className="history-playback" aria-label="Playback controls">
         <div className="history-playback-actions">
@@ -106,8 +108,27 @@ export default function VehicleHistoryTracking({ isActive }) {
           <button type="button" disabled={!playing} onClick={() => setPlaying(false)}>Stop</button>
           <label>Playback speed<select value={playbackSpeed} onChange={event => setPlaybackSpeed(Number(event.target.value))}>{[1, 10, 60, 300].map(speed => <option key={speed} value={speed}>{speed}×</option>)}</select></label>
         </div>
-        <progress aria-label="Playback progress" max={duration || 1} value={started ? (duration ? elapsed : 1) : 0} />
-        <span>{playback ? `${historyTime(playback.timestamp)} WIB · ${elapsed >= duration ? 'Selesai' : playing ? 'Berjalan' : 'Dihentikan'}` : 'Klik Start untuk memutar perjalanan.'}</span>
+        <div className="history-timeline">
+          <input type="range" className="history-seek" aria-label="Playback progress" min="0" max={duration || 1} step="any"
+            value={elapsed} disabled={!first || duration <= 0}
+            aria-valuetext={first ? `${historyTime(first.timestamp + elapsed)} WIB` : 'Tidak ada riwayat'}
+            style={{ '--playback-progress': `${duration > 0 ? elapsed / duration * 100 : 0}%` }}
+            onChange={event => { setElapsed(Number(event.target.value)); setStarted(true); }}
+            onKeyDown={event => {
+              const direction = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[event.key];
+              if (!direction) return;
+              event.preventDefault();
+              setElapsed(value => Math.max(0, Math.min(duration, value + direction * 1000)));
+              setStarted(true);
+            }} />
+          {first && <div className="history-timeline-ticks" aria-hidden="true">
+            {(duration > 0 ? [0, 0.5, 1] : [0]).map(fraction => <span key={fraction}>{historyTime(first.timestamp + duration * fraction)}</span>)}
+          </div>}
+        </div>
+        <div className="history-playback-time">
+          <time>{first ? `${date} · ${historyTime(first.timestamp + elapsed)} WIB` : '—'}</time>
+          <span>{started ? elapsed >= duration ? 'Selesai' : playing ? 'Berjalan' : 'Dihentikan' : 'Klik atau geser timeline untuk memilih waktu.'}</span>
+        </div>
       </div>
       {first && <div className="history-summary" aria-label="History summary"><span>Vehicle: <b>{name}</b></span><span>Date: <b>{date}</b></span><span>Start: <b>{historyTime(first.timestamp)} WIB</b></span><span>End: <b>{historyTime(last.timestamp)} WIB</b></span><span>Duration: <b>{Math.floor(minutes / 60)}h {minutes % 60}m</b></span><span>Distance: <b>{distance.toFixed(1)} km</b></span><span title="Total jarak dibagi durasi perjalanan, termasuk waktu berhenti">Avg speed: <b>{averageSpeed === null ? '—' : `${averageSpeed.toFixed(1)} km/jam`}</b></span></div>}
       {message && <div role="status">{message}</div>}
