@@ -1,9 +1,9 @@
 .vehicle-map-icon { background: none; border: 0; }
 .vehicle-auth-retry { pointer-events: auto; border: 0; border-radius: 4px; padding: 5px 8px; background: #fbbf24; color: #111827; cursor: pointer; }
 .vehicle-map-icon svg { filter: drop-shadow(0 2px 3px #0008); }
-.leaflet-tooltip.vehicle-map-label { background: #f5ad00; border: 0; border-radius: 6px; color: #fff; padding: 9px 12px; font-size: 13px; font-weight: 700; box-shadow: 0 2px 6px #0002; }
-.leaflet-tooltip-top.vehicle-map-label::before { border-top-color: #f5ad00; }
-.leaflet-tooltip.vehicle-map-label--inactive { background: #64748b; }
-.leaflet-tooltip-top.vehicle-map-label--inactive::before { border-top-color: #64748b; }
+.leaflet-tooltip.vehicle-map-label { background: transparent; border: 0; border-radius: 6px; color: #fff; padding: 0; font-size: 13px; font-weight: 700; box-shadow: 0 2px 6px #0002; }
+.leaflet-tooltip-top.vehicle-map-label::before { display: none; }
+.vehicle-map-label-content { display: block; background: var(--vehicle-color); border-radius: 6px; padding: 9px 12px; }
+.vehicle-map-label-content::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: var(--vehicle-color); }
 .vehicle-map-label small { display: block; font-size: 10px; font-weight: 400; }
 .vehicle-tracking-status { position: absolute; bottom: 28px; left: 12px; z-index: 800; background: #0f172ae8; color: #fff; border-radius: 6px; padding: 7px 10px; font-size: 12px; max-width: min(360px, 65%); pointer-events: none; }

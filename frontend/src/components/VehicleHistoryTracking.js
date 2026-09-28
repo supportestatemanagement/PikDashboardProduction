@@ -45,6 +45,7 @@ export default function VehicleHistoryTracking({ isActive }) {
   const [elapsed, setElapsed] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(60);
   const duration = first ? last.timestamp - first.timestamp : 0;
+  const averageSpeed = duration > 0 ? distance / (duration / 3600000) : null;
   useEffect(() => {
     setPlaying(false);
     setStarted(false);
@@ -108,7 +109,7 @@ export default function VehicleHistoryTracking({ isActive }) {
         <progress aria-label="Playback progress" max={duration || 1} value={started ? (duration ? elapsed : 1) : 0} />
         <span>{playback ? `${historyTime(playback.timestamp)} WIB · ${elapsed >= duration ? 'Selesai' : playing ? 'Berjalan' : 'Dihentikan'}` : 'Klik Start untuk memutar perjalanan.'}</span>
       </div>
-      {first && <div className="history-summary" aria-label="History summary"><span>Vehicle: <b>{name}</b></span><span>Date: <b>{date}</b></span><span>Start: <b>{historyTime(first.timestamp)} WIB</b></span><span>End: <b>{historyTime(last.timestamp)} WIB</b></span><span>Duration: <b>{Math.floor(minutes / 60)}h {minutes % 60}m</b></span><span>Distance: <b>{distance.toFixed(1)} km</b></span><span>Points: <b>{points.length.toLocaleString('en-US')}</b></span></div>}
+      {first && <div className="history-summary" aria-label="History summary"><span>Vehicle: <b>{name}</b></span><span>Date: <b>{date}</b></span><span>Start: <b>{historyTime(first.timestamp)} WIB</b></span><span>End: <b>{historyTime(last.timestamp)} WIB</b></span><span>Duration: <b>{Math.floor(minutes / 60)}h {minutes % 60}m</b></span><span>Distance: <b>{distance.toFixed(1)} km</b></span><span title="Total jarak dibagi durasi perjalanan, termasuk waktu berhenti">Avg speed: <b>{averageSpeed === null ? '—' : `${averageSpeed.toFixed(1)} km/jam`}</b></span></div>}
       {message && <div role="status">{message}</div>}
     </section>
     <div className="history-map"><HeatmapMap mode="vehicle-tracker" isActive={isActive} showLiveVehicles={false}>

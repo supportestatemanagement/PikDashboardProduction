@@ -35,12 +35,15 @@ function VehicleMarker({ vehicle, now, connected }) {
   const initialPosition = useRef(vehicle.position);
   const name = vehicle.vehicle_name || vehicle.vehicle_id || vehicle.id;
   return <Marker ref={marker} position={initialPosition.current} icon={icon} title={name} zIndexOffset={1000}>
-    <Tooltip permanent direction="top" offset={[0, -28]} className={`vehicle-map-label ${status === 'Live' ? '' : 'vehicle-map-label--inactive'}`}>
-      {name} {vehicle.plate_number || ''}{status !== 'Live' && status !== 'GPS tidak diperbarui' && <small>{status}</small>}
+    <Tooltip permanent direction="top" offset={[0, -28]} className="vehicle-map-label">
+      <span className="vehicle-map-label-content" style={{ '--vehicle-color': vehicleColor }}>
+        {name} {vehicle.plate_number || ''}{status !== 'Live' && status !== 'GPS tidak diperbarui' && <small>{status}</small>}
+      </span>
     </Tooltip>
     <Popup><strong>{name}</strong><div>Pelat: {vehicle.plate_number || '—'}</div>
       <div>Petugas: {vehicle.officer_name || '—'}</div>{status !== 'GPS tidak diperbarui' && <div>Status: {status}</div>}
-      <div>Akurasi GPS: {Number.isFinite(vehicle.accuracy) ? `${vehicle.accuracy.toFixed(1)} m` : '—'}</div>
+      <div>Speed: {Number.isFinite(vehicle.speed) && vehicle.speed >= 0 ? `${vehicle.speed.toFixed(1)} km/jam` : '—'}</div>
+      <div title="Perkiraan radius ketelitian posisi GPS; semakin kecil nilainya, semakin teliti posisinya.">Akurasi GPS: {Number.isFinite(vehicle.accuracy) ? `${vehicle.accuracy.toFixed(1)} m` : '—'}</div>
       <div>Pembaruan: {Number.isFinite(vehicle.timestamp) ? new Date(vehicle.timestamp).toLocaleString('id-ID') : '—'}</div>
     </Popup>
   </Marker>;
