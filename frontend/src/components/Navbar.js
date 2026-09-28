@@ -43,7 +43,7 @@ export default function Navbar({
   const isSingleDateDashboard = isTrafficDashboard || activeTab === "pump";
   const dashboardSubtitle = {
     dashboard: "Traffic Dashboard",
-    vehicletracker: "Vehicle Tracker",
+    vehicletracker: "Vehicle Tracker Dashboard",
     callcenter: "Call Center Dashboard / Emergency",
     cctv: "CCTV Dashboard",
     perparkiran: "Call Center Dashboard / Parking",
