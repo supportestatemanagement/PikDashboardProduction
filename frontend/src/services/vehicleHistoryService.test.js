@@ -1,10 +1,40 @@
 import { get } from 'firebase/database';
 import { getFirebaseServices } from '../config/firebase';
-import { normalizeHistory, readVehicleHistory, historyDistance, renderHistoryPoints, historyCheckpoints } from './vehicleHistoryService';
+import { normalizeHistory, readVehicleHistory, historyDistance, estimatedHistoryDistance, renderHistoryPoints, historyCheckpoints } from './vehicleHistoryService';
 jest.mock('firebase/database', () => ({ get: jest.fn(), ref: (_, path) => path }));
 jest.mock('../config/firebase', () => ({ getFirebaseServices: jest.fn() }));
 const user = { uid: 'dashboard' };
 const stopPoints = (count, offset = 0) => Array.from({ length: count }, (_, index) => ({ position: [0, 0], timestamp: 1790300000000 + offset + index * 60000, accuracy: 5 }));
+
+test('distance excludes stationary drift while preserving entry and departure travel', () => {
+  const stopped = stopPoints(7).map((point, index) => ({ ...point, position: [0, index % 2 * 0.0001], speed: 0 }));
+  const before = { position: [0, -0.001], timestamp: stopped[0].timestamp - 60000 };
+  const after = { position: [0, 0.001], timestamp: stopped[6].timestamp + 60000 };
+  const points = [before, ...stopped, after];
+  const original = JSON.stringify(points);
+  expect(estimatedHistoryDistance(points)).toBeCloseTo(historyDistance([before, stopped[0], after]), 8);
+  expect(estimatedHistoryDistance(points)).toBeLessThan(historyDistance(points));
+  expect(JSON.stringify(points)).toBe(original);
+  expect(estimatedHistoryDistance([])).toBe(0);
+  expect(estimatedHistoryDistance([before])).toBe(0);
+});
+
+test('distance removes an isolated impossible jump but preserves real corners and sparse records', () => {
+  const points = [
+    { position: [0, 0], timestamp: 1790300000000 },
+    { position: [1, 1], timestamp: 1790300005000 },
+    { position: [0, 0.001], timestamp: 1790300010000 },
+    { position: [0.001, 0.001], timestamp: 1790300020000 },
+  ];
+  expect(estimatedHistoryDistance(points)).toBeCloseTo(historyDistance([points[0], points[2], points[3]]), 8);
+  const sparse = points.map((point, index) => ({ ...point, timestamp: 1790300000000 + index * 3600000 }));
+  expect(estimatedHistoryDistance(sparse)).toBe(historyDistance(sparse));
+});
+
+test('distance preserves local movement when reported speed contradicts a stationary checkpoint', () => {
+  const moving = stopPoints(7).map((point, index) => ({ ...point, position: [0, index % 2 * 0.0001], speed: 5 }));
+  expect(estimatedHistoryDistance(moving)).toBe(historyDistance(moving));
+});
 
 test('detects five-minute stops including GPS jitter and the final stop', () => {
   expect(historyCheckpoints([])).toEqual([]);

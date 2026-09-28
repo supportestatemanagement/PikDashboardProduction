@@ -4,7 +4,7 @@ import HeatmapMap from './HeatmapMap';
 import L from 'leaflet';
 import { getVehicleColor, getVehicleType, vehicleIconSvg } from './vehicleIcons';
 import { useVehicleAuth } from './VehicleAuthProvider';
-import { HISTORY_VEHICLES, todayWib, historyTime, readVehicleHistory, historyDistance, renderHistoryPoints, historyCheckpoints } from '../services/vehicleHistoryService';
+import { HISTORY_VEHICLES, todayWib, historyTime, readVehicleHistory, estimatedHistoryDistance, renderHistoryPoints, historyCheckpoints } from '../services/vehicleHistoryService';
 
 const stopDuration = duration => `${Math.floor(duration / 60000)} menit ${Math.floor(duration / 1000) % 60} detik`;
 
@@ -39,7 +39,7 @@ export default function VehicleHistoryTracking({ isActive }) {
   }, [isActive, authStatus, user, vehicle, date, key]);
   const points = useMemo(() => isActive && authStatus === 'ready' && user && result.key === key && result.status === 'ready' ? result.points : [], [isActive, authStatus, user, result, key]);
   const positions = useMemo(() => renderHistoryPoints(points), [points]);
-  const distance = useMemo(() => historyDistance(points), [points]);
+  const distance = useMemo(() => estimatedHistoryDistance(points), [points]);
   const checkpoints = useMemo(() => historyCheckpoints(points).map((checkpoint, index) => ({ ...checkpoint,
     icon: L.divIcon({ className: 'history-checkpoint-icon', html: `<span>${index + 1}</span>`, iconSize: [28, 28], iconAnchor: [14, 14] }),
   })), [points]);
@@ -139,7 +139,6 @@ export default function VehicleHistoryTracking({ isActive }) {
       {first && <div className="history-summary" aria-label="History summary"><span>Vehicle: <b>{name}</b></span><span>Date: <b>{date}</b></span><span>Start: <b>{historyTime(first.timestamp)} WIB</b></span><span>End: <b>{historyTime(last.timestamp)} WIB</b></span><span>Duration: <b>{Math.floor(minutes / 60)}h {minutes % 60}m</b></span><span>Distance: <b>{distance.toFixed(1)} km</b></span><span title="Total jarak dibagi durasi perjalanan, termasuk waktu berhenti">Avg speed: <b>{averageSpeed === null ? '—' : `${averageSpeed.toFixed(1)} km/jam`}</b></span><span>Checkpoint berhenti: <b>{checkpoints.length} kali</b></span><span title="Total durasi checkpoint berhenti dibagi jumlah checkpoint">Avg checkpoint time: <b>{averageCheckpointTime === null ? '—' : stopDuration(averageCheckpointTime)}</b></span></div>}
       {first && <section className="history-checkpoints" aria-label="Checkpoint berhenti">
         <h3>Checkpoint berhenti ({checkpoints.length})</h3>
-        <p>Minimal 5 menit dalam radius 25 m. Lonjakan GPS sesaat ditoleransi jika posisi kembali dalam 30 detik. Perpindahan terkonfirmasi atau jeda GPS lebih dari 2 menit memisahkan checkpoint.</p>
         {checkpoints.length ? <ol>{checkpoints.map((checkpoint, index) => <li key={checkpoint.start}>
           <button type="button" onClick={() => { setElapsed(checkpoint.start - first.timestamp); setStarted(true); setPlaying(false); }}>
             <strong>Checkpoint {index + 1} · {stopDuration(checkpoint.duration)}</strong>

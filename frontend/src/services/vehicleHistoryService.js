@@ -54,6 +54,45 @@ export function renderHistoryPoints(points, limit = 5000) {
   return points.filter((point, index) => index % stride === 0 || index === points.length - 1).map(point => point.position);
 }
 
+// Keep geometric distance separate: checkpoint radii must use raw coordinates.
+export function estimatedHistoryDistance(points) {
+  const speedBetween = (from, to) => {
+    const hours = (to.timestamp - from.timestamp) / 3600000;
+    return hours > 0 ? historyDistance([from, to]) / hours : NaN;
+  };
+  const filtered = [];
+  for (let index = 0; index < points.length; index += 1) {
+    const point = points[index], previous = filtered[filtered.length - 1], next = points[index + 1];
+    // Remove only isolated spikes with an implausible outward AND return leg.
+    // Do not interpret missing GPS coverage as an outlier or erase real turns.
+    if (previous && next && next.timestamp - previous.timestamp <= 120000 &&
+      speedBetween(previous, point) > 180 && speedBetween(point, next) > 180 &&
+      speedBetween(previous, next) <= 180) continue;
+    filtered.push(point);
+  }
+  const stops = historyCheckpoints(filtered);
+  let stopIndex = 0;
+  const corrected = filtered.map(point => {
+    while (stopIndex < stops.length && point.timestamp > stops[stopIndex].end) stopIndex += 1;
+    const stop = stops[stopIndex];
+    return stop && point.timestamp >= stop.start ? { ...point, position: stop.position } : point;
+  });
+  // A reported moving speed contradicts a stationary cluster (e.g. a small loop).
+  // Preserve that cluster's original geometry instead of discarding real travel.
+  let index = 0;
+  for (const stop of stops) {
+    while (index < filtered.length && filtered[index].timestamp < stop.start) index += 1;
+    const startIndex = index;
+    let moving = false;
+    while (index < filtered.length && filtered[index].timestamp <= stop.end) {
+      if (Number.isFinite(filtered[index].speed) && filtered[index].speed > 3) moving = true;
+      index += 1;
+    }
+    if (moving) for (let restore = startIndex; restore < index; restore += 1) corrected[restore] = filtered[restore];
+  }
+  return historyDistance(corrected);
+}
+
 // Use a fixed anchor so slow movement cannot accumulate into a false stop.
 // A gap in GPS records is not evidence that the vehicle remained stationary.
 export function historyCheckpoints(points) {
