@@ -66,17 +66,17 @@ export default function App() {
   }, []);
 
   const [displayedTab, setDisplayedTab] = useState(activeTab);
-  const pumpExiting = displayedTab === "pump" && activeTab !== "pump";
+  const isPageExiting = displayedTab !== activeTab;
   useEffect(() => {
     if (displayedTab === activeTab) return;
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (displayedTab !== "pump" || reduceMotion) {
+    if (reduceMotion || !isLoggedIn) {
       setDisplayedTab(activeTab);
       return;
     }
-    const timer = window.setTimeout(() => setDisplayedTab(activeTab), 220);
+    const timer = window.setTimeout(() => setDisplayedTab(activeTab), 180);
     return () => window.clearTimeout(timer);
-  }, [activeTab, displayedTab]);
+  }, [activeTab, displayedTab, isLoggedIn]);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth <= 768 : false);
@@ -165,6 +165,10 @@ export default function App() {
           minHeight: "100vh"
         }}
       >
+        <div
+          className={`dashboard-page-transition ${isPageExiting ? "is-exiting" : "is-entering"}`}
+          inert={isPageExiting ? true : undefined}
+        >
         <div style={{ display: displayedTab === "dashboard" ? "block" : "none" }}>
           <TrafficDashboard dateRange={dateRange} isActive={activeTab === "dashboard"} />
         </div>
@@ -192,10 +196,10 @@ export default function App() {
           />
         </div>
 
-        <div className={displayedTab === "pump" ? `pump-page-transition ${pumpExiting ? "is-exiting" : "is-entering"}` : undefined} inert={pumpExiting ? true : undefined} style={{ display: displayedTab === "pump" ? "block" : "none" }}>
+        <div style={{ display: displayedTab === "pump" ? "block" : "none" }}>
           <PumpWeatherDashboard dateRange={dateRange} isSidebarOpen={isSidebarOpen} />
         </div>
-
+        </div>
       </div>
     </div>
     </VehicleAuthProvider>

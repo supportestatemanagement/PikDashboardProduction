@@ -750,41 +750,31 @@ body {
 .pw-range-popover button { display: block; margin: 12px 0 0 auto; border: 1px solid #2dd4bf66; border-radius: 5px; padding: 6px 12px; background: #134e4a; color: #ccfbf1; cursor: pointer; }
 .pw-peak-table .head,.pw-peak-table button { grid-template-columns: .65fr 1.35fr .65fr .95fr .8fr; gap: 5px; box-sizing: border-box; }
 .pw-peak-table .head span:nth-last-child(2) { text-align: right; }
-/* Animate individual Pump Station panels and their content on tab changes. */
-.pump-page-transition.is-entering .pw-dashboard .pw-panel,
-.pump-page-transition.is-entering .pw-current-row > article,
-.pump-page-transition.is-entering .pw-status-row > article,
-.pump-page-transition.is-entering .pw-weather-hours > article {
-  transform-origin: center top;
-  animation: pump-panel-in 480ms cubic-bezier(.2,.7,.2,1) backwards;
-  animation-delay: var(--pump-delay, 0ms);
+/* Shared page motion: keep mounted dashboards and their local state intact. */
+.dashboard-page-transition.is-entering {
+  animation: dashboard-page-in 300ms cubic-bezier(.22, 1, .36, 1) backwards;
 }
-.pump-page-transition .pw-weather-panel { --pump-delay: 0ms; }
-.pump-page-transition .pw-level-section { --pump-delay: 60ms; }
-.pump-page-transition .pw-peak-panel { --pump-delay: 120ms; }
-.pump-page-transition .pw-trend-panel { --pump-delay: 180ms; }
-.pump-page-transition .pw-status-section { --pump-delay: 180ms; }
-.pump-page-transition .pw-current-row > article:nth-child(2),
-.pump-page-transition .pw-weather-hours > article:nth-child(2),
-.pump-page-transition .pw-status-row > article:nth-child(2) { --pump-delay: 100ms; }
-.pump-page-transition .pw-current-row > article:nth-child(3),
-.pump-page-transition .pw-weather-hours > article:nth-child(3),
-.pump-page-transition .pw-status-row > article:nth-child(3) { --pump-delay: 140ms; }
-.pump-page-transition .pw-current-row > article:nth-child(n+4),
-.pump-page-transition .pw-weather-hours > article:nth-child(n+4),
-.pump-page-transition .pw-status-row > article:nth-child(n+4) { --pump-delay: 180ms; }
-.pump-page-transition.is-entering .pw-chart { animation: pump-chart-in 550ms ease-out 180ms backwards; }
-.pump-page-transition.is-entering .pw-peak-table,
-.pump-page-transition.is-entering .pw-daily-total { animation: pump-panel-in 380ms ease-out 220ms backwards; }
-.pump-page-transition.is-exiting { pointer-events: none; }
-.pump-page-transition.is-exiting .pw-dashboard .pw-panel,
-.pump-page-transition.is-exiting .pw-current-row > article { transform-origin: center top; animation: pump-panel-out 200ms ease-in both; }
-@keyframes pump-panel-in { from { opacity: 0; transform: translateY(24px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-@keyframes pump-panel-out { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-12px) scale(.98); } }
-@keyframes pump-chart-in { from { opacity: 0; clip-path: inset(0 100% 0 0); } to { opacity: 1; clip-path: inset(0); } }
+.dashboard-page-transition.is-exiting {
+  pointer-events: none;
+  animation: dashboard-page-out 180ms cubic-bezier(.4, 0, 1, 1) forwards;
+}
+@keyframes dashboard-page-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes dashboard-page-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(-10px); }
+}
+@media (max-width: 768px) {
+  @keyframes dashboard-page-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .pump-page-transition.is-entering .pw-dashboard *,
-  .pump-page-transition.is-exiting .pw-dashboard * { animation: none; }
+  .dashboard-page-transition.is-entering,
+  .dashboard-page-transition.is-exiting { animation: none; }
 }
 /* Compact labels when the navigation sidebar reduces dashboard width. */
 .cctv-sidebar-open .cctv-offline-table { min-width: 0; }
