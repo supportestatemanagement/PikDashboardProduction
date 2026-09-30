@@ -750,31 +750,40 @@ body {
 .pw-range-popover button { display: block; margin: 12px 0 0 auto; border: 1px solid #2dd4bf66; border-radius: 5px; padding: 6px 12px; background: #134e4a; color: #ccfbf1; cursor: pointer; }
 .pw-peak-table .head,.pw-peak-table button { grid-template-columns: .65fr 1.35fr .65fr .95fr .8fr; gap: 5px; box-sizing: border-box; }
 .pw-peak-table .head span:nth-last-child(2) { text-align: right; }
-/* Shared page motion: keep mounted dashboards and their local state intact. */
-.dashboard-page-transition.is-entering {
-  animation: dashboard-page-in 300ms cubic-bezier(.22, 1, .36, 1) backwards;
+/* Animate cards only; dashboard backgrounds, maps and layout stay stationary.
+   Individual translate preserves existing panel positioning/maximize transforms. */
+.dashboard-page-transition :is(.animate-card, .glass-panel, .vehicle-tracker-modes, .history-toolbar, .pw-weather-panel, .pw-peak-panel, .pw-trend-panel, .pw-level-card, .pw-status-panel, .parking-summary, .parking-location, .parking-ranking, .water-area-card, .water-trend, .water-records, .ppb-data-sidebar > .ppb-panel, .ppb-data-sidebar > .ppb-weather) {
+  opacity: 1;
+  --panel-enter-offset: 16px;
+  --panel-delay: 0ms;
 }
-.dashboard-page-transition.is-exiting {
-  pointer-events: none;
-  animation: dashboard-page-out 180ms cubic-bezier(.4, 0, 1, 1) forwards;
+.dashboard-page-transition :is(.animate-card, .glass-panel, .vehicle-tracker-modes, .history-toolbar, .pw-weather-panel, .pw-peak-panel, .pw-trend-panel, .pw-level-card, .pw-status-panel, .parking-summary, .parking-location, .parking-ranking, .water-area-card, .water-trend, .water-records, .ppb-data-sidebar > .ppb-panel, .ppb-data-sidebar > .ppb-weather):nth-child(2) { --panel-delay: 35ms; }
+.dashboard-page-transition :is(.animate-card, .glass-panel, .vehicle-tracker-modes, .history-toolbar, .pw-weather-panel, .pw-peak-panel, .pw-trend-panel, .pw-level-card, .pw-status-panel, .parking-summary, .parking-location, .parking-ranking, .water-area-card, .water-trend, .water-records, .ppb-data-sidebar > .ppb-panel, .ppb-data-sidebar > .ppb-weather):nth-child(3) { --panel-delay: 70ms; }
+.dashboard-page-transition :is(.animate-card, .glass-panel, .vehicle-tracker-modes, .history-toolbar, .pw-weather-panel, .pw-peak-panel, .pw-trend-panel, .pw-level-card, .pw-status-panel, .parking-summary, .parking-location, .parking-ranking, .water-area-card, .water-trend, .water-records, .ppb-data-sidebar > .ppb-panel, .ppb-data-sidebar > .ppb-weather):nth-child(n+4) { --panel-delay: 105ms; }
+.dashboard-page-transition.is-entering :is(.animate-card, .glass-panel, .vehicle-tracker-modes, .history-toolbar, .pw-weather-panel, .pw-peak-panel, .pw-trend-panel, .pw-level-card, .pw-status-panel, .parking-summary, .parking-location, .parking-ranking, .water-area-card, .water-trend, .water-records, .ppb-data-sidebar > .ppb-panel, .ppb-data-sidebar > .ppb-weather) {
+  animation: dashboard-panel-in 340ms cubic-bezier(.22, 1, .36, 1) backwards;
+  /* Override legacy inline card delays so navigation stays responsive. */
+  animation-delay: var(--panel-delay) !important;
 }
-@keyframes dashboard-page-in {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: none; }
+.dashboard-page-transition.is-exiting { pointer-events: none; }
+.dashboard-page-transition.is-exiting :is(.animate-card, .glass-panel, .vehicle-tracker-modes, .history-toolbar, .pw-weather-panel, .pw-peak-panel, .pw-trend-panel, .pw-level-card, .pw-status-panel, .parking-summary, .parking-location, .parking-ranking, .water-area-card, .water-trend, .water-records, .ppb-data-sidebar > .ppb-panel, .ppb-data-sidebar > .ppb-weather) {
+  animation: dashboard-panel-out 180ms cubic-bezier(.4, 0, 1, 1) forwards;
+  animation-delay: 0ms !important;
 }
-@keyframes dashboard-page-out {
-  from { opacity: 1; transform: none; }
-  to { opacity: 0; transform: translateY(-10px); }
+@keyframes dashboard-panel-in {
+  from { opacity: 0; translate: 0 var(--panel-enter-offset); }
+  to { opacity: 1; translate: none; }
+}
+@keyframes dashboard-panel-out {
+  from { opacity: 1; translate: none; }
+  to { opacity: 0; translate: 0 -10px; }
 }
 @media (max-width: 768px) {
-  @keyframes dashboard-page-in {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: none; }
-  }
+  .dashboard-page-transition :is(.animate-card, .glass-panel, .vehicle-tracker-modes, .history-toolbar, .pw-weather-panel, .pw-peak-panel, .pw-trend-panel, .pw-level-card, .pw-status-panel, .parking-summary, .parking-location, .parking-ranking, .water-area-card, .water-trend, .water-records, .ppb-data-sidebar > .ppb-panel, .ppb-data-sidebar > .ppb-weather) { --panel-enter-offset: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .dashboard-page-transition.is-entering,
-  .dashboard-page-transition.is-exiting { animation: none; }
+  .dashboard-page-transition.is-entering :is(.animate-card, .glass-panel, .vehicle-tracker-modes, .history-toolbar, .pw-weather-panel, .pw-peak-panel, .pw-trend-panel, .pw-level-card, .pw-status-panel, .parking-summary, .parking-location, .parking-ranking, .water-area-card, .water-trend, .water-records, .ppb-data-sidebar > .ppb-panel, .ppb-data-sidebar > .ppb-weather),
+  .dashboard-page-transition.is-exiting :is(.animate-card, .glass-panel, .vehicle-tracker-modes, .history-toolbar, .pw-weather-panel, .pw-peak-panel, .pw-trend-panel, .pw-level-card, .pw-status-panel, .parking-summary, .parking-location, .parking-ranking, .water-area-card, .water-trend, .water-records, .ppb-data-sidebar > .ppb-panel, .ppb-data-sidebar > .ppb-weather) { animation: none; }
 }
 /* Compact labels when the navigation sidebar reduces dashboard width. */
 .cctv-sidebar-open .cctv-offline-table { min-width: 0; }
