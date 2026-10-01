@@ -4,6 +4,36 @@ import { readHistoryVehicles, normalizeHistory, readVehicleHistory, historyDista
 jest.mock('firebase/database', () => ({ get: jest.fn(), ref: (_, path) => path }));
 jest.mock('../config/firebase', () => ({ getFirebaseServices: jest.fn() }));
 const user = { uid: 'dashboard' };
+test('deduplicates pending reads but fetches again after completion for fresh history', async () => {
+  let resolve;
+  get.mockImplementationOnce(() => new Promise(done => { resolve = done; }));
+  const first = readVehicleHistory('JAGUAR_BGM', '2026-10-01', user);
+  const duplicate = readVehicleHistory('JAGUAR_BGM', '2026-10-01', user);
+  expect(get).toHaveBeenCalledTimes(1);
+  expect(get).toHaveBeenCalledWith('vehicle_history/JAGUAR_BGM/2026-10-01');
+  resolve({ val: () => null });
+  await Promise.all([first, duplicate]);
+  get.mockResolvedValue({ val: () => null });
+  await readVehicleHistory('JAGUAR_BGM', '2026-10-01', user);
+  expect(get).toHaveBeenCalledTimes(2);
+});
+
+test('keeps distinct vehicle/date requests separate and allows retry after failure', async () => {
+  get.mockRejectedValueOnce(new Error('offline'));
+  await expect(readVehicleHistory('JAGUAR_BGM', '2026-10-01', user)).rejects.toThrow('offline');
+  get.mockResolvedValue({ val: () => null });
+  await Promise.all([
+    readVehicleHistory('JAGUAR_BGM', '2026-10-01', user),
+    readVehicleHistory('MACAN_BGM', '2026-10-01', user),
+    readVehicleHistory('JAGUAR_BGM', '2026-09-30', user),
+  ]);
+  expect(get.mock.calls.map(([path]) => path)).toEqual([
+    'vehicle_history/JAGUAR_BGM/2026-10-01',
+    'vehicle_history/JAGUAR_BGM/2026-10-01',
+    'vehicle_history/MACAN_BGM/2026-10-01',
+    'vehicle_history/JAGUAR_BGM/2026-09-30',
+  ]);
+});
 test('groups exact vehicle IDs and discovers other vehicles without duplicating known IDs', async () => {
   get.mockResolvedValue({ val: () => ({ JAGUAR_BGM: {}, MACAN_BGM: {}, NEW_VEHICLE: {}, MACAN_OTHER: {} }) });
   const vehicles = await readHistoryVehicles(user);

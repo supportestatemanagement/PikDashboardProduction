@@ -1,6 +1,23 @@
 import { get, ref } from 'firebase/database';
 import { getFirebaseServices } from '../config/firebase';
 
+// Share only requests still in flight (including React StrictMode effect replay).
+// Completed reads are not cached, so reopening History and Refresh stay fresh.
+const pendingReads = new WeakMap();
+function readHistorySnapshot(database, user, path) {
+  let requests = pendingReads.get(database);
+  if (!requests) {
+    requests = new Map();
+    pendingReads.set(database, requests);
+  }
+  const key = JSON.stringify([user.uid, path]);
+  if (!requests.has(key)) {
+    const request = get(ref(database, path)).finally(() => requests.delete(key));
+    requests.set(key, request);
+  }
+  return requests.get(key);
+}
+
 export const HISTORY_VEHICLES = [
   { id: 'JAGUAR_BGM', name: 'JAGUAR BGM', area: 'BGM' },
   { id: 'MACAN_BGM', name: 'MACAN BGM', area: 'BGM' },
@@ -14,7 +31,7 @@ export const HISTORY_VEHICLES = [
 export async function readHistoryVehicles(user) {
   const { auth, database } = getFirebaseServices();
   if (!user || auth.currentUser?.uid !== user.uid) throw new Error('Firebase authentication required');
-  const snapshot = await get(ref(database, 'vehicle_locations'));
+  const snapshot = await readHistorySnapshot(database, user, 'vehicle_locations');
   const knownIds = new Set(HISTORY_VEHICLES.map(item => item.id));
   return [...HISTORY_VEHICLES, ...Object.keys(snapshot.val() || {}).sort()
     .filter(id => !knownIds.has(id))
@@ -44,7 +61,8 @@ export async function readVehicleHistory(vehicle, date, user) {
   const { auth, database } = getFirebaseServices();
   if (!user || auth.currentUser?.uid !== user.uid) throw new Error('Firebase authentication required');
   if (typeof vehicle !== 'string' || !vehicle || /[.#$\[\]/\u0000-\u001f\u007f]/.test(vehicle) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Invalid history filter');
-  const snapshot = await get(ref(database, `vehicle_history/${vehicle}/${date}`));
+  // Never read the history root: one vehicle and one selected day per request.
+  const snapshot = await readHistorySnapshot(database, user, `vehicle_history/${vehicle}/${date}`);
   return normalizeHistory(snapshot.val());
 }
 

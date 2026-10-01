@@ -55,6 +55,7 @@ test('defaults to live, loads history, fits once and preserves live mode', async
   render(<VehicleTrackerDashboard />);
   expect(screen.getByText('Existing live map')).toBeInTheDocument();
   expect(readVehicleHistory).not.toHaveBeenCalled();
+  expect(readHistoryVehicles).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'History Tracking' }));
   await screen.findByLabelText('History summary');
   expect(screen.getByTestId('path')).toHaveTextContent('2');
@@ -65,6 +66,22 @@ test('defaults to live, loads history, fits once and preserves live mode', async
   expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button', { name: 'Live Tracking' }));
   expect(screen.getByText('Existing live map')).toBeInTheDocument();
+});
+
+test('does not read history while inactive and ignores a pending result after returning to live', async () => {
+  let resolve;
+  readVehicleHistory.mockImplementation(() => new Promise(done => { resolve = done; }));
+  const { rerender } = render(<VehicleTrackerDashboard isActive={false} />);
+  fireEvent.click(screen.getByRole('button', { name: 'History Tracking' }));
+  expect(readVehicleHistory).not.toHaveBeenCalled();
+  expect(readHistoryVehicles).not.toHaveBeenCalled();
+  rerender(<VehicleTrackerDashboard isActive />);
+  expect(readVehicleHistory).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Live Tracking' }));
+  await act(async () => resolve(points));
+  expect(screen.getByText('Existing live map')).toBeInTheDocument();
+  expect(screen.queryByLabelText('History summary')).not.toBeInTheDocument();
+  expect(readVehicleHistory).toHaveBeenCalledTimes(1);
 });
 test('panel starts, stops, accelerates and replays the vehicle with a growing trail', async () => {
   readVehicleHistory.mockResolvedValue(points);
