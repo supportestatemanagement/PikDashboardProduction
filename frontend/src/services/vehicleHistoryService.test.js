@@ -1,9 +1,27 @@
 import { get } from 'firebase/database';
 import { getFirebaseServices } from '../config/firebase';
-import { normalizeHistory, readVehicleHistory, historyDistance, estimatedHistoryDistance, renderHistoryPoints, historyCheckpoints } from './vehicleHistoryService';
+import { readHistoryVehicles, normalizeHistory, readVehicleHistory, historyDistance, estimatedHistoryDistance, renderHistoryPoints, historyCheckpoints } from './vehicleHistoryService';
 jest.mock('firebase/database', () => ({ get: jest.fn(), ref: (_, path) => path }));
 jest.mock('../config/firebase', () => ({ getFirebaseServices: jest.fn() }));
 const user = { uid: 'dashboard' };
+test('groups exact vehicle IDs and discovers other vehicles without duplicating known IDs', async () => {
+  get.mockResolvedValue({ val: () => ({ JAGUAR_BGM: {}, MACAN_BGM: {}, NEW_VEHICLE: {}, MACAN_OTHER: {} }) });
+  const vehicles = await readHistoryVehicles(user);
+  expect(vehicles.filter(item => item.area === 'BGM').map(item => item.id)).toEqual(['JAGUAR_BGM', 'MACAN_BGM']);
+  expect(vehicles.filter(item => item.area === 'GI').map(item => item.id)).toEqual(['MACAN_GI']);
+  expect(vehicles.filter(item => item.area === 'RWI').map(item => item.id)).toEqual(['JAGUAR_RWI']);
+  expect(vehicles.filter(item => item.area === 'Other').map(item => item.id)).toEqual(expect.arrayContaining(['PATROL_01', 'JAGUAR_1', 'TRITON_1', 'NEW_VEHICLE', 'MACAN_OTHER']));
+  expect(get).toHaveBeenCalledWith('vehicle_locations');
+});
+
+test('reads additional vehicle IDs but rejects invalid Firebase path segments', async () => {
+  get.mockResolvedValue({ val: () => null });
+  await expect(readVehicleHistory('NEW_VEHICLE', '2026-10-01', user)).resolves.toEqual([]);
+  expect(get).toHaveBeenCalledWith('vehicle_history/NEW_VEHICLE/2026-10-01');
+  for (const id of ['', 'bad/id', 'bad.id', 'bad#id', 'bad$id', 'bad[id]']) {
+    await expect(readVehicleHistory(id, '2026-10-01', user)).rejects.toThrow('Invalid history filter');
+  }
+});
 const stopPoints = (count, offset = 0) => Array.from({ length: count }, (_, index) => ({ position: [0, 0], timestamp: 1790300000000 + offset + index * 60000, accuracy: 5 }));
 
 test('distance excludes stationary drift while preserving entry and departure travel', () => {

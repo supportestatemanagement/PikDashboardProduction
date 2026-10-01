@@ -2,12 +2,24 @@ import { get, ref } from 'firebase/database';
 import { getFirebaseServices } from '../config/firebase';
 
 export const HISTORY_VEHICLES = [
-  { id: 'PATROL_01', name: 'PATROL_01', area: 'Uji Coba' },
-  { id: 'JAGUAR_1', name: 'JAGUAR 1', area: 'BGM' },
-  { id: 'TRITON_1', name: 'TRITON 1', area: 'BGM' },
+  { id: 'JAGUAR_BGM', name: 'JAGUAR BGM', area: 'BGM' },
+  { id: 'MACAN_BGM', name: 'MACAN BGM', area: 'BGM' },
   { id: 'MACAN_GI', name: 'MACAN GI', area: 'GI' },
   { id: 'JAGUAR_RWI', name: 'JAGUAR RWI', area: 'RWI' },
+  { id: 'PATROL_01', name: 'PATROL_01', area: 'Other' },
+  { id: 'JAGUAR_1', name: 'JAGUAR 1', area: 'Other' },
+  { id: 'TRITON_1', name: 'TRITON 1', area: 'Other' },
 ];
+
+export async function readHistoryVehicles(user) {
+  const { auth, database } = getFirebaseServices();
+  if (!user || auth.currentUser?.uid !== user.uid) throw new Error('Firebase authentication required');
+  const snapshot = await get(ref(database, 'vehicle_locations'));
+  const knownIds = new Set(HISTORY_VEHICLES.map(item => item.id));
+  return [...HISTORY_VEHICLES, ...Object.keys(snapshot.val() || {}).sort()
+    .filter(id => !knownIds.has(id))
+    .map(id => ({ id, name: id, area: 'Other' }))];
+}
 export const todayWib = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 export const historyTime = timestamp => new Date(timestamp).toLocaleTimeString('en-GB', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
@@ -31,7 +43,7 @@ export function normalizeHistory(data) {
 export async function readVehicleHistory(vehicle, date, user) {
   const { auth, database } = getFirebaseServices();
   if (!user || auth.currentUser?.uid !== user.uid) throw new Error('Firebase authentication required');
-  if (!HISTORY_VEHICLES.some(item => item.id === vehicle) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Invalid history filter');
+  if (typeof vehicle !== 'string' || !vehicle || /[.#$\[\]/\u0000-\u001f\u007f]/.test(vehicle) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Invalid history filter');
   const snapshot = await get(ref(database, `vehicle_history/${vehicle}/${date}`));
   return normalizeHistory(snapshot.val());
 }

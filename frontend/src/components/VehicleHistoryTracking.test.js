@@ -1,18 +1,21 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import VehicleTrackerDashboard from './VehicleTrackerDashboard';
-import { readVehicleHistory } from '../services/vehicleHistoryService';
+import { HISTORY_VEHICLES, readHistoryVehicles, readVehicleHistory } from '../services/vehicleHistoryService';
 const mockMap = { fitBounds: jest.fn(), getSize: () => ({ x: 1200, y: 800 }) };
 const mockUser = { uid: 'dashboard' };
 jest.mock('./VehicleAuthProvider', () => ({ useVehicleAuth: () => ({ status: 'ready', user: mockUser }) }));
 jest.mock('./HeatmapMap', () => ({ children, showLiveVehicles }) => <div data-testid="map">{showLiveVehicles !== false && 'Existing live map'}{children}</div>);
-jest.mock('../services/vehicleHistoryService', () => ({ ...jest.requireActual('../services/vehicleHistoryService'), readVehicleHistory: jest.fn() }));
+jest.mock('../services/vehicleHistoryService', () => ({ ...jest.requireActual('../services/vehicleHistoryService'), readVehicleHistory: jest.fn(), readHistoryVehicles: jest.fn().mockResolvedValue(jest.requireActual('../services/vehicleHistoryService').HISTORY_VEHICLES) }));
 jest.mock('react-leaflet', () => ({
   MapContainer: ({ children }) => <div data-testid="map">{children}</div>, TileLayer: () => null,
   useMap: () => mockMap, Popup: ({ children }) => <div>{children}</div>,
   Marker: ({ title, children, position }) => <div aria-label={title} data-position={JSON.stringify(position)}>{children}</div>,
   Polyline: ({ positions }) => <div data-testid="path">{positions.length}</div>,
 }));
-beforeEach(() => { jest.clearAllMocks(); });
+beforeEach(() => {
+  jest.clearAllMocks();
+  readHistoryVehicles.mockResolvedValue(HISTORY_VEHICLES);
+});
 test('shows stop checkpoints and selects their start time from the list', async () => {
   const stationary = Array.from({ length: 7 }, (_, index) => ({ position: [-6, 106], timestamp: 1790300060000 + index * 60000 }));
   readVehicleHistory.mockResolvedValue([{ position: [-6.1, 106], timestamp: 1790300000000 }, ...stationary]);
@@ -23,7 +26,7 @@ test('shows stop checkpoints and selects their start time from the list', async 
   expect(screen.getByLabelText('Checkpoint 1')).toHaveAttribute('data-position', '[-6,106]');
   fireEvent.click(screen.getByRole('button', { name: /Checkpoint 1 · 6 menit 0 detik/ }));
   expect(screen.getByRole('slider')).toHaveValue('60000');
-  expect(screen.getByLabelText('Playback: PATROL_01')).toHaveAttribute('data-position', '[-6,106]');
+  expect(screen.getByLabelText('Playback: JAGUAR BGM')).toHaveAttribute('data-position', '[-6,106]');
   expect(screen.getByRole('button', { name: 'Stop' })).toBeDisabled();
   readVehicleHistory.mockResolvedValue([]);
   fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
@@ -55,9 +58,9 @@ test('defaults to live, loads history, fits once and preserves live mode', async
   fireEvent.click(screen.getByRole('button', { name: 'History Tracking' }));
   await screen.findByLabelText('History summary');
   expect(screen.getByTestId('path')).toHaveTextContent('2');
-  expect(screen.queryByLabelText('START: PATROL_01')).not.toBeInTheDocument();
-  expect(screen.queryByLabelText('END: PATROL_01')).not.toBeInTheDocument();
-  expect(readVehicleHistory).toHaveBeenCalledWith('PATROL_01', expect.any(String), mockUser);
+  expect(screen.queryByLabelText('START: JAGUAR BGM')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('END: JAGUAR BGM')).not.toBeInTheDocument();
+  expect(readVehicleHistory).toHaveBeenCalledWith('JAGUAR_BGM', expect.any(String), mockUser);
   expect(screen.getByText('1h 0m')).toBeInTheDocument();
   expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button', { name: 'Live Tracking' }));
@@ -72,13 +75,13 @@ test('panel starts, stops, accelerates and replays the vehicle with a growing tr
     render(<VehicleTrackerDashboard />);
     fireEvent.click(screen.getByRole('button', { name: 'History Tracking' }));
     await screen.findByLabelText('History summary');
-    expect(screen.queryByLabelText('Playback: PATROL_01')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Playback: JAGUAR BGM')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     act(() => frame(0));
     act(() => frame(1000));
     expect(screen.getByLabelText('Playback progress')).toHaveAttribute('value', '60000');
     expect(screen.getAllByTestId('path')).toHaveLength(2);
-    expect(screen.getByLabelText('Playback: PATROL_01')).not.toHaveAttribute('data-position', JSON.stringify(points[0].position));
+    expect(screen.getByLabelText('Playback: JAGUAR BGM')).not.toHaveAttribute('data-position', JSON.stringify(points[0].position));
     fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
     expect(cancel).toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Start' })).toBeEnabled();
@@ -88,13 +91,13 @@ test('panel starts, stops, accelerates and replays the vehicle with a growing tr
     act(() => frame(3000));
     expect(screen.getByLabelText('Playback progress')).toHaveAttribute('value', '360000');
     act(() => frame(20000));
-    expect(screen.getByLabelText('Playback: PATROL_01')).toHaveAttribute('data-position', JSON.stringify(points[1].position));
+    expect(screen.getByLabelText('Playback: JAGUAR BGM')).toHaveAttribute('data-position', JSON.stringify(points[1].position));
     expect(screen.getByRole('button', { name: 'Stop' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     expect(screen.getByLabelText('Playback progress')).toHaveAttribute('value', '0');
     fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-09-19' } });
     await screen.findByLabelText('History summary');
-    expect(screen.queryByLabelText('Playback: PATROL_01')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Playback: JAGUAR BGM')).not.toBeInTheDocument();
   } finally { request.mockRestore(); cancel.mockRestore(); }
 });
 test('ignores stale requests after filter changes and retains map on empty/error', async () => {
@@ -120,7 +123,7 @@ test('seeks before starting, while playing and after finishing, and refresh rese
   await screen.findByLabelText('History summary');
   const slider = screen.getByRole('slider', { name: 'Playback progress' });
   fireEvent.change(slider, { target: { value: '1800000' } });
-  expect(JSON.parse(screen.getByLabelText('Playback: PATROL_01').dataset.position)).toEqual([-6.05, 106.05]);
+  expect(JSON.parse(screen.getByLabelText('Playback: JAGUAR BGM').dataset.position)).toEqual([-6.05, 106.05]);
   expect(screen.getByRole('button', { name: 'Stop' })).toBeDisabled();
   fireEvent.keyDown(slider, { key: 'ArrowRight' });
   expect(slider).toHaveValue('1801000');
@@ -131,11 +134,11 @@ test('seeks before starting, while playing and after finishing, and refresh rese
   expect(screen.getByText('Selesai')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Stop' })).toBeDisabled();
   fireEvent.change(slider, { target: { value: '0' } });
-  expect(screen.getByLabelText('Playback: PATROL_01')).toHaveAttribute('data-position', JSON.stringify(points[0].position));
+  expect(screen.getByLabelText('Playback: JAGUAR BGM')).toHaveAttribute('data-position', JSON.stringify(points[0].position));
   fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
   await screen.findByLabelText('History summary');
   expect(readVehicleHistory).toHaveBeenCalledTimes(2);
-  expect(screen.queryByLabelText('Playback: PATROL_01')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Playback: JAGUAR BGM')).not.toBeInTheDocument();
 });
 
 test('disables seeking for empty history and a single GPS point', async () => {
@@ -148,6 +151,6 @@ test('disables seeking for empty history and a single GPS point', async () => {
   await screen.findByLabelText('History summary');
   expect(screen.getByRole('slider')).toBeDisabled();
   fireEvent.click(screen.getByRole('button', { name: 'Start' }));
-  expect(screen.getByLabelText('Playback: PATROL_01')).toHaveAttribute('data-position', JSON.stringify(points[0].position));
+  expect(screen.getByLabelText('Playback: JAGUAR BGM')).toHaveAttribute('data-position', JSON.stringify(points[0].position));
   expect(screen.getByText('Selesai')).toBeInTheDocument();
 });
