@@ -7,13 +7,16 @@ const row = changes => ({ 'Project Code': 'BGM', 'Created At': '01/10/2026 18:00
 beforeEach(() => fetchCustomerRows.mockResolvedValue(normalizeCustomerRows([
   row({}), row({ 'Project Code': 'GI', Source: 'PHONE', 'SLA Days': '10', 'Category Name': 'Engineering', 'Sub Category Name': 'Keluhan Listrik' }),
   row({ 'Project Code': 'RWI', 'Created At': '01/09/2026 12:00:00' }),
+  row({ 'Project Code': 'PIK2', Source: 'PIK2 ONLY', 'Category Name': 'PIK2 category' }),
 ])));
 test('loads sheet rows, uses independent area/category filters and filters all table columns', async () => {
   render(<CustomerServiceDashboard dateRange={dateRange} />);
   await screen.findByRole('img', { name: 'Monthly Customer Service Tickets' });
   expect(screen.queryByText('Other')).not.toBeInTheDocument();
   expect(screen.getByLabelText('Monthly Project Code')).toHaveValue('');
-  expect([...document.querySelectorAll('.cs-summary-card')].map(card => card.querySelector('small')?.textContent || card.querySelector('span').textContent)).toEqual(['TOTAL TICKETS', 'BGM', 'GI', 'RWI', 'PIK 2']);
+  expect([...document.querySelectorAll('.cs-summary-card')].map(card => card.querySelector('small')?.textContent || card.querySelector('span').textContent)).toEqual(['TOTAL TICKETS', 'BGM', 'GI', 'RWI']);
+  expect(document.querySelector('.cs-total strong')).toHaveTextContent('2');
+  expect(screen.queryByText(/PIK2|PIK 2/)).not.toBeInTheDocument();
   expect(screen.getByRole('img', { name: 'Monthly Customer Service Tickets' })).toHaveTextContent('2026-10: 2 tiket');
   expect(screen.getByRole('heading', { name: 'Request Source Distribution' })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Service Type Distribution' })).toBeInTheDocument();
@@ -53,7 +56,7 @@ test('shows all panels immediately with local skeletons, then replaces them with
   fetchCustomerRows.mockImplementationOnce(() => new Promise(done => { resolve = done; }));
   render(<CustomerServiceDashboard dateRange={dateRange} />);
   expect(screen.getByRole('main', { name: 'Customer Service Dashboard' })).toBeInTheDocument();
-  expect(screen.getAllByLabelText('Memuat jumlah tiket')).toHaveLength(5);
+  expect(screen.getAllByLabelText('Memuat jumlah tiket')).toHaveLength(4);
   expect(document.querySelectorAll('.cs-chart[aria-busy="true"]')).toHaveLength(5);
   const table = screen.getByRole('region', { name: 'Customer Service Records' });
   expect(table).toHaveAttribute('aria-busy', 'true');

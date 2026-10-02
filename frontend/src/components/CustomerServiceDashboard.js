@@ -6,8 +6,8 @@ import './CustomerServiceDashboard.css';
 
 const number = value => value.toLocaleString('id-ID');
 const colors = ['#3b82f6', '#18bfd4', '#8b5cf6', '#f59e0b', '#10b981', '#ef6464', '#ec4899', '#6366f1', '#64748b', '#0d9488'];
-const logos = { BGM: '/logobgm.png', GIS: '/logogi2.png', GI: '/logogi2.png', RWI: '/logorwi2.png', 'PIK 2': '/logopik2.png' };
-const summaryAreas = ['BGM', 'GI', 'RWI', 'PIK 2'];
+const logos = { BGM: '/logobgm.png', GI: '/logogi2.png', RWI: '/logorwi2.png' };
+const summaryAreas = ['BGM', 'GI', 'RWI'];
 const categorical = ['SLA Days', 'Project Code', 'Source', 'Service Type', 'Category Name', 'Response Status', 'Handling Status'];
 const options = (rows, column) => [...new Set(rows.map(row => row[column]).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 function Select({ label, value, onChange, values, disabled }) {
@@ -80,7 +80,7 @@ export default function CustomerServiceDashboard({ dateRange }) {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError('');
-    fetchCustomerRows(controller.signal).then(rows => { if (!controller.signal.aborted) setData(rows); }).catch(err => { if (!controller.signal.aborted) setError(err.message); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    fetchCustomerRows(controller.signal).then(rows => { if (!controller.signal.aborted) setData(rows.filter(row => summaryAreas.includes(row['Project Code']))); }).catch(err => { if (!controller.signal.aborted) setError(err.message); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [attempt]);
   const start = dateRange ? toApiDate(dateRange.start) : '', end = dateRange ? toApiDate(dateRange.end) : '';
