@@ -1,9 +1,29 @@
 import { get } from 'firebase/database';
 import { getFirebaseServices } from '../config/firebase';
-import { readHistoryVehicles, normalizeHistory, readVehicleHistory, historyDistance, estimatedHistoryDistance, renderHistoryPoints, historyCheckpoints } from './vehicleHistoryService';
+import { filterHistorySpikes, readHistoryVehicles, normalizeHistory, readVehicleHistory, historyDistance, estimatedHistoryDistance, renderHistoryPoints, historyCheckpoints } from './vehicleHistoryService';
 jest.mock('firebase/database', () => ({ get: jest.fn(), ref: (_, path) => path }));
 jest.mock('../config/firebase', () => ({ getFirebaseServices: jest.fn() }));
 const user = { uid: 'dashboard' };
+test('removes a sustained distant GPS excursion without changing the stored records', () => {
+  const start = { position: [-6.1, 106.7], timestamp: 1790816400000 };
+  const bad = Array.from({ length: 5 }, (_, index) => ({ position: [-5.7, 107.1 + index * 0.00001], timestamp: start.timestamp + (index + 1) * 60000 }));
+  const end = { position: [-6.1, 106.7001], timestamp: start.timestamp + 6 * 60000 };
+  const records = [start, ...bad, end];
+  const original = JSON.stringify(records);
+  expect(filterHistorySpikes(records)).toEqual([start, end]);
+  expect(JSON.stringify(records)).toBe(original);
+  expect(filterHistorySpikes([start, ...bad])).toEqual([start, ...bad]);
+  const gap = { ...end, timestamp: end.timestamp + 10 * 60000 };
+  expect(filterHistorySpikes([start, ...bad, gap])).toEqual([start, ...bad, gap]);
+});
+
+test('handles a far fix with a duplicate timestamp and retains normal driving', () => {
+  const start = { position: [-6.1, 106.7], timestamp: 1790816400000 };
+  const end = { position: [-6.1, 106.7001], timestamp: start.timestamp + 10000 };
+  expect(filterHistorySpikes([start, { ...start, position: [-5.7, 107.1] }, end])).toEqual([start, end]);
+  const normal = Array.from({ length: 8 }, (_, index) => ({ position: [-6.1, 106.7 + index * 0.001], timestamp: start.timestamp + index * 10000 }));
+  expect(filterHistorySpikes(normal)).toEqual(normal);
+});
 test('reads each history request independently using the selected path', async () => {
   get.mockResolvedValue({ val: () => null });
   const first = readVehicleHistory('JAGUAR_BGM', '2026-10-01', user);
