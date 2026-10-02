@@ -4,18 +4,16 @@ import { readHistoryVehicles, normalizeHistory, readVehicleHistory, historyDista
 jest.mock('firebase/database', () => ({ get: jest.fn(), ref: (_, path) => path }));
 jest.mock('../config/firebase', () => ({ getFirebaseServices: jest.fn() }));
 const user = { uid: 'dashboard' };
-test('deduplicates pending reads but fetches again after completion for fresh history', async () => {
-  let resolve;
-  get.mockImplementationOnce(() => new Promise(done => { resolve = done; }));
+test('reads each history request independently using the selected path', async () => {
+  get.mockResolvedValue({ val: () => null });
   const first = readVehicleHistory('JAGUAR_BGM', '2026-10-01', user);
   const duplicate = readVehicleHistory('JAGUAR_BGM', '2026-10-01', user);
-  expect(get).toHaveBeenCalledTimes(1);
+  expect(get).toHaveBeenCalledTimes(2);
   expect(get).toHaveBeenCalledWith('vehicle_history/JAGUAR_BGM/2026-10-01');
-  resolve({ val: () => null });
   await Promise.all([first, duplicate]);
   get.mockResolvedValue({ val: () => null });
   await readVehicleHistory('JAGUAR_BGM', '2026-10-01', user);
-  expect(get).toHaveBeenCalledTimes(2);
+  expect(get).toHaveBeenCalledTimes(3);
 });
 
 test('keeps distinct vehicle/date requests separate and allows retry after failure', async () => {
