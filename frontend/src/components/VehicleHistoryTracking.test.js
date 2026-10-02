@@ -16,6 +16,30 @@ beforeEach(() => {
   jest.clearAllMocks();
   readHistoryVehicles.mockResolvedValue(HISTORY_VEHICLES);
 });
+
+test('excludes an isolated GPS spike from the route, map bounds and playback without mutating records', async () => {
+  // Synthetic regression fixture, not production MACAN_GI data.
+  const records = [
+    { position: [-6.1, 106.7], timestamp: 1790816400000 },
+    { position: [-5.7, 107.1], timestamp: 1790816405000 },
+    { position: [-6.1, 106.7001], timestamp: 1790816410000 },
+  ];
+  const original = JSON.stringify(records);
+  readVehicleHistory.mockResolvedValue(records);
+  render(<VehicleTrackerDashboard />);
+  fireEvent.click(screen.getByRole('button', { name: 'History Tracking' }));
+  fireEvent.change(screen.getByLabelText('Vehicle'), { target: { value: 'MACAN_GI' } });
+  fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-10-01' } });
+  await screen.findByLabelText('History summary');
+  expect(readVehicleHistory).toHaveBeenLastCalledWith('MACAN_GI', '2026-10-01', mockUser);
+  expect(screen.getByTestId('path')).toHaveTextContent('2');
+  expect(mockMap.fitBounds).toHaveBeenLastCalledWith([records[0].position, records[2].position], expect.any(Object));
+  fireEvent.change(screen.getByRole('slider'), { target: { value: '5000' } });
+  const position = JSON.parse(screen.getByLabelText('Playback: MACAN GI').dataset.position);
+  expect(position[0]).toBeCloseTo(-6.1, 6);
+  expect(position[1]).toBeCloseTo(106.70005, 6);
+  expect(JSON.stringify(records)).toBe(original);
+});
 test('shows stop checkpoints and selects their start time from the list', async () => {
   const stationary = Array.from({ length: 7 }, (_, index) => ({ position: [-6, 106], timestamp: 1790300060000 + index * 60000 }));
   readVehicleHistory.mockResolvedValue([{ position: [-6.1, 106], timestamp: 1790300000000 }, ...stationary]);

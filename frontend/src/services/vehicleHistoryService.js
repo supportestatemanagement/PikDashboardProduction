@@ -68,7 +68,7 @@ export function renderHistoryPoints(points, limit = 5000) {
 }
 
 // Keep geometric distance separate: checkpoint radii must use raw coordinates.
-export function estimatedHistoryDistance(points) {
+export function filterHistorySpikes(points) {
   const speedBetween = (from, to) => {
     const hours = (to.timestamp - from.timestamp) / 3600000;
     return hours > 0 ? historyDistance([from, to]) / hours : NaN;
@@ -83,6 +83,11 @@ export function estimatedHistoryDistance(points) {
       speedBetween(previous, next) <= 180) continue;
     filtered.push(point);
   }
+  return filtered;
+}
+
+export function estimatedHistoryDistance(points) {
+  const filtered = filterHistorySpikes(points);
   const stops = historyCheckpoints(filtered);
   const corrected = [...filtered];
   let index = 0;

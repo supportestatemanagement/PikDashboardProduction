@@ -4,7 +4,7 @@ import HeatmapMap from './HeatmapMap';
 import L from 'leaflet';
 import { getVehicleColor, getVehicleType, vehicleIconSvg } from './vehicleIcons';
 import { useVehicleAuth } from './VehicleAuthProvider';
-import { HISTORY_VEHICLES, readHistoryVehicles, todayWib, historyTime, readVehicleHistory, estimatedHistoryDistance, renderHistoryPoints, historyCheckpoints } from '../services/vehicleHistoryService';
+import { HISTORY_VEHICLES, readHistoryVehicles, todayWib, historyTime, readVehicleHistory, filterHistorySpikes, estimatedHistoryDistance, renderHistoryPoints, historyCheckpoints } from '../services/vehicleHistoryService';
 
 const stopDuration = duration => `${Math.floor(duration / 60000)} menit ${Math.floor(duration / 1000) % 60} detik`;
 
@@ -46,7 +46,7 @@ export default function VehicleHistoryTracking({ isActive }) {
     });
     return () => { cancelled = true; };
   }, [isActive, authStatus, user, vehicle, date, key]);
-  const points = useMemo(() => isActive && authStatus === 'ready' && user && result.key === key && result.status === 'ready' ? result.points : [], [isActive, authStatus, user, result, key]);
+  const points = useMemo(() => isActive && authStatus === 'ready' && user && result.key === key && result.status === 'ready' ? filterHistorySpikes(result.points) : [], [isActive, authStatus, user, result, key]);
   const positions = useMemo(() => renderHistoryPoints(points), [points]);
   const distance = useMemo(() => estimatedHistoryDistance(points), [points]);
   const checkpoints = useMemo(() => historyCheckpoints(points).map((checkpoint, index) => ({ ...checkpoint,
