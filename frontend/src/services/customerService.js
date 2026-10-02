@@ -17,6 +17,8 @@ export function normalizeCustomerRows(rows) {
   return rows.map(row => {
     const values = Object.fromEntries(Object.entries(row).map(([name, value]) => [key(name), String(value ?? '').trim()]));
     const normalized = Object.fromEntries(CUSTOMER_COLUMNS.map(name => [name, values[key(name)] || '']));
+    const area = normalized['Project Code'].toUpperCase().replace(/\s+/g, '');
+    normalized['Project Code'] = ({ GIS: 'GI', EBI: 'RWI', PIK2: 'PIK 2', GI: 'GI', BGM: 'BGM', RWI: 'RWI' })[area] || normalized['Project Code'];
     return { ...normalized, date: customerDate(normalized['Created At']) };
   }).filter(row => CUSTOMER_COLUMNS.some(name => row[name]));
 }
@@ -25,16 +27,16 @@ export function countCustomerValues(rows, column) {
   rows.forEach(row => { const value = row[column] || 'Not specified'; counts.set(value, (counts.get(value) || 0) + 1); });
   return [...counts].map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
-export function dailyCustomerTickets(rows) {
-  const counts = countCustomerValues(rows.filter(row => row.date), 'date').sort((a, b) => a.label.localeCompare(b.label));
+export function monthlyCustomerTickets(rows) {
+  const counts = countCustomerValues(rows.filter(row => row.date).map(row => ({ month: row.date.slice(0, 7) })), 'month').sort((a, b) => a.label.localeCompare(b.label));
   if (!counts.length) return [];
   const lookup = new Map(counts.map(item => [item.label, item.count]));
-  const day = new Date(`${counts[0].label}T00:00:00Z`), end = counts[counts.length - 1].label;
+  const day = new Date(`${counts[0].label}-01T00:00:00Z`), end = counts[counts.length - 1].label;
   const result = [];
-  while (day.toISOString().slice(0, 10) <= end) {
-    const label = day.toISOString().slice(0, 10);
+  while (day.toISOString().slice(0, 7) <= end) {
+    const label = day.toISOString().slice(0, 7);
     result.push({ label, count: lookup.get(label) || 0 });
-    day.setUTCDate(day.getUTCDate() + 1);
+    day.setUTCMonth(day.getUTCMonth() + 1);
   }
   return result;
 }

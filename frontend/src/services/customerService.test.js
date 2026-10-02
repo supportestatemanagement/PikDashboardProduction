@@ -1,4 +1,10 @@
-import { fetchCustomerRows, customerDate, normalizeCustomerRows, countCustomerValues, dailyCustomerTickets } from './customerService';
+import { fetchCustomerRows, customerDate, normalizeCustomerRows, countCustomerValues, monthlyCustomerTickets } from './customerService';
+
+test('groups monthly totals across years and fills months without tickets', () => {
+  expect(monthlyCustomerTickets([{ date: '2025-12-01' }, { date: '2025-12-31' }, { date: '2026-02-01' }, { date: '' }])).toEqual([
+    { label: '2025-12', count: 2 }, { label: '2026-01', count: 0 }, { label: '2026-02', count: 1 },
+  ]);
+});
 
 test.each([200, 404, 502])('handles HTML responses without exposing JSON parser errors (HTTP %s)', async status => {
   const original = global.fetch;
@@ -57,7 +63,7 @@ test('keeps project codes and text IDs, fills missing columns, counts tickets an
   ]);
   expect(rows).toHaveLength(2);
   expect(rows[0]['Unit Code']).toBe('001');
-  expect(rows[1]['Project Code']).toBe('EBI');
+  expect(rows[1]['Project Code']).toBe('RWI');
   expect(countCustomerValues(rows, 'Source')).toEqual([{ label: 'WEB PORTAL', count: 2 }]);
-  expect(dailyCustomerTickets(rows)).toEqual([{ label: '2026-10-01', count: 1 }, { label: '2026-10-02', count: 0 }, { label: '2026-10-03', count: 1 }]);
+  expect(monthlyCustomerTickets(rows)).toEqual([{ label: '2026-10', count: 2 }]);
 });

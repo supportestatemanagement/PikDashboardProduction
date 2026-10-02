@@ -6,8 +6,9 @@ import './VehicleTrackingLayer.css';
 import { useVehicleAuth } from './VehicleAuthProvider';
 import { getVehicleType, getVehicleColor, vehicleIconSvg } from './vehicleIcons';
 
-function VehicleMarker({ vehicle, now, connected }) {
+export function VehicleMarker({ vehicle, now, connected }) {
   const marker = useRef(null);
+  const lastPositionAt = useRef(null);
   const stale = !Number.isFinite(vehicle.timestamp) || now - vehicle.timestamp > 60000;
   const status = !vehicle.tracking ? 'Tracking berhenti' : stale ? 'GPS tidak diperbarui' : !connected ? 'Koneksi terputus' : 'Live';
   const heading = Number.isFinite(vehicle.heading) ? vehicle.heading : 0;
@@ -23,9 +24,20 @@ function VehicleMarker({ vehicle, now, connected }) {
     if (!instance) return undefined;
     const start = instance.getLatLng();
     const began = performance.now();
+    const interval = lastPositionAt.current === null ? 1000 : began - lastPositionAt.current;
+    lastPositionAt.current = began;
+    // Match the observed position-update cadence without predicting GPS fixes
+    // or making a reconnect take an unbounded amount of time to catch up.
+    const duration = Math.max(1000, Math.min(interval, 5000));
+    if (start.lat === vehicle.latitude && start.lng === vehicle.longitude) return undefined;
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+      instance.setLatLng([vehicle.latitude, vehicle.longitude]);
+      return undefined;
+    }
     let frame;
     const move = (time) => {
-      const progress = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 1 : Math.min((time - began) / 900, 1);
+      const progress = Math.max(0, Math.min((time - began) / duration, 1));
       instance.setLatLng([start.lat + (vehicle.latitude - start.lat) * progress, start.lng + (vehicle.longitude - start.lng) * progress]);
       if (progress < 1) frame = requestAnimationFrame(move);
     };
