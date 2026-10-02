@@ -39,8 +39,34 @@ export function dailyCustomerTickets(rows) {
   return result;
 }
 export async function fetchCustomerRows(signal) {
-  const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/customer-service-data`, { signal });
-  const payload = await response.json();
-  if (!response.ok || payload.status !== 'success' || !Array.isArray(payload.data)) throw new Error('Tidak dapat memuat data Customer Service.');
+  const base = (process.env.REACT_APP_API_URL || '').trim().replace(/\/+$/, '');
+  let response;
+  // Retry only temporary failures; a missing endpoint or HTML app fallback
+  // needs a deployment/routing fix, not repeated requests to Google Sheets.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    try {
+      response = await fetch(`${base}/api/customer-service-data`, { signal, headers: { Accept: 'application/json' } });
+      if (![408, 429, 500, 502, 503, 504].includes(response.status) || attempt === 2) break;
+      await response.body?.cancel();
+    } catch (error) {
+      if (signal?.aborted || error.name === 'AbortError') throw error;
+      if (attempt === 2) throw new Error('Koneksi ke Customer Service terputus. Silakan coba lagi.');
+    }
+    await new Promise((resolve, reject) => {
+      const abort = () => { clearTimeout(timer); reject(new DOMException('Aborted', 'AbortError')); };
+      const timer = setTimeout(() => { signal?.removeEventListener('abort', abort); resolve(); }, 500 * (attempt + 1));
+      if (signal?.aborted) abort();
+      else signal?.addEventListener('abort', abort, { once: true });
+    });
+  }
+  if (!(response.headers.get('content-type') || '').toLowerCase().includes('application/json')) {
+    if (response.status === 404 || response.ok) throw new Error('Layanan Customer Service belum tersedia pada server ini. Hubungi pengelola dashboard untuk mengaktifkannya.');
+    throw new Error(`Server Customer Service sedang tidak tersedia (HTTP ${response.status}). Silakan coba lagi.`);
+  }
+  let payload;
+  try { payload = await response.json(); }
+  catch { throw new Error('Respons data Customer Service tidak valid. Silakan coba lagi.'); }
+  if (!response.ok || payload?.status !== 'success' || !Array.isArray(payload.data)) throw new Error('Tidak dapat memuat data Customer Service dari Google Sheets. Silakan coba lagi.');
   return normalizeCustomerRows(payload.data);
 }

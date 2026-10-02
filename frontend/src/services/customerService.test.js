@@ -1,4 +1,45 @@
-import { customerDate, normalizeCustomerRows, countCustomerValues, dailyCustomerTickets } from './customerService';
+import { fetchCustomerRows, customerDate, normalizeCustomerRows, countCustomerValues, dailyCustomerTickets } from './customerService';
+
+test.each([200, 404, 502])('handles HTML responses without exposing JSON parser errors (HTTP %s)', async status => {
+  const original = global.fetch;
+  const json = jest.fn();
+  global.fetch = jest.fn().mockResolvedValue({ status, ok: status === 200, headers: { get: () => 'text/html' }, json });
+  try {
+    await expect(fetchCustomerRows()).rejects.toThrow(status === 502 ? 'sedang tidak tersedia' : 'belum tersedia');
+    expect(json).not.toHaveBeenCalled();
+    expect(global.fetch).toHaveBeenCalledTimes(status === 502 ? 3 : 1);
+  } finally { global.fetch = original; }
+});
+
+test('recovers from a temporary HTML gateway failure', async () => {
+  const original = global.fetch;
+  global.fetch = jest.fn()
+    .mockResolvedValueOnce({ status: 503, ok: false, headers: { get: () => 'text/html' } })
+    .mockResolvedValueOnce({ status: 200, ok: true, headers: { get: () => 'application/json' }, json: async () => ({ status: 'success', data: [] }) });
+  try {
+    await expect(fetchCustomerRows()).resolves.toEqual([]);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  } finally { global.fetch = original; }
+});
+
+test('stops retrying when the user leaves Customer Service', async () => {
+  const original = global.fetch;
+  const controller = new AbortController();
+  global.fetch = jest.fn().mockResolvedValue({ status: 503, ok: false });
+  try {
+    const pending = fetchCustomerRows(controller.signal);
+    await Promise.resolve();
+    controller.abort();
+    await expect(pending).rejects.toHaveProperty('name', 'AbortError');
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  } finally { global.fetch = original; }
+});
+test('reads successful JSON from the Customer Service API', async () => {
+  const original = global.fetch;
+  global.fetch = jest.fn().mockResolvedValue({ ok: true, headers: { get: () => 'application/json' }, json: async () => ({ status: 'success', data: [{ 'Project Code': 'GIS', 'Created At': '01/10/2026 12:30:00' }] }) });
+  try { expect((await fetchCustomerRows())[0].date).toBe('2026-10-01'); }
+  finally { global.fetch = original; }
+});
 
 test('parses CustomerRelation dates as day/month/year including afternoon timestamps', () => {
   expect(customerDate('20/09/2026 22:34:08')).toBe('2026-09-20');
