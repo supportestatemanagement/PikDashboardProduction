@@ -17,6 +17,7 @@ from firebase_admin_service import create_dashboard_token
 from disaster_maritime import register_maritime_routes
 from disaster_enso import register_enso_routes
 from water_distribution import build_water_locations
+from customer_service import register_customer_service_routes
 
 # Menggunakan RapidOCR (Ringan, Cepat, dan Akurat untuk Angka CCTV)
 from rapidocr_onnxruntime import RapidOCR
@@ -52,6 +53,7 @@ client = gspread.authorize(creds)
 spreadsheet = client.open("PIK Dashboard")
 
 cc_spreadsheet = client.open("Master Data Dashboard")
+register_customer_service_routes(app, lambda: cc_spreadsheet.worksheet("CustomerRelation").get_all_records(numericise_ignore=['all']))
 cc_sheet = cc_spreadsheet.worksheet("CallCenter")
 cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
 perparkiran_sheet = cc_spreadsheet.worksheet("Perparkiran")

@@ -6,6 +6,7 @@ import Navbar from "./components/Navbar";
 import TrafficDashboard from "./components/TrafficDashboard";
 import VehicleTrackerDashboard from './components/VehicleTrackerDashboard';
 import CallCenterDashboard from "./components/CallCenterDashboard";
+import CustomerServiceDashboard from "./components/CustomerServiceDashboard";
 import CctvDashboard from "./components/CctvDashboard";
 import PerparkiranDashboard from "./components/PerparkiranDashboard";
 import PumpWeatherDashboard from "./components/PumpWeatherDashboard";
@@ -116,10 +117,13 @@ export default function App() {
   const [callCenterDateRange, setCallCenterDateRange] = useState(currentYearRange);
   const [parkingDateRange, setParkingDateRange] = useState(currentYearRange);
   const [waterDateRange, setWaterDateRange] = useState(currentYearRange);
+  const [customerDateRange, setCustomerDateRange] = useState(currentYearRange);
   const activeDateRange = activeTab === "callcenter" ? callCenterDateRange
+    : activeTab === "customerservice" ? customerDateRange
     : activeTab === "waterquality" ? waterDateRange
     : activeTab === "perparkiran" ? parkingDateRange : dateRange;
   const setActiveDateRange = activeTab === "callcenter" ? setCallCenterDateRange
+    : activeTab === "customerservice" ? setCustomerDateRange
     : activeTab === "waterquality" ? setWaterDateRange
     : activeTab === "perparkiran" ? setParkingDateRange : setDateRange;
 
@@ -187,6 +191,7 @@ export default function App() {
 
         {displayedTab === "availableparking" && <AvailableParkingDashboard />}
         {displayedTab === "waterquality" && <WaterQualityDashboard dateRange={waterDateRange} />}
+        {displayedTab === "customerservice" && <CustomerServiceDashboard dateRange={customerDateRange} />}
         {displayedTab === disasterDevelopTab && <PusatPantauBencana />}
 
         <div style={{ display: displayedTab === "perparkiran" ? "block" : "none" }}>

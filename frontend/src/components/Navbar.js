@@ -45,6 +45,7 @@ export default function Navbar({
     dashboard: "Traffic Dashboard",
     vehicletracker: "Vehicle Tracker Dashboard",
     callcenter: "Call Center Dashboard / Emergency",
+    customerservice: "Customer Service Dashboard",
     cctv: "CCTV Dashboard",
     perparkiran: "Call Center Dashboard / Parking",
     pump: "Pump Station Dashboard",
@@ -177,7 +178,7 @@ export default function Navbar({
         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "4px" : "12px", flexShrink: 0 }}>
 
           {/* RENTANG TANGGAL DATERANGE UNTUK CALL CENTER */}
-          {(["dashboard", "callcenter", "perparkiran", "pump", "waterquality"].includes(activeTab)) && dateRange && (
+          {(["dashboard", "callcenter", "customerservice", "perparkiran", "pump", "waterquality"].includes(activeTab)) && dateRange && (
             <div style={{ position: "relative" }}>
               <div 
                 onClick={() => {
@@ -343,6 +344,7 @@ export default function Navbar({
               { id: "dashboard", label: "Traffic", icon: "road" },
               { id: "vehicletracker", label: "Vehicle Tracker", icon: "car" },
               { id: "callcenter", label: "Call Center", icon: "call" },
+              { id: "customerservice", label: "Customer Service", icon: "call" },
               { id: "cctv", label: "CCTV", icon: "camera" },
               { id: "pump", label: "Pump Station", icon: "pump" },
               { id: "waterquality", label: "Water Quality", icon: "water" },
