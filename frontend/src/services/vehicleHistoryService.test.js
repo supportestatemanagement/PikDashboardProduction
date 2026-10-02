@@ -12,9 +12,9 @@ test('removes a sustained distant GPS excursion without changing the stored reco
   const original = JSON.stringify(records);
   expect(filterHistorySpikes(records)).toEqual([start, end]);
   expect(JSON.stringify(records)).toBe(original);
-  expect(filterHistorySpikes([start, ...bad])).toEqual([start, ...bad]);
+  expect(filterHistorySpikes([start, ...bad])).toEqual([start]);
   const gap = { ...end, timestamp: end.timestamp + 10 * 60000 };
-  expect(filterHistorySpikes([start, ...bad, gap])).toEqual([start, ...bad, gap]);
+  expect(filterHistorySpikes([start, ...bad, gap])).toEqual([start, gap]);
 });
 
 test('handles a far fix with a duplicate timestamp and retains normal driving', () => {

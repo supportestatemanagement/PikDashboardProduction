@@ -69,31 +69,15 @@ export function renderHistoryPoints(points, limit = 5000) {
 
 // Keep geometric distance separate: checkpoint radii must use raw coordinates.
 export function filterHistorySpikes(points) {
-  const speedBetween = (from, to) => {
-    const hours = (to.timestamp - from.timestamp) / 3600000;
-    const distance = historyDistance([from, to]);
-    return hours > 0 ? distance / hours : hours === 0 && distance > 0 ? Infinity : NaN;
-  };
   const filtered = [];
-  for (let index = 0; index < points.length; index += 1) {
-    const point = points[index], previous = filtered[filtered.length - 1];
-    // Require impossible departure AND return (>180 km/h), plus a plausible
-    // connection between the good fixes. Look through short runs of bad fixes,
-    // but never infer an outlier across missing GPS coverage or an open end.
-    let resume = -1;
-    if (previous && point.timestamp - previous.timestamp <= 120000 && speedBetween(previous, point) > 180) {
-      for (let next = index + 1; next < points.length && next - index <= 1000; next += 1) {
-        const candidate = points[next], before = points[next - 1];
-        if (candidate.timestamp - previous.timestamp > 10 * 60000 || candidate.timestamp - before.timestamp > 120000) break;
-        if (speedBetween(previous, candidate) <= 180) {
-          if (speedBetween(before, candidate) > 180) resume = next;
-          break;
-        }
-      }
-    }
-    if (resume !== -1) {
-      index = resume - 1;
-      continue;
+  for (const point of points) {
+    const previous = filtered[filtered.length - 1];
+    if (previous) {
+      const seconds = (point.timestamp - previous.timestamp) / 1000;
+      const distanceKm = historyDistance([previous, point]);
+      // Skip sudden jumps against the last accepted fix, not the rejected fix.
+      // Allow up to 100 m of GPS noise; otherwise cap implied speed at 180 km/h.
+      if (seconds < 0 || (distanceKm > 0.1 && (seconds === 0 || distanceKm / seconds * 3600 > 180))) continue;
     }
     filtered.push(point);
   }

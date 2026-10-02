@@ -17,6 +17,26 @@ beforeEach(() => {
   readHistoryVehicles.mockResolvedValue(HISTORY_VEHICLES);
 });
 
+test.each(['JAGUAR_BGM', 'MACAN_BGM', 'MACAN_GI', 'JAGUAR_RWI'])('keeps afternoon history after skipping a jump for %s and hides Other', async vehicle => {
+  const records = [
+    { position: [-6.1, 106.7], timestamp: Date.parse('2026-10-01T12:45:00+07:00') },
+    { position: [-5.7, 107.1], timestamp: Date.parse('2026-10-01T12:45:05+07:00') },
+    { position: [-6.1, 106.7001], timestamp: Date.parse('2026-10-01T12:45:10+07:00') },
+    { position: [-6.1, 106.701], timestamp: Date.parse('2026-10-01T23:59:00+07:00') },
+  ];
+  readVehicleHistory.mockResolvedValue(records);
+  render(<VehicleTrackerDashboard />);
+  fireEvent.click(screen.getByRole('button', { name: 'History Tracking' }));
+  fireEvent.change(screen.getByLabelText('Vehicle'), { target: { value: vehicle } });
+  fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-10-01' } });
+  const summary = await screen.findByLabelText('History summary');
+  expect(summary).toHaveTextContent('End: 23:59:00 WIB');
+  expect(screen.getByTestId('path')).toHaveTextContent('3');
+  expect(screen.getByLabelText('Vehicle').querySelectorAll('optgroup')).toHaveLength(3);
+  expect(screen.queryByRole('option', { name: 'PATROL_01' })).not.toBeInTheDocument();
+  expect(readHistoryVehicles).not.toHaveBeenCalled();
+});
+
 test('excludes an isolated GPS spike from the route, map bounds and playback without mutating records', async () => {
   // Synthetic regression fixture, not production MACAN_GI data.
   const records = [
@@ -42,7 +62,7 @@ test('excludes an isolated GPS spike from the route, map bounds and playback wit
 });
 test('shows stop checkpoints and selects their start time from the list', async () => {
   const stationary = Array.from({ length: 7 }, (_, index) => ({ position: [-6, 106], timestamp: 1790300060000 + index * 60000 }));
-  readVehicleHistory.mockResolvedValue([{ position: [-6.1, 106], timestamp: 1790300000000 }, ...stationary]);
+  readVehicleHistory.mockResolvedValue([{ position: [-6.001, 106], timestamp: 1790300000000 }, ...stationary]);
   render(<VehicleTrackerDashboard />);
   fireEvent.click(screen.getByRole('button', { name: 'History Tracking' }));
   await screen.findByLabelText('History summary');
@@ -61,7 +81,7 @@ const points = [{ id: 'a', position: [-6, 106], timestamp: 1790300000000 }, { id
 test('summarizes checkpoint count and mean stop duration, including no stops after refresh', async () => {
   const stops = [
     ...Array.from({ length: 6 }, (_, index) => ({ position: [-6, 106], timestamp: 1790300000000 + index * 60000 })),
-    ...Array.from({ length: 9 }, (_, index) => ({ position: [-6.1, 106], timestamp: 1790300360000 + index * 60000 })),
+    ...Array.from({ length: 9 }, (_, index) => ({ position: [-6.001, 106], timestamp: 1790300360000 + index * 60000 })),
   ];
   readVehicleHistory.mockResolvedValueOnce(stops).mockResolvedValueOnce(points);
   render(<VehicleTrackerDashboard />);
@@ -147,13 +167,13 @@ test('ignores stale requests after filter changes and retains map on empty/error
   render(<VehicleTrackerDashboard />);
   fireEvent.click(screen.getByRole('button', { name: 'History Tracking' }));
   expect(screen.getByRole('status')).toHaveTextContent('Loading tracking history...');
-  fireEvent.change(screen.getByLabelText('Vehicle'), { target: { value: 'TRITON_1' } });
+  fireEvent.change(screen.getByLabelText('Vehicle'), { target: { value: 'MACAN_BGM' } });
   await screen.findByText('No tracking history found for selected date.');
   await act(async () => resolveFirst(points));
   expect(screen.queryByTestId('path')).not.toBeInTheDocument();
   fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-09-20' } });
   await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Unable to load tracking history'));
-  expect(readVehicleHistory).toHaveBeenLastCalledWith('TRITON_1', '2026-09-20', mockUser);
+  expect(readVehicleHistory).toHaveBeenLastCalledWith('MACAN_BGM', '2026-09-20', mockUser);
   expect(screen.getByTestId('map')).toBeInTheDocument();
 });
 
