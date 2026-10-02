@@ -43,14 +43,14 @@ export default function Navbar({
   const isSingleDateDashboard = isTrafficDashboard || activeTab === "pump";
   const dashboardSubtitle = {
     dashboard: "Traffic Dashboard",
-    vehicletracker: "Vehicle Tracker Dashboard",
-    callcenter: "Call Center Dashboard / Emergency",
+    vehicletracker: "Patrol Tracker Dashboard",
+    callcenter: "911 Dashboard / Emergency",
     customerservice: "Customer Service Dashboard",
-    cctv: "CCTV Dashboard",
-    perparkiran: "Call Center Dashboard / Parking",
+    cctv: "CCTV Growth Dashboard",
+    perparkiran: "911 Dashboard / Parking",
     pump: "Pump Station Dashboard",
     waterquality: "Water Quality Dashboard",
-    availableparking: "Parking Availability Dashboard",
+    availableparking: "Lot Parking Dashboard",
     "pantau-bencana-develop": "Pantau Bencana Dashboard",
   }[activeTab] || "Dashboard";
   const todayKey = new Date().toDateString();
@@ -342,13 +342,13 @@ export default function Navbar({
           <nav style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {[
               { id: "dashboard", label: "Traffic", icon: "road" },
-              { id: "vehicletracker", label: "Vehicle Tracker", icon: "car" },
-              { id: "callcenter", label: "Call Center", icon: "call" },
+              { id: "vehicletracker", label: "Patrol Tracker", icon: "car" },
+              { id: "callcenter", label: "911", icon: "call" },
               { id: "customerservice", label: "Customer Service", icon: "call" },
-              { id: "cctv", label: "CCTV", icon: "camera" },
+              { id: "cctv", label: "CCTV Growth", icon: "camera" },
               { id: "pump", label: "Pump Station", icon: "pump" },
               { id: "waterquality", label: "Water Quality", icon: "water" },
-              { id: "availableparking", label: "Parking Availability", icon: "parking" },
+              { id: "availableparking", label: "Lot Parking", icon: "parking" },
               { id: "pantau-bencana-develop", label: "Pantau Bencana", icon: "disaster" },
             ].map(tab => {
               const isGroup = tab.id === "callcenter";
