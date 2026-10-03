@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-const defaultColors = ['#285ac2', '#df0202', '#5945be', '#287c69', '#974604'];
+const defaultColors = ['#1565C0', '#D32F2F', '#6A1B9A', '#2E7D32', '#EF6C00'];
 const timestamp = value => new Date(value).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
 export const formatTrendValue = (value, metric) => metric === 'pH' ? (Math.round((value + Number.EPSILON) * 100) / 100).toFixed(2) : String(Number(value.toFixed(2)));
 
 export default function WaterQualityTrend({ metric, points, areas, loading = false, error = false }) {
-  const colors = areas.map((name, index) => metric === 'TDS' && name === 'GI' ? '#df0202' : defaultColors[index]);
+  const colors = areas.map((name, index) => metric === 'TDS' && name === 'GI' ? '#D32F2F' : defaultColors[index]);
   const statistic = metric === 'TDS' ? 'Daily average' : 'Daily median';
   const displayValue = value => formatTrendValue(value, metric);
   const [area, setArea] = useState('All areas');
