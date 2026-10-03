@@ -55,7 +55,7 @@ export function phStatus(value) {
 }
 const bands = [['green', '< 300'], ['red', '≥ 300']];
 const phBands = [['green', '6.5–8.5'], ['red', '< 6.5 / > 8.5']];
-const accents = ['#285ac2', '#008493', '#5945be', '#287c69', '#a56127'];
+const accents = ['#D32F2F', '#F57C00', '#388E3C', '#1976D2', '#8E24AA'];
 function cellValue(row, key) {
   if (key === 'TANGGAL') return formatWaterDate(row[key]);
   if (key === 'JAM') return formatWaterTime(row[key]);
