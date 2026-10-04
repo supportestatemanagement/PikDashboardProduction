@@ -15,6 +15,10 @@ const VEHICLES = [{ key: 'car', label: 'Mobil' }, { key: 'bike', label: 'Motor' 
 const vehicleMetrics = (location, vehicle) => ({ capacity: location[`${vehicle}Capacity`], occupied: location[`${vehicle}Qty`] });
 const occupancyLabel = metrics => `${percent(metrics).toFixed(1)}%`;
 
+function LoadingValue() {
+  return <span className="parking-loading-value" aria-label="Loading" />;
+}
+
 function OverCapacity({ metrics }) {
   const excess = metrics.occupied - metrics.capacity;
   return excess > 0 ? <span className="parking-over">Melebihi kapasitas: <strong>{number(excess)}</strong> kendaraan</span> : null;
@@ -66,6 +70,7 @@ export default function AvailableParkingDashboard() {
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
   const [rankingVehicles, setRankingVehicles] = useState({ BGM: 'car', GI: 'car', RWI: 'car' });
+  const contentValue = value => loading ? <LoadingValue /> : value;
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
@@ -95,30 +100,29 @@ export default function AvailableParkingDashboard() {
 
   return (
     <main className="available-parking">
-      {loading && <p role="status">Memuat data SPI_Parking...</p>}
       {error && <p role="alert">{error} <button onClick={() => setRefresh(value => value + 1)}>Coba lagi</button></p>}
       {!loading && !error && !locations.length && <p role="status">Belum ada data parkir BGM, GI, atau RWI.</p>}
       <section aria-label="Ringkasan ketersediaan parkir">
         <div className="parking-summary-grid">
           {summaries.map((item) => (
-            <article key={item.area} className="parking-summary" data-area={item.area} aria-label={`Ringkasan parkir ${item.area}`}>
+            <article key={item.area} className="parking-summary" data-area={item.area} aria-busy={loading} aria-label={`Ringkasan parkir ${item.area}`}>
               <header className="parking-summary-heading">
                 <img className="parking-area-logo" src={AREA_LOGOS[item.area]} alt={item.area} />
-                <span>{item.count} lokasi parkir</span>
+                <span>{contentValue(`${item.count} lokasi parkir`)}</span>
               </header>
               <div className="parking-summary-vehicles">
                 {item.vehicles.map(vehicle => (
                   <section key={vehicle.key} aria-label={`Ringkasan ${vehicle.label} ${item.area}`}>
-                    <div className="parking-summary-capacity"><h3>Total Kapasitas {vehicle.label}</h3><strong>{number(vehicle.capacity)} <small>slot</small></strong></div>
+                    <div className="parking-summary-capacity"><h3>Total Kapasitas <b>{vehicle.label}</b></h3><strong>{contentValue(<>{number(vehicle.capacity)} <small>slot</small></>)}</strong></div>
                     <dl className="parking-summary-metrics">
-                      <div><dt>Terisi</dt><dd>{number(vehicle.occupied)} <small>slot</small></dd></div>
-                      <div><dt>Tersedia</dt><dd><Availability metrics={vehicle} slots /></dd></div>
-                      <div><dt>Tingkat terisi</dt><dd className={`parking-occupancy-value parking-${status(vehicle)}`}>{occupancyLabel(vehicle)}</dd></div>
+                      <div><dt>Terisi</dt><dd>{contentValue(<>{number(vehicle.occupied)} <small>slot</small></>)}</dd></div>
+                      <div><dt>Tersedia</dt><dd>{contentValue(<Availability metrics={vehicle} slots />)}</dd></div>
+                      <div><dt>Tingkat terisi</dt><dd className={`parking-occupancy-value parking-${status(vehicle)}`}>{contentValue(occupancyLabel(vehicle))}</dd></div>
                     </dl>
                   </section>
                 ))}
               </div>
-              <p className="parking-summary-snapshot">Pembaruan: {formatParkingTime(item.updated)}</p>
+              <p className="parking-summary-snapshot">Pembaruan: {contentValue(formatParkingTime(item.updated))}</p>
             </article>
           ))}
         </div>
@@ -129,23 +133,23 @@ export default function AvailableParkingDashboard() {
           {AREAS.map((area) => {
             const areaLocations = locations.filter((location) => location.area === area);
             return (
-              <section className="parking-area" data-area={area} key={area} aria-labelledby={`parking-area-${area}`}>
+              <section className="parking-area" data-area={area} key={area} aria-busy={loading} aria-labelledby={`parking-area-${area}`}>
                 <header className="parking-area-heading">
                   <div className="parking-area-identity">
                     <img className="parking-area-logo" src={AREA_LOGOS[area]} alt={area} />
                     <div>
                       <h2 id={`parking-area-${area}`}>Status Parkir per Lokasi {AREA_NAMES[area]}</h2>
-                      <p className="parking-area-meta">{areaLocations.length} lokasi</p>
+                      <p className="parking-area-meta">{contentValue(`${areaLocations.length} lokasi`)}</p>
                     </div>
                   </div>
-                  <p className="parking-area-updated"><span>Pembaruan terakhir</span><time dateTime={areaLocations.length ? new Date(Math.max(...areaLocations.map(location => location.timestamp))).toISOString() : undefined}>{formatParkingTime(Math.max(0, ...areaLocations.map(location => location.timestamp)))}</time></p>
+                  <p className="parking-area-updated"><span>Pembaruan terakhir</span><time dateTime={areaLocations.length ? new Date(Math.max(...areaLocations.map(location => location.timestamp))).toISOString() : undefined}>{contentValue(formatParkingTime(Math.max(0, ...areaLocations.map(location => location.timestamp))))}</time></p>
                 </header>
                 <div className="parking-legend" aria-label={`Keterangan status parkir ${area}`}>
                   <span className="parking-available">Tersedia &lt;80%</span>
                   <span className="parking-busy">Padat 80–&lt;95%</span>
                   <span className="parking-full">Penuh ≥95%</span>
                 </div>
-                <div className="parking-area-locations">{areaLocations.map((location) => <LocationCard key={location.id} location={location} />)}</div>
+                <div className="parking-area-locations">{loading ? Array.from({ length: 3 }, (_, index) => <div className="parking-location parking-location-loading" key={index} aria-hidden="true"><LoadingValue /><div className="parking-vehicle-grid">{VEHICLES.map(vehicle => <div key={vehicle.key}><h5>{vehicle.label}</h5><div className="parking-loading-donut" /><LoadingValue /><LoadingValue /><LoadingValue /></div>)}</div></div>) : areaLocations.map((location) => <LocationCard key={location.id} location={location} />)}</div>
               </section>
             );
           })}
@@ -157,14 +161,14 @@ export default function AvailableParkingDashboard() {
         <p className="parking-section-description">Diurutkan berdasarkan tingkat terisi jenis kendaraan yang dipilih pada masing-masing area</p>
         <div className="parking-area-grid">
           {AREAS.map((area) => (
-            <article className="parking-ranking" data-area={area} key={area} aria-label={`Grafik tingkat terisi ${area}`}>
+            <article className="parking-ranking" data-area={area} key={area} aria-busy={loading} aria-label={`Grafik tingkat terisi ${area}`}>
               <header><h3>{area}</h3><label className="parking-ranking-filter">Jenis kendaraan
                 <select aria-label={`Jenis kendaraan ranking ${area}`} value={rankingVehicles[area]} onChange={event => setRankingVehicles(previous => ({ ...previous, [area]: event.target.value }))}>
                   {VEHICLES.map(vehicle => <option key={vehicle.key} value={vehicle.key}>{vehicle.label}</option>)}
                 </select>
               </label><span>Tingkat terisi (%)</span></header>
               <div className="parking-ranking-bars">
-                {locations.filter((location) => location.area === area).map(location => ({ ...location, ...vehicleMetrics(location, rankingVehicles[area]) })).sort((a, b) => percent(b) - percent(a)).map((location) => (
+                {loading ? Array.from({ length: 3 }, (_, index) => <div className="parking-rank-row" key={index} aria-hidden="true"><LoadingValue /><div className="parking-bar-track"><LoadingValue /></div></div>) : locations.filter((location) => location.area === area).map(location => ({ ...location, ...vehicleMetrics(location, rankingVehicles[area]) })).sort((a, b) => percent(b) - percent(a)).map((location) => (
                   <div key={location.id} className={`parking-rank-row parking-${status(location)}`}>
                     <div className="parking-rank-label"><span>{location.name}</span><strong>{percent(location).toFixed(1)}%</strong></div>
                     <div className="parking-bar-track"><div className="parking-bar" style={{ width: `${Math.min(100, percent(location))}%` }} /></div>

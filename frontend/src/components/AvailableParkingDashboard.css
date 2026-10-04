@@ -11,6 +11,15 @@
 .parking-area-identity .parking-area-logo { width: 88px; height: 48px; }
 .parking-summary-heading > span { color: var(--area-accent); background: var(--area-tint); border: 1px solid var(--area-border); padding: 5px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; }
 .parking-summary-capacity h3 { color: #64748b; font-size: 11px; font-weight: 500; margin-bottom: 6px; }
+.parking-summary-capacity h3 b { font-weight: 700; }
+.parking-loading-value { display: inline-block; width: 70%; min-width: 28px; max-width: 125px; height: .8em; border-radius: 4px; background: linear-gradient(90deg, #e3eaf4 25%, #f4f7fc 50%, #e3eaf4 75%); background-size: 200% 100%; animation: parking-loading-shimmer 1.5s ease-in-out infinite; }
+.parking-summary-heading > span:has(.parking-loading-value) { min-width: 90px; }
+.parking-area-updated time:has(.parking-loading-value) { min-width: 140px; }
+.parking-location-loading .parking-loading-value { margin-bottom: 10px; }
+.parking-location-loading h5 { margin: 0 0 12px; }
+.parking-loading-donut { width: 68px; height: 68px; border: 9px solid #e3eaf4; border-radius: 50%; margin-bottom: 14px; box-sizing: border-box; }
+@keyframes parking-loading-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .parking-loading-value { animation: none; } }
 .parking-summary-capacity > strong { display: block; font-size: 32px; font-weight: 700; letter-spacing: -.8px; font-variant-numeric: tabular-nums; }
 .parking-summary small { font-size: 11px; font-weight: 400; letter-spacing: 0; }
 .parking-summary-vehicles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }

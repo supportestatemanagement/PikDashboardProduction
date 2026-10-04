@@ -1,5 +1,6 @@
 "use client";
 import React, { useMemo, useState, useEffect } from "react"; 
+import { LoadingValue, LoadingChart } from "./DashboardLoading";
 
 const navButtonStyle = {
   padding: "6px 12px",
@@ -89,6 +90,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
         dailyData: [], 
         topIssues: [],
         deptWorkload: [],
+        deptData: [],
         metrics: { bgm: "0%", gi: "0%", rwi: "0%", pik2: "0%", pik2mil: "0%", other: "0%" } 
       };
     }
@@ -187,16 +189,9 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  if (isLoading) {
-    return (
-      <div style={{ padding: "50px", textAlign: "center", color: "#1E3A8A", fontWeight: "bold" }}>
-        <div className="spinner" style={{ marginBottom: "10px", fontSize: "24px" }}>⌛</div>
-        Menghubungkan ke Server ...
-      </div>
-    );
-  }
 
-  if (!filteredData || filteredData.length === 0) {
+
+  if (!isLoading && (!filteredData || filteredData.length === 0)) {
     return (
       <div style={{ padding: "50px", textAlign: "center", color: "#64748B" }}>
         <p style={{ fontSize: "18px", fontWeight: "bold" }}>⚠️ Tidak ada data ditemukan.</p>
@@ -218,7 +213,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
   });
 
   const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-  const areaPath = `${linePath} L ${points[points.length - 1]?.x} ${chartHeight - padding.bottom} L ${points[0]?.x} ${chartHeight - padding.bottom} Z`;
+  const areaPath = points.length ? `${linePath} L ${points[points.length - 1]?.x} ${chartHeight - padding.bottom} L ${points[0]?.x} ${chartHeight - padding.bottom} Z` : "";
 
   const formatDate = (dateStr) => {
     if (!dateStr || dateStr === "N/A") return dateStr;
@@ -257,7 +252,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
         }
       `}</style>
       
-      <div className="callcenter-container" style={{ padding: "2px", color: "#1E3A8A" }}>
+      <div aria-busy={isLoading} className="callcenter-container" style={{ padding: "2px", color: "#1E3A8A" }}>
         
         {/* ROW 1: SUMMARY CARDS */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "10px", marginBottom: "20px" }}>
@@ -334,7 +329,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
                   overflow: "hidden",
                   transition: "all 0.3s ease" 
                 }}>
-                  {item.val}
+                  {isLoading ? <LoadingValue /> : item.val}
                 </div>
               </div>
             </div>
@@ -359,7 +354,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
             </div>
 
             <div style={{ width: "100%", position: "relative" }}>
-              <svg 
+              {isLoading ? <LoadingChart /> : (              <svg 
                 width="100%" 
                 height={chartHeight} 
                 viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
@@ -407,7 +402,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
                     </text>
                   </g>
                 ))}
-              </svg>
+              </svg>)}
 
               {hoveredPoint && (
                 <div style={{
@@ -451,7 +446,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
             </div>
             
             <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-              <TopIssueVerticalChart issues={processedData.topIssues} />
+              {isLoading ? <LoadingChart /> : <TopIssueVerticalChart issues={processedData.topIssues} />}
             </div>
           </div>
         </div>
@@ -480,7 +475,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
             </div>
             
             <div style={{ flex: 1, overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+              {isLoading ? <div aria-label="Loading records">{Array.from({ length: 5 }, (_, index) => <p key={index}><LoadingValue /></p>)}</div> : (              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
                 <thead>
                   <tr style={{ background: "#F8FAFC", textAlign: "left" }}>
                     <th style={{ padding: "10px", borderBottom: "2px solid #E2E8F0", color: "#64748B" }}>NO</th>
@@ -518,7 +513,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
                     );
                   })}
                 </tbody>
-              </table>
+              </table>)}
             </div>
 
             <div style={{ 
@@ -588,7 +583,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
               Follow-up by Department
             </div>
             <div style={{ flex: 1 }}>
-              <DepartmentWorkloadChart data={processedData.deptWorkload} />
+              {isLoading ? <LoadingChart /> : <DepartmentWorkloadChart data={processedData.deptWorkload} />}
             </div>
           </div>
         </div>

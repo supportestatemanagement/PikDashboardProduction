@@ -1,5 +1,6 @@
 "use client";
 import React, { useMemo, useState, useEffect, useLayoutEffect, useRef } from "react";
+import { LoadingValue, LoadingChart } from "./DashboardLoading";
 
 export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }) {
   const [data, setData] = useState([]);
@@ -143,14 +144,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
     };
   }, [filteredData]);
 
-  if (isLoading) {
-    return (
-      <div style={{ padding: "50px", textAlign: "center", color: "#1E3A8A", fontWeight: "bold" }}>
-        <div className="spinner" style={{ marginBottom: "10px", fontSize: "24px" }}>⌛</div>
-        Menghubungkan ke Server ...
-      </div>
-    );
-  }
+
 
   // Pengaturan Chart SVG untuk Daily Ticket
   const chartWidth = 800;
@@ -168,7 +162,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
   });
 
   const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-  const areaPath = `${linePath} L ${points[points.length - 1]?.x} ${chartHeight - padding.bottom} L ${points[0]?.x} ${chartHeight - padding.bottom} Z`;
+  const areaPath = points.length ? `${linePath} L ${points[points.length - 1]?.x} ${chartHeight - padding.bottom} L ${points[0]?.x} ${chartHeight - padding.bottom} Z` : "";
 
   // Scale Y-Axis grid generator
   const gridLevels = [];
@@ -203,7 +197,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
       `}</style>
       
-      <div style={{ padding: "2px", color: "#1E3A8A", display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div aria-busy={isLoading} style={{ padding: "2px", color: "#1E3A8A", display: "flex", flexDirection: "column", gap: "20px" }}>
         
         {/* ROW 1: SUMMARY CARDS (Scoreboard) */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "10px" }}>
@@ -241,7 +235,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
                   {item.label}
                 </div>
                 <div style={{ fontSize: valFontSize, fontWeight: "900", color: item.color }}>
-                  {item.val}
+                  {isLoading ? <LoadingValue /> : item.val}
                 </div>
               </div>
             </div>
@@ -265,7 +259,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
             </div>
 
             <div style={{ width: "100%", position: "relative" }}>
-              {dailyData.length === 0 ? (
+              {isLoading ? <LoadingChart /> : dailyData.length === 0 ? (
                  <div style={{ textAlign: "center", color: "#94A3B8", padding: "50px 0" }}>Tidak ada data pada rentang tanggal ini.</div>
               ) : (
                 <svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" style={{ overflow: "visible" }}>
@@ -342,7 +336,7 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
             </div>
             
             <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-              {processedData.overallTop5Issues.length === 0 ? (
+              {isLoading ? <LoadingChart /> : processedData.overallTop5Issues.length === 0 ? (
                 <div style={{ margin: "auto", color: "#94A3B8" }}>Belum ada data isu.</div>
               ) : (
                 <TopIssueVerticalChart issues={processedData.overallTop5Issues} isSidebarOpen={isSidebarOpen} />
@@ -362,7 +356,8 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
             <div style={{ display: "flex", flexDirection: "column" }}>
               <h3 style={{ textAlign: "center", color: colors.BGM, fontSize: "20px", fontWeight: "800", marginBottom: "20px" }}>BGM</h3>
               <div className="custom-scroll" style={{ maxHeight: "400px", overflowY: "auto", paddingRight: "10px" }}>
-                {processedData.topIssues.bgm.length === 0 && <div style={{ textAlign: "center", fontSize:"12px", color:"#94a3b8" }}>N/A</div>}
+                {isLoading && <LoadingChart />}
+                {!isLoading && processedData.topIssues.bgm.length === 0 && <div style={{ textAlign: "center", fontSize:"12px", color:"#94a3b8" }}>N/A</div>}
                 {processedData.topIssues.bgm.map((item, idx) => (
                   <HorizontalBar key={idx} label={item.label} val={item.val} max={processedData.topIssues.bgm[0]?.val} color={colors.BGM} />
                 ))}
@@ -373,7 +368,8 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
             <div style={{ display: "flex", flexDirection: "column" }}>
               <h3 style={{ textAlign: "center", color: colors.GI, fontSize: "20px", fontWeight: "800", marginBottom: "20px" }}>GI</h3>
               <div className="custom-scroll" style={{ maxHeight: "400px", overflowY: "auto", paddingRight: "10px" }}>
-                {processedData.topIssues.gi.length === 0 && <div style={{ textAlign: "center", fontSize:"12px", color:"#94a3b8" }}>N/A</div>}
+                {isLoading && <LoadingChart />}
+                {!isLoading && processedData.topIssues.gi.length === 0 && <div style={{ textAlign: "center", fontSize:"12px", color:"#94a3b8" }}>N/A</div>}
                 {processedData.topIssues.gi.map((item, idx) => (
                   <HorizontalBar key={idx} label={item.label} val={item.val} max={processedData.topIssues.gi[0]?.val} color={colors.GI} />
                 ))}
@@ -384,7 +380,8 @@ export default function PerparkiranDashboard({ dateRange, isSidebarOpen = true }
             <div style={{ display: "flex", flexDirection: "column" }}>
               <h3 style={{ textAlign: "center", color: colors.RWI, fontSize: "20px", fontWeight: "800", marginBottom: "20px" }}>RWI</h3>
               <div className="custom-scroll" style={{ maxHeight: "400px", overflowY: "auto", paddingRight: "10px" }}>
-                {processedData.topIssues.rwi.length === 0 && <div style={{ textAlign: "center", fontSize:"12px", color:"#94a3b8" }}>N/A</div>}
+                {isLoading && <LoadingChart />}
+                {!isLoading && processedData.topIssues.rwi.length === 0 && <div style={{ textAlign: "center", fontSize:"12px", color:"#94a3b8" }}>N/A</div>}
                 {processedData.topIssues.rwi.map((item, idx) => (
                   <HorizontalBar key={idx} label={item.label} val={item.val} max={processedData.topIssues.rwi[0]?.val} color={colors.RWI} />
                 ))}

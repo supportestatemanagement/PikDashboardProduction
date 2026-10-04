@@ -1,0 +1,8 @@
+.dashboard-loading-value { display: inline-block; width: 70%; min-width: 48px; max-width: 125px; height: .8em; border-radius: 4px; background: linear-gradient(90deg, #e3eaf4 25%, #f4f7fc 50%, #e3eaf4 75%); background-size: 200% 100%; animation: dashboard-loading-shimmer 1.5s ease-in-out infinite; }
+.dashboard-loading-chart { position: relative; width: 100%; overflow: hidden; }
+.dashboard-loading-grid { position: absolute; inset: 20px 12px 25px 30px; border-left: 1px solid #e3eaf4; border-bottom: 1px solid #e3eaf4; background: repeating-linear-gradient(to top, transparent 0, transparent calc(25% - 1px), #edf1f7 calc(25% - 1px), #edf1f7 25%); }
+.dashboard-loading-bars { position: absolute; inset: 35px 28px 26px 46px; display: flex; align-items: flex-end; justify-content: space-around; gap: 18px; }
+.dashboard-loading-bars > span { width: 12%; border-radius: 5px 5px 0 0; background: linear-gradient(90deg, #e3eaf4 25%, #f4f7fc 50%, #e3eaf4 75%); background-size: 200% 100%; animation: dashboard-loading-shimmer 1.5s ease-in-out infinite; }
+[aria-busy="true"] .animate-card { animation: none !important; opacity: 1 !important; }
+@keyframes dashboard-loading-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .dashboard-loading-value, .dashboard-loading-bars > span { animation: none; } }

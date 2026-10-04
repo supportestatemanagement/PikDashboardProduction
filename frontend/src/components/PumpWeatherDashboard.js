@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { LoadingValue, LoadingChart } from "./DashboardLoading";
 import { fetchPumpAnalytics } from "../services/pumpService";
 
 const SERIES = [
@@ -55,7 +56,7 @@ function DateRangeFilter({ start, end, onStart, onEnd, onPreset, active }) {
   </details>;
 }
 
-function CurrentCards({ latest }) {
+function CurrentCards({ latest, loading = false }) {
   const cards = [
     ...["PS1", "PS2", "PS3", "PS4"].map((key) => ({ key, label: key, value: fmt(latest?.stations?.[key]?.level), status: latest?.stations?.[key]?.status || "-" })),
     { key: "twa", label: "TWA", value: fmt(latest?.twa), status: "Latest level" },
@@ -65,27 +66,27 @@ function CurrentCards({ latest }) {
     const isPump = /^PS[1-4]$/.test(card.key);
     const state = /^run\s*[1-9]\d*$/i.test(card.status) ? "on" : /^standby$/i.test(card.status) ? "off" : "unknown";
     const label = state === "unknown" ? "N/A" : state.toUpperCase();
-    return <article key={card.key} className="pw-level-card">
-      <div className="pw-level-reading"><span>{card.label}</span><strong>{card.value}{card.value !== "-" && " M"}</strong><small>{card.status}</small></div>
-      {isPump && <span className={`pw-pump-indicator is-${state}`} aria-label={`${card.key} pump ${state}`} title={state === "unknown" ? "Pump status unavailable" : `Pump ${label}`}><i aria-hidden="true" />{label}</span>}
+    return <article key={card.key} className="pw-level-card" aria-busy={loading}>
+      <div className="pw-level-reading"><span>{card.label}</span><strong>{loading ? <LoadingValue /> : <>{card.value}{card.value !== "-" && " M"}</>}</strong><small>{loading ? <LoadingValue /> : card.status}</small></div>
+      {isPump && !loading && <span className={`pw-pump-indicator is-${state}`} aria-label={`${card.key} pump ${state}`} title={state === "unknown" ? "Pump status unavailable" : `Pump ${label}`}><i aria-hidden="true" />{label}</span>}
     </article>;
   })}</section>;
 }
 
-export function PeakPanel({ data, filter, setFilter, navbarKey }) {
+export function PeakPanel({ data, filter, setFilter, navbarKey, loading = false }) {
   const active = filter.start !== navbarKey || filter.end !== navbarKey;
   const peaks = new Map((data?.stationPeaks || []).map((event) => [event.station, event]));
-  return <article className={`pw-panel pw-peak-panel${active ? " is-filtered" : ""}`}>
+  return <article aria-busy={loading} className={`pw-panel pw-peak-panel${active ? " is-filtered" : ""}`}>
     <div className="pw-panel-head"><div><h2>PEAK LEVEL BY STATION</h2><small>Highest water level in the selected period</small></div><DateRangeFilter {...filter} active={active} onPreset={(months) => setFilter(presetRange(navbarKey, months))} onStart={(start) => start && setFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => end && setFilter((old) => ({ ...old, start: old.start > end ? end : old.start, end }))} /></div>
-    <div className="pw-peak-table"><div className="head"><span>STATION</span><span>DATE</span><span>TIME</span><span>PEAK LEVEL (M)</span><span title="Total pump run count on the peak date">RUN COUNT</span></div>{SERIES.map(({ key, label }) => { const event = peaks.get(key); const runs = event ? summarizePumpDays(data?.pumpStatusEvents || [], key).find((day) => day.date === event.date) : null; return <button key={key} disabled={!event}><b>{label}</b><span>{event ? niceDate(event.date) : "-"}</span><time>{event?.time || "-"}</time><strong>{fmt(event?.level)}</strong><strong>{runs ? fmt(runs.total) : "-"}</strong></button>; })}</div>
+    <div className="pw-peak-table"><div className="head"><span>STATION</span><span>DATE</span><span>TIME</span><span>PEAK LEVEL (M)</span><span title="Total pump run count on the peak date">RUN COUNT</span></div>{SERIES.map(({ key, label }) => { const event = peaks.get(key); const runs = event ? summarizePumpDays(data?.pumpStatusEvents || [], key).find((day) => day.date === event.date) : null; return <button key={key} disabled={loading || !event}><b>{label}</b><span>{loading ? <LoadingValue /> : event ? niceDate(event.date) : "-"}</span><time>{loading ? <LoadingValue /> : event?.time || "-"}</time><strong>{loading ? <LoadingValue /> : fmt(event?.level)}</strong><strong>{loading ? <LoadingValue /> : runs ? fmt(runs.total) : "-"}</strong></button>; })}</div>
   </article>;
 }
 
-function UpdatedLabel({ latest }) {
-  return <span className="pw-active-date">Updated: {latest?.date ? `${niceDate(latest.date)} / ${latest.time || "-"}` : "-"}</span>;
+function UpdatedLabel({ latest, loading = false }) {
+  return <span className="pw-active-date">Updated: {loading ? <LoadingValue /> : latest?.date ? `${niceDate(latest.date)} / ${latest.time || "-"}` : "-"}</span>;
 }
 
-function TrendChart({ rows, latest }) {
+function TrendChart({ rows, latest, loading = false }) {
   const [active, setActive] = useState(() => new Set(SERIES.map(({ key }) => key)));
   const ordered = useMemo(() => [...rows].sort((a, b) => { const hour = (row) => Number(row.period.slice(-5, -3)) || 24; return hour(a) - hour(b); }), [rows]);
   const selected = SERIES.filter(({ key }) => active.has(key));
@@ -96,17 +97,17 @@ function TrendChart({ rows, latest }) {
   const x = (i) => left + 24 + i * ((right - left - 24) / Math.max(ordered.length - 1, 1));
   const y = (value) => top + (1 - (value - min) / span) * (bottom - top);
   const toggle = (key) => setActive((old) => { const next = new Set(old); next.has(key) ? next.delete(key) : next.add(key); return next; });
-  return <article className="pw-panel pw-trend-panel"><div className="pw-panel-head"><div><h2>WATER LEVEL TREND</h2><small>Observations on the selected date</small></div><UpdatedLabel latest={latest} /></div>
+  return <article className="pw-panel pw-trend-panel" aria-busy={loading}><div className="pw-panel-head"><div><h2>WATER LEVEL TREND</h2><small>Observations on the selected date</small></div><UpdatedLabel latest={latest} loading={loading} /></div>
     <div className="pw-series-switches">{SERIES.map((item) => <button key={item.key} className={active.has(item.key) ? "active" : ""} onClick={() => toggle(item.key)}><i style={{ background: item.color }} />{item.label}</button>)}</div>
-    <div className="pw-chart-scroll"><svg className="pw-chart" viewBox="0 0 970 320" role="img" aria-label="Water level trend">
+    <div className="pw-chart-scroll">{loading ? <LoadingChart height={320} /> : <svg className="pw-chart" viewBox="0 0 970 320" role="img" aria-label="Water level trend">
       {[0, .25, .5, .75, 1].map((ratio) => { const yy = top + ratio * (bottom - top), value = max - ratio * span; return <g key={ratio}><line x1={left} x2={right} y1={yy} y2={yy} /><text className="y-label" x={left - 12} y={yy + 4} textAnchor="end">{fmt(value)}</text></g>; })}
       {selected.map(({ key, color }) => { const points = ordered.map((row, i) => Number.isFinite(row[key]) ? `${x(i)},${y(row[key])}` : null).filter(Boolean).join(" "); return <g key={key}><polyline points={points} style={{ stroke: color }} />{ordered.map((row, i) => Number.isFinite(row[key]) && <g key={`${key}-${row.period}`}><circle cx={x(i)} cy={y(row[key])} r="3" style={{ fill: color }} /><text className="data-label" x={x(i)} y={y(row[key]) - 9} textAnchor="middle">{fmt(row[key])}</text></g>)}</g>; })}
       {ordered.map((row, i) => <text className="x-label" key={row.period} x={x(i)} y="298" textAnchor="middle">{row.period.slice(-5)}</text>)}
-    </svg></div>
+    </svg>}</div>
   </article>;
 }
 
-function WeatherPanel({ rows }) {
+function WeatherPanel({ rows, loading = false }) {
   const ordered = [...rows].sort((a, b) => (a.time === "00:00" ? "24:00" : a.time).localeCompare(b.time === "00:00" ? "24:00" : b.time));
   const icon = (weather) => {
     const value = String(weather || "").toLowerCase();
@@ -117,9 +118,9 @@ function WeatherPanel({ rows }) {
     if (/cerah|sun|clear/.test(value)) return "\u2600\ufe0f";
     return "-";
   };
-  return <section className="pw-panel pw-weather-panel" aria-label="Cuaca per jam">
+  return <section aria-busy={loading} className="pw-panel pw-weather-panel" aria-label="Cuaca per jam">
     <div className="pw-panel-head"><div><h2>WEATHER CONDITIONS</h2></div></div>
-    {ordered.length ? <div className="pw-weather-hours">{ordered.map((row) => <article key={`${row.date}-${row.time}`}>
+    {loading ? <div className="pw-weather-hours">{Array.from({ length: 6 }, (_, index) => <article key={index}><LoadingValue /><LoadingValue /><LoadingValue /></article>)}</div> : ordered.length ? <div className="pw-weather-hours">{ordered.map((row) => <article key={`${row.date}-${row.time}`}>
       <time>{row.time}</time><span className="pw-weather-icon" aria-hidden="true">{icon(row.weather)}</span><strong>{row.weather || "Belum ada data"}</strong>
     </article>)}</div> : <p>Belum ada data cuaca pada tanggal ini.</p>}
   </section>;
@@ -160,12 +161,12 @@ export function summarizePumpDays(events, station) {
   return [...days.values()].sort((a, b) => b.date.localeCompare(a.date));
 }
 
-export function StatusPanel({ data, station, filter }) {
+export function StatusPanel({ data, station, filter, loading = false }) {
   const days = useMemo(() => summarizePumpDays(data?.pumpStatusEvents || [], station), [data?.pumpStatusEvents, station]);
-  return <article className="pw-panel pw-status-panel">
+  return <article className="pw-panel pw-status-panel" aria-busy={loading}>
     <div className="pw-panel-head"><div><h2>{station}</h2><small>Total Pump Run Count</small></div></div>
-    <div className="pw-daily-total"><span className="pw-period-label">{rangeLabel(filter.start, filter.end)}</span><strong>{days.length ? fmt(days.reduce((total, day) => total + day.total, 0)) : "-"}</strong></div>
-    {!days.length && <small className="pw-no-data">Tidak ada status pada periode ini.</small>}
+    <div className="pw-daily-total"><span className="pw-period-label">{rangeLabel(filter.start, filter.end)}</span><strong>{loading ? <LoadingValue /> : days.length ? fmt(days.reduce((total, day) => total + day.total, 0)) : "-"}</strong></div>
+    {!loading && !days.length && <small className="pw-no-data">Tidak ada status pada periode ini.</small>}
   </article>;
 }
 
@@ -181,17 +182,16 @@ export default function PumpWeatherDashboard({ dateRange, isSidebarOpen = false 
   const statusRange = useMemo(() => range(statusFilter.start, statusFilter.end), [statusFilter.start, statusFilter.end]);
   const base = usePumpData(baseRange), peaks = usePumpData(peakRange), statuses = usePumpData(statusRange);
   return <main className={`pump-dashboard pw-dashboard${isSidebarOpen ? " sidebar-open" : ""}`}>
-    {(base.loading || peaks.loading || statuses.loading) && <div className="pw-loading">Memuat data Pump Station...</div>}
     {(base.error || peaks.error || statuses.error) && <div className="pw-error">{base.error || peaks.error || statuses.error}</div>}
-    <WeatherPanel rows={base.data?.analytics?.weatherTimeline || []} />
+    <WeatherPanel loading={base.loading} rows={base.data?.analytics?.weatherTimeline || []} />
     <section className="pw-panel pw-level-section" aria-label="Water levels">
-      <div className="pw-status-toolbar"><h2>WATER LEVELS</h2><UpdatedLabel latest={base.data?.analytics?.latest} /></div>
-      <CurrentCards latest={base.data?.analytics?.latest} />
+      <div className="pw-status-toolbar"><h2>WATER LEVELS</h2><UpdatedLabel loading={base.loading} latest={base.data?.analytics?.latest} /></div>
+      <CurrentCards loading={base.loading} latest={base.data?.analytics?.latest} />
     </section>
-    <section className="pw-main-grid"><PeakPanel data={peaks.data} filter={peakFilter} setFilter={setPeakFilter} navbarKey={navbarKey} /><TrendChart rows={base.data?.chart || []} latest={base.data?.analytics?.latest} /></section>
+    <section className="pw-main-grid"><PeakPanel loading={peaks.loading} data={peaks.data} filter={peakFilter} setFilter={setPeakFilter} navbarKey={navbarKey} /><TrendChart loading={base.loading} rows={base.data?.chart || []} latest={base.data?.analytics?.latest} /></section>
     <section className="pw-panel pw-status-section" aria-label="Pump Run Summary">
       <div className="pw-status-toolbar"><h2>PUMP RUN SUMMARY</h2><DateRangeFilter {...statusFilter} active={statusFilter.start !== navbarKey || statusFilter.end !== navbarKey} onPreset={(months) => setStatusFilter(presetRange(navbarKey, months))} onStart={(start) => start && setStatusFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => end && setStatusFilter((old) => ({ ...old, start: old.start > end ? end : old.start, end }))} /></div>
-      <div className="pw-status-row">{["PS1", "PS2", "PS3", "PS4"].map((station) => <StatusPanel key={station} station={station} data={statuses.data} filter={statusFilter} />)}</div>
+      <div className="pw-status-row">{["PS1", "PS2", "PS3", "PS4"].map((station) => <StatusPanel loading={statuses.loading} key={station} station={station} data={statuses.data} filter={statusFilter} />)}</div>
     </section>
   </main>;
 }
