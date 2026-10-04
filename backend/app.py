@@ -59,6 +59,20 @@ cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
 perparkiran_sheet = cc_spreadsheet.worksheet("Perparkiran")
 pump_station_sheet = cc_spreadsheet.worksheet("PumpStation")
 
+
+@app.get('/api/lot-parking-data')
+def get_lot_parking_data():
+    try:
+        records = spreadsheet.worksheet("SPI_Parking").get_all_records(numericise_ignore=['all'])
+        columns = ('received_at_wib', 'sitename', 'car_capacity', 'bike_capacity', 'car_qty', 'bike_qty')
+        rows = [{column: row.get(column, '') for column in columns} for row in records]
+        response = jsonify({"status": "success", "data": rows})
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+    except Exception:
+        app.logger.exception('Unable to load SPI_Parking')
+        return jsonify({"status": "error", "message": "Tidak dapat memuat SPI_Parking."}), 500
+
 TRAFFIC_SHEETS = {
     "summary": spreadsheet.worksheet("AllCheckpoint"),
     "hourly": spreadsheet.worksheet("CheckpointHour"),

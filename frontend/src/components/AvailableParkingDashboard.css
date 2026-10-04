@@ -59,6 +59,8 @@
 .parking-counts dt { color: #64748b; }
 .parking-counts dt::after { content: ':'; }
 .parking-counts dd { font-weight: 700; }
+.parking-vehicle-counts { margin-top: 14px; }
+.parking-vehicle-counts > div { flex-wrap: wrap; justify-content: space-between; }
 .parking-section-description { margin: -9px 0 18px; }
 .parking-ranking-panel h2 { color: #173153; font-size: 14px; }
 .parking-ranking { background: var(--area-tint); padding: 16px; border-radius: 12px; min-width: 0; border: 1px solid var(--area-border); border-top: 4px solid var(--area-accent); }
