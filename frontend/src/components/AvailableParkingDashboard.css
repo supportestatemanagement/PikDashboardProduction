@@ -19,8 +19,12 @@
 .parking-summary-metrics dt { font-size: 10px; color: #64748b; margin-bottom: 6px; }
 .parking-summary-metrics dd { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .parking-summary-available { color: #1b9e56; }
-.parking-availability-value { color: var(--status-color); display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 4px; }
-.parking-over { color: #d93129; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.parking-availability-value { color: var(--status-color); display: inline-flex; flex-direction: column; gap: 6px; }
+.parking-availability-count { white-space: nowrap; }
+.parking-over { display: block; color: #d93129; font-size: 10px; font-weight: 500; line-height: 1.5; }
+.parking-over strong { font-weight: 700; }
+.parking-vehicle > .parking-over { margin-top: 8px; }
+.parking-occupancy-value { color: var(--status-color); }
 .parking-ranking-filter { display: flex; flex-direction: column; gap: 4px; font-size: 10px; color: #536982; }
 .parking-ranking-filter select { font: inherit; font-size: 12px; color: #173153; background: #fff; border: 1px solid var(--area-border); border-radius: 6px; padding: 5px 8px; }
 .parking-summary-snapshot { color: #536982; font-size: 10px; margin-top: 16px; }
@@ -67,7 +71,7 @@
 .parking-vehicle .parking-counts { margin-top: 12px; }
 .parking-vehicle .parking-counts > div { flex-wrap: wrap; justify-content: space-between; }
 .parking-donut { width: 68px; height: 68px; flex-shrink: 0; border-radius: 50%; background: conic-gradient(var(--status-color) var(--occupancy), #d3e3f6 0); display: grid; place-items: center; }
-.parking-donut strong { background: var(--area-tint); border-radius: 50%; width: 50px; height: 50px; display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+.parking-donut strong { color: var(--status-color); background: var(--area-tint); border-radius: 50%; width: 50px; height: 50px; display: grid; place-items: center; font-size: 13px; font-weight: 800; }
 .parking-counts { font-size: 11px; display: grid; gap: 7px; }
 .parking-counts > div { display: flex; gap: 5px; }
 .parking-counts dt { color: #64748b; }
@@ -82,7 +86,7 @@
 .parking-ranking-bars { min-height: 180px; background: repeating-linear-gradient(to right, #d3e3f6 0, #d3e3f6 1px, transparent 1px, transparent 25%); border-right: 1px solid #d3e3f6; }
 .parking-rank-row { padding-bottom: 22px; }
 .parking-rank-label { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; margin-bottom: 10px; background: var(--area-tint); padding-bottom: 4px; }
-.parking-rank-label strong { white-space: nowrap; }
+.parking-rank-label strong { white-space: nowrap; color: var(--status-color); }
 .parking-bar-track { height: 15px; }
 .parking-bar { height: 100%; background: var(--status-color); border-radius: 0 5px 5px 0; }
 .parking-chart-axis { display: flex; justify-content: space-between; border-top: 1px solid #cddff5; padding-top: 10px; color: #587394; font-size: 9px; }

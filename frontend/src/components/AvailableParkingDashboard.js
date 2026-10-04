@@ -14,11 +14,16 @@ const VEHICLES = [{ key: 'car', label: 'Mobil' }, { key: 'bike', label: 'Motor' 
 const vehicleMetrics = (location, vehicle) => ({ capacity: location[`${vehicle}Capacity`], occupied: location[`${vehicle}Qty`] });
 const occupancyLabel = metrics => `${percent(metrics).toFixed(1)}%`;
 
-function Availability({ metrics, slots = false }) {
+function OverCapacity({ metrics }) {
+  const excess = metrics.occupied - metrics.capacity;
+  return excess > 0 ? <span className="parking-over">Melebihi kapasitas: <strong>{number(excess)}</strong> kendaraan</span> : null;
+}
+
+function Availability({ metrics, slots = false, showOver = true }) {
   const remaining = metrics.capacity - metrics.occupied;
   return <span className={`parking-availability-value parking-${status(metrics)}`}>
-    {number(Math.max(0, remaining))}{slots && <small> slot</small>}
-    {remaining < 0 && <span className="parking-over">Over ({number(-remaining)})</span>}
+    <span className="parking-availability-count">{number(Math.max(0, remaining))}{slots && <small> slot</small>}</span>
+    {showOver && <OverCapacity metrics={metrics} />}
   </span>;
 }
 
@@ -35,8 +40,9 @@ function VehicleChart({ location, vehicle }) {
       <dl className="parking-counts">
         <div><dt>Kapasitas</dt><dd>{number(metrics.capacity)}</dd></div>
         <div><dt>Terisi</dt><dd>{number(metrics.occupied)}</dd></div>
-        <div><dt>Tersedia</dt><dd><Availability metrics={metrics} /></dd></div>
+        <div><dt>Tersedia</dt><dd><Availability metrics={metrics} showOver={false} /></dd></div>
       </dl>
+      <OverCapacity metrics={metrics} />
     </section>
   );
 }
@@ -107,7 +113,7 @@ export default function AvailableParkingDashboard() {
                     <dl className="parking-summary-metrics">
                       <div><dt>Terisi</dt><dd>{number(vehicle.occupied)} <small>slot</small></dd></div>
                       <div><dt>Tersedia</dt><dd><Availability metrics={vehicle} slots /></dd></div>
-                      <div><dt>Tingkat terisi</dt><dd>{occupancyLabel(vehicle)}</dd></div>
+                      <div><dt>Tingkat terisi</dt><dd className={`parking-occupancy-value parking-${status(vehicle)}`}>{occupancyLabel(vehicle)}</dd></div>
                     </dl>
                   </section>
                 ))}

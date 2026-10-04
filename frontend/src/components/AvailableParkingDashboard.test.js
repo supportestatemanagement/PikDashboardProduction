@@ -15,23 +15,24 @@ test('shows live totals and vehicle details, refreshes, and preserves data after
   await act(async () => {});
   const summary = screen.getByRole('region', { name: 'Ringkasan Mobil BGM' });
   const bikeSummary = screen.getByRole('region', { name: 'Ringkasan Motor BGM' });
-  expect(within(summary).getByText('Over (80)')).toBeInTheDocument();
-  expect(within(summary).getByText('140.0%')).toBeInTheDocument();
-  expect(within(bikeSummary).getByText('Over (422)')).toBeInTheDocument();
+  expect(within(summary).getByText('80')).toBeInTheDocument();
+  expect(within(summary).getByText('140.0%')).toHaveClass('parking-occupancy-value', 'parking-full');
+  expect(within(bikeSummary).getByText('422')).toBeInTheDocument();
   expect(within(bikeSummary).getByText('240.7%')).toBeInTheDocument();
   const card = screen.getByRole('article', { name: 'Parkir KAWASAN RUKAN PIK - CORDOBA' });
   expect(within(card).getAllByRole('img')).toHaveLength(2);
   const car = within(card).getByRole('region', { name: 'KAWASAN RUKAN PIK - CORDOBA Mobil' });
-  expect(within(car).getByText('Over (80)')).toBeInTheDocument();
+  expect(within(car).getByText('80')).toBeInTheDocument();
   expect(within(car).getByText('280')).toBeInTheDocument();
   expect(within(car).getByText('200')).toBeInTheDocument();
   expect(within(car).getByRole('img')).toHaveStyle('--occupancy: 100%');
+  expect(car.querySelector('.parking-over')).toHaveTextContent('Melebihi kapasitas: 80 kendaraan');
   expect([...car.querySelectorAll('dt')].map(element => element.textContent)).toEqual(['Kapasitas', 'Terisi', 'Tersedia']);
   fetchParkingRows.mockRejectedValue(new Error('offline'));
   await act(async () => { jest.advanceTimersByTime(60000); });
   expect(fetchParkingRows).toHaveBeenCalledTimes(2);
   expect(screen.getByRole('alert')).toBeInTheDocument();
-  expect(within(summary).getByText('Over (80)')).toBeInTheDocument();
+  expect(within(summary).getByText('80')).toBeInTheDocument();
   unmount();
   await act(async () => { jest.advanceTimersByTime(60000); });
   expect(fetchParkingRows).toHaveBeenCalledTimes(2);
@@ -54,10 +55,10 @@ test('ranks cars by default, switches each area independently, and displays full
   for (const area of ['BGM', 'GI', 'RWI']) {
     const motor = screen.getByRole('region', { name: `${area} B Motor` });
     expect(within(motor).getByText('100.0%')).toBeInTheDocument();
-    expect(within(motor).getByText('Over (5)')).toHaveClass('parking-over');
+    expect(motor.querySelector('.parking-over')).toHaveTextContent('Melebihi kapasitas: 5 kendaraan');
     expect(within(motor).getByRole('img')).toHaveStyle('--occupancy: 100%');
     const available = motor.querySelector('.parking-availability-value');
-    expect(available).toHaveTextContent('0Over (5)');
+    expect(available).toHaveTextContent('0');
     expect(available).toHaveClass('parking-full');
   }
 });
@@ -70,7 +71,7 @@ test('calculates area percentage from total quantity and capacity and handles ze
   render(<AvailableParkingDashboard />);
   await act(async () => {});
   const cars = screen.getByRole('region', { name: 'Ringkasan Mobil GI' });
-  expect(within(cars).getByText('20.0%')).toBeInTheDocument();
+  expect(within(cars).getByText('20.0%')).toHaveClass('parking-available');
   expect(within(cars).getByText('400')).toBeInTheDocument();
   expect(within(cars).getByText('320')).toBeInTheDocument();
   const bikes = screen.getByRole('region', { name: 'Ringkasan Motor GI' });
