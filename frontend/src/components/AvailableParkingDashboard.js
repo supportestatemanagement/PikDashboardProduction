@@ -10,28 +10,36 @@ const status = (location) => percent(location) >= 95 ? "full" : percent(location
 const LABELS = { full: "PENUH", busy: "PADAT", available: "TERSEDIA" };
 
 
-function LocationCard({ location }) {
-  const value = percent(location);
+const VEHICLES = [{ key: 'car', label: 'Mobil' }, { key: 'bike', label: 'Motor' }];
+const vehicleMetrics = (location, vehicle) => ({ capacity: location[`${vehicle}Capacity`], occupied: location[`${vehicle}Qty`] });
+const occupancyLabel = ({ capacity, occupied }) => capacity > 0 ? `${(occupied / capacity * 100).toFixed(1)}%` : '—';
+
+function VehicleChart({ location, vehicle }) {
+  const metrics = vehicleMetrics(location, vehicle.key);
+  const state = status(metrics);
+  const label = occupancyLabel(metrics);
   return (
-    <article className={`parking-location parking-${status(location)}`}>
-      <div className="parking-location-heading">
-        <h4>{location.name}</h4>
-        <span className="parking-status">{LABELS[status(location)]}</span>
+    <section className={`parking-vehicle parking-${state}`} aria-label={`${location.name} ${vehicle.label}`}>
+      <header><h5>{vehicle.label}</h5><span className="parking-status">{metrics.capacity === 0 && metrics.occupied === 0 ? 'TANPA KAPASITAS' : LABELS[state]}</span></header>
+      <div className="parking-donut" style={{ "--occupancy": `${Math.min(100, percent(metrics))}%` }} role="img" aria-label={`${location.name}: ${vehicle.label} ${label} terisi`}>
+        <strong>{label}</strong>
       </div>
-      <div className="parking-location-body">
-        <div className="parking-donut" style={{ "--occupancy": `${Math.min(100, value)}%` }} role="img" aria-label={`${value.toFixed(1)}% terisi`}>
-          <strong>{value.toFixed(1)}%</strong>
-        </div>
-        <dl className="parking-counts">
-          <div><dt>Tersedia</dt><dd>{number(location.capacity - location.occupied)}</dd></div>
-          <div><dt>Terisi</dt><dd>{number(location.occupied)}</dd></div>
-          <div><dt>Kapasitas</dt><dd>{number(location.capacity)}</dd></div>
-        </dl>
-      </div>
-      <dl className="parking-counts parking-vehicle-counts">
-        <div><dt>Mobil: tersedia / masuk / kapasitas</dt><dd>{number(location.carCapacity - location.carQty)} / {number(location.carQty)} / {number(location.carCapacity)}</dd></div>
-        <div><dt>Motor: tersedia / masuk / kapasitas</dt><dd>{number(location.bikeCapacity - location.bikeQty)} / {number(location.bikeQty)} / {number(location.bikeCapacity)}</dd></div>
+      <dl className="parking-counts">
+        <div><dt>Tersedia</dt><dd>{number(metrics.capacity - metrics.occupied)}</dd></div>
+        <div><dt>Terisi</dt><dd>{number(metrics.occupied)}</dd></div>
+        <div><dt>Kapasitas</dt><dd>{number(metrics.capacity)}</dd></div>
       </dl>
+    </section>
+  );
+}
+
+function LocationCard({ location }) {
+  return (
+    <article className="parking-location" aria-label={`Parkir ${location.name}`}>
+      <div className="parking-location-heading"><h4>{location.name}</h4></div>
+      <div className="parking-vehicle-grid">
+        {VEHICLES.map(vehicle => <VehicleChart key={vehicle.key} location={location} vehicle={vehicle} />)}
+      </div>
       <p className="parking-summary-snapshot">Pembaruan: {formatParkingTime(location.timestamp)}</p>
     </article>
   );
@@ -62,9 +70,11 @@ export default function AvailableParkingDashboard() {
 
   const summaries = AREAS.map((area) => {
     const areaLocations = locations.filter((location) => location.area === area);
-    const capacity = areaLocations.reduce((sum, location) => sum + location.capacity, 0);
-    const occupied = areaLocations.reduce((sum, location) => sum + location.occupied, 0);
-    return { area, capacity, occupied, available: capacity - occupied, count: areaLocations.length, updated: Math.max(0, ...areaLocations.map(location => location.timestamp)) };
+    const vehicles = VEHICLES.map(vehicle => ({ ...vehicle,
+      capacity: areaLocations.reduce((sum, location) => sum + location[`${vehicle.key}Capacity`], 0),
+      occupied: areaLocations.reduce((sum, location) => sum + location[`${vehicle.key}Qty`], 0),
+    }));
+    return { area, vehicles, count: areaLocations.length, updated: Math.max(0, ...areaLocations.map(location => location.timestamp)) };
   });
 
   return (
@@ -72,7 +82,7 @@ export default function AvailableParkingDashboard() {
       {loading && <p role="status">Memuat data SPI_Parking...</p>}
       {error && <p role="alert">{error} <button onClick={() => setRefresh(value => value + 1)}>Coba lagi</button></p>}
       {!loading && !error && !locations.length && <p role="status">Belum ada data parkir BGM, GI, atau RWI.</p>}
-      <p className="parking-section-description">Total mencakup mobil dan motor. Diperbarui otomatis setiap menit; nilai tersedia negatif berarti jumlah kendaraan melebihi kapasitas.</p>
+      <p className="parking-section-description">Tingkat terisi = jumlah kendaraan / kapasitas × 100%. Persentase ditampilkan — jika kapasitas nol. Diperbarui otomatis setiap menit; nilai tersedia negatif berarti jumlah kendaraan melebihi kapasitas.</p>
       <section aria-label="Ringkasan ketersediaan parkir">
         <div className="parking-summary-grid">
           {summaries.map((item) => (
@@ -81,12 +91,18 @@ export default function AvailableParkingDashboard() {
                 <img className="parking-area-logo" src={AREA_LOGOS[item.area]} alt={item.area} />
                 <span>{item.count} lokasi parkir</span>
               </header>
-              <div className="parking-summary-capacity"><h3>Total kapasitas parkir</h3><strong>{number(item.capacity)} <small>slot</small></strong></div>
-              <dl className="parking-summary-metrics">
-                <div><dt>Tersedia</dt><dd className="parking-summary-available">{number(item.available)} <small>slot</small></dd></div>
-                <div><dt>Terisi</dt><dd>{number(item.occupied)} <small>slot</small></dd></div>
-                <div><dt>Tingkat terisi</dt><dd>{percent(item).toFixed(1)}<small>%</small></dd></div>
-              </dl>
+              <div className="parking-summary-vehicles">
+                {item.vehicles.map(vehicle => (
+                  <section key={vehicle.key} aria-label={`Ringkasan ${vehicle.label} ${item.area}`}>
+                    <div className="parking-summary-capacity"><h3>Total Kapasitas {vehicle.label}</h3><strong>{number(vehicle.capacity)} <small>slot</small></strong></div>
+                    <dl className="parking-summary-metrics">
+                      <div><dt>Tersedia</dt><dd className="parking-summary-available">{number(vehicle.capacity - vehicle.occupied)} <small>slot</small></dd></div>
+                      <div><dt>Terisi</dt><dd>{number(vehicle.occupied)} <small>slot</small></dd></div>
+                      <div><dt>Tingkat terisi</dt><dd>{occupancyLabel(vehicle)}</dd></div>
+                    </dl>
+                  </section>
+                ))}
+              </div>
               <p className="parking-summary-snapshot">Pembaruan: {formatParkingTime(item.updated)}</p>
             </article>
           ))}
@@ -104,7 +120,7 @@ export default function AvailableParkingDashboard() {
                   <div className="parking-area-identity">
                     <img className="parking-area-logo" src={AREA_LOGOS[area]} alt={area} />
                     <div>
-                      <h2 id={`parking-area-${area}`}><span className="parking-visually-hidden">{area} · </span>Status Parkir per Lokasi</h2>
+                      <h2 id={`parking-area-${area}`}><span>{area} · </span>Status Parkir per Lokasi</h2>
                       <p className="parking-area-meta"><span>{areaLocations.length} lokasi</span><span className="parking-area-availability"><strong>{number(available)}</strong> slot tersedia</span></p>
                     </div>
                   </div>
@@ -124,7 +140,7 @@ export default function AvailableParkingDashboard() {
 
       <section className="parking-ranking-panel" aria-labelledby="parking-ranking-title">
         <h2 id="parking-ranking-title">Lokasi dengan Tingkat Terisi Tertinggi</h2>
-        <p className="parking-section-description">Diurutkan dari yang paling padat pada masing-masing area</p>
+        <p className="parking-section-description">Diurutkan berdasarkan tingkat terisi gabungan mobil dan motor pada masing-masing area</p>
         <div className="parking-area-grid">
           {AREAS.map((area) => (
             <article className="parking-ranking" data-area={area} key={area} aria-label={`Grafik tingkat terisi ${area}`}>
