@@ -19,6 +19,10 @@
 .parking-summary-metrics dt { font-size: 10px; color: #64748b; margin-bottom: 6px; }
 .parking-summary-metrics dd { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .parking-summary-available { color: #1b9e56; }
+.parking-availability-value { color: var(--status-color); display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 4px; }
+.parking-over { color: #d93129; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.parking-ranking-filter { display: flex; flex-direction: column; gap: 4px; font-size: 10px; color: #536982; }
+.parking-ranking-filter select { font: inherit; font-size: 12px; color: #173153; background: #fff; border: 1px solid var(--area-border); border-radius: 6px; padding: 5px 8px; }
 .parking-summary-snapshot { color: #536982; font-size: 10px; margin-top: 16px; }
 
 .parking-section-description { color: #64748b; font-size: 12px; }
