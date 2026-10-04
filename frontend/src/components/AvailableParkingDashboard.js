@@ -19,10 +19,10 @@ function OverCapacity({ metrics }) {
   return excess > 0 ? <span className="parking-over">Melebihi kapasitas: <strong>{number(excess)}</strong> kendaraan</span> : null;
 }
 
-function Availability({ metrics, slots = false, showOver = true }) {
+function Availability({ metrics, slots = false, showOver = true, suffix = '' }) {
   const remaining = metrics.capacity - metrics.occupied;
   return <span className={`parking-availability-value parking-${status(metrics)}`}>
-    <span className="parking-availability-count">{number(Math.max(0, remaining))}{slots && <small> slot</small>}</span>
+    <span className="parking-availability-count">{number(Math.max(0, remaining))}{slots && <small> slot</small>}{suffix}</span>
     {showOver && <OverCapacity metrics={metrics} />}
   </span>;
 }
@@ -138,7 +138,7 @@ export default function AvailableParkingDashboard() {
                     <img className="parking-area-logo" src={AREA_LOGOS[area]} alt={area} />
                     <div>
                       <h2 id={`parking-area-${area}`}><span>{area} · </span>Status Parkir per Lokasi</h2>
-                      <p className="parking-area-meta"><span>{areaLocations.length} lokasi</span><span className="parking-area-availability"><Availability metrics={metrics} slots /> tersedia</span></p>
+                      <p className="parking-area-meta"><span>{areaLocations.length} lokasi</span><span className="parking-area-availability"><Availability metrics={metrics} slots suffix=" tersedia" /></span></p>
                     </div>
                   </div>
                   <p className="parking-area-updated"><span>Pembaruan terakhir</span><time dateTime={areaLocations.length ? new Date(Math.max(...areaLocations.map(location => location.timestamp))).toISOString() : undefined}>{formatParkingTime(Math.max(0, ...areaLocations.map(location => location.timestamp)))}</time></p>
