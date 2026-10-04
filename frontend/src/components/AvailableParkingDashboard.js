@@ -3,6 +3,7 @@ import { fetchParkingRows, formatParkingTime } from "../services/parkingService"
 import "./AvailableParkingDashboard.css";
 
 const AREAS = ["BGM", "GI", "RWI"];
+const AREA_NAMES = { BGM: "Bukit Golf Mediterania", GI: "Golf Island", RWI: "Riverwalk Island" };
 const AREA_LOGOS = { BGM: "/logobgm.png", GI: "/logogi2.png", RWI: "/logorwi2.png" };
 const number = (value) => value.toLocaleString("id-ID");
 const percent = (location) => location.capacity > 0 ? location.occupied / location.capacity * 100 : location.occupied > 0 ? 100 : 0;
@@ -127,18 +128,14 @@ export default function AvailableParkingDashboard() {
         <div className="parking-area-stack">
           {AREAS.map((area) => {
             const areaLocations = locations.filter((location) => location.area === area);
-            const metrics = {
-              capacity: areaLocations.reduce((sum, location) => sum + location.capacity, 0),
-              occupied: areaLocations.reduce((sum, location) => sum + location.occupied, 0),
-            };
             return (
               <section className="parking-area" data-area={area} key={area} aria-labelledby={`parking-area-${area}`}>
                 <header className="parking-area-heading">
                   <div className="parking-area-identity">
                     <img className="parking-area-logo" src={AREA_LOGOS[area]} alt={area} />
                     <div>
-                      <h2 id={`parking-area-${area}`}><span>{area} · </span>Status Parkir per Lokasi</h2>
-                      <p className="parking-area-meta"><span>{areaLocations.length} lokasi</span><span className="parking-area-availability"><Availability metrics={metrics} slots suffix=" tersedia" /></span></p>
+                      <h2 id={`parking-area-${area}`}>Status Parkir per Lokasi {AREA_NAMES[area]}</h2>
+                      <p className="parking-area-meta">{areaLocations.length} lokasi</p>
                     </div>
                   </div>
                   <p className="parking-area-updated"><span>Pembaruan terakhir</span><time dateTime={areaLocations.length ? new Date(Math.max(...areaLocations.map(location => location.timestamp))).toISOString() : undefined}>{formatParkingTime(Math.max(0, ...areaLocations.map(location => location.timestamp)))}</time></p>
