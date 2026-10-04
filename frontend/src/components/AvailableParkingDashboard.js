@@ -97,7 +97,6 @@ export default function AvailableParkingDashboard() {
       {loading && <p role="status">Memuat data SPI_Parking...</p>}
       {error && <p role="alert">{error} <button onClick={() => setRefresh(value => value + 1)}>Coba lagi</button></p>}
       {!loading && !error && !locations.length && <p role="status">Belum ada data parkir BGM, GI, atau RWI.</p>}
-      <p className="parking-section-description">Tingkat terisi = jumlah kendaraan / kapasitas × 100%. Jika kapasitas nol, indikator menunjukkan 100% saat ada kendaraan dan 0% saat kosong. Diperbarui otomatis setiap menit.</p>
       <section aria-label="Ringkasan ketersediaan parkir">
         <div className="parking-summary-grid">
           {summaries.map((item) => (
