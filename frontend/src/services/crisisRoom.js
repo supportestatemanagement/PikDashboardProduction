@@ -13,6 +13,7 @@ export class CrisisRoomClient {
   constructor({ session, broadcast, onStatus, onStream, onError, onSessionExpired, onDiagnostics = () => {} }) {
     Object.assign(this, { session, broadcast, onStatus, onStream, onError, onSessionExpired });
     this.peers = new Map();
+    this.offerRequests = new Map();
     this.stream = null;
     this.closed = false;
     this.live = false;
@@ -25,7 +26,7 @@ export class CrisisRoomClient {
     this.iceServers = this.defaultIceServers;
     this.iceExpiresAt = 0;
     this.onDiagnostics = onDiagnostics;
-    this.diagnostics = { origin: window.location.origin, signalingUrl: crisisSocketUrl(), signaling: 'CONNECTING', broadcast: 'UNKNOWN', video: 'WAITING', ice: 'NEW' };
+    this.diagnostics = { origin: window.location.origin, signalingUrl: crisisSocketUrl(), signaling: 'CONNECTING', broadcast: 'UNKNOWN', video: 'WAITING', ice: 'NEW', mode: 'STUN_FIRST', turn: 'NOT_REQUESTED' };
     this.connect();
   }
 
@@ -74,7 +75,7 @@ export class CrisisRoomClient {
 
   scheduleIceRefresh() {
     clearTimeout(this.iceRefresh);
-    if (!this.turnConfigured || !this.peers.size || this.closed) return;
+    if (!this.turnConfigured || ![...this.peers.values()].some(peer => peer.useTurn) || this.closed) return;
     this.iceRefresh = setTimeout(() => {
       this.queue = this.queue.then(async () => {
         const previousExpiry = this.iceExpiresAt;
@@ -83,9 +84,9 @@ export class CrisisRoomClient {
         if (this.iceExpiresAt <= previousExpiry) { this.scheduleIceRefresh(); return; }
         // Fresh credentials and a new ICE allocation keep a 24-hour capture
         // working without putting permanent TURN secrets in the browser.
-        for (const peer of this.peers.values()) peer.pc.setConfiguration({ iceServers: this.iceServers, iceTransportPolicy: 'all' });
+        for (const peer of this.peers.values()) if (peer.useTurn) peer.pc.setConfiguration({ iceServers: this.iceServers, iceTransportPolicy: 'all' });
         if (this.broadcast && this.stream) {
-          for (const id of [...this.peers.keys()]) await this.offer(id);
+          for (const peer of [...this.peers.values()]) if (peer.useTurn) await this.offer(peer.id, true);
         }
         this.scheduleIceRefresh();
       }).catch(() => { this.retryViewer(); });
@@ -184,19 +185,21 @@ export class CrisisRoomClient {
         else if (![...this.peers.values()].some(peer => peer.pc.connectionState === 'connected')) this.onStatus('CONNECTING');
         break;
       case 'viewer-joined':
-        if (this.broadcast && this.stream) await this.offer(message.peer);
+        if (this.broadcast && this.stream) await this.offer(message.peer, message.useTurn === true);
         break;
       case 'viewer-left':
+        this.offerRequests.delete(message.peer);
         this.removePeer(message.peer);
         break;
       case 'offer':
         if (!this.broadcast) {
-          await this.ensureIceConfiguration();
+          const useTurn = message.useTurn === true;
+          if (useTurn) await this.ensureIceConfiguration();
           if (this.closed || !this.ready) return;
           clearTimeout(this.offerWait);
           this.clearPeers();
           this.onStatus('CONNECTING');
-          const peer = this.createPeer(message.peer, message.call);
+          const peer = this.createPeer(message.peer, message.call, useTurn);
           await peer.pc.setRemoteDescription({ type: 'offer', sdp: message.sdp });
           await peer.pc.setLocalDescription(await peer.pc.createAnswer());
           this.send({ type: 'answer', peer: message.peer, call: message.call, sdp: peer.pc.localDescription.sdp });
@@ -252,18 +255,17 @@ export class CrisisRoomClient {
     }, 15000);
   }
 
-  createPeer(id, call) {
+  createPeer(id, call, useTurn = false) {
     this.removePeer(id);
-    const pc = new RTCPeerConnection({ iceServers: this.iceServers, iceTransportPolicy: 'all' });
-    const peer = { id, call, pc, pendingIce: [], outgoingIce: [], sentDescription: false };
+    const pc = new RTCPeerConnection({ iceServers: useTurn ? this.iceServers : this.defaultIceServers, iceTransportPolicy: 'all' });
+    const peer = { id, call, pc, useTurn, pendingIce: [], outgoingIce: [], sentDescription: false };
     this.peers.set(id, peer);
     this.scheduleIceRefresh();
-    this.diagnose({ video: 'NEGOTIATING', ice: pc.iceConnectionState || 'new', peers: this.peers.size });
+    this.diagnose({ video: 'NEGOTIATING', ice: pc.iceConnectionState || 'new', peers: this.peers.size, attemptMode: useTurn ? 'TURN_FALLBACK' : 'STUN_ONLY', route: 'PENDING' });
     peer.timeout = setTimeout(() => {
       if (pc.connectionState !== 'connected') {
         this.onError('Signaling terhubung, tetapi koneksi video WebRTC belum berhasil. Periksa jaringan atau firewall antara PC Astina dan viewer.');
-        this.removePeer(id);
-        this.retryViewer();
+        this.failPeer(peer);
       }
     }, 30000);
     pc.onicecandidate = event => {
@@ -286,12 +288,11 @@ export class CrisisRoomClient {
         this.reportPeerRoute(peer);
       } else if (pc.connectionState === 'failed') {
         this.onError('Koneksi video WebRTC gagal meskipun signaling terhubung. Periksa jaringan atau firewall antara PC Astina dan viewer.');
-        this.removePeer(id);
-        this.retryViewer();
+        this.failPeer(peer);
       } else if (pc.connectionState === 'disconnected') {
         if (!this.broadcast) this.onStatus('RECONNECTING');
         clearTimeout(peer.disconnected);
-        peer.disconnected = setTimeout(() => { this.removePeer(id); this.retryViewer(); }, 8000);
+        peer.disconnected = setTimeout(() => this.failPeer(peer), 8000);
       }
     };
     pc.oniceconnectionstatechange = () => {
@@ -325,24 +326,40 @@ export class CrisisRoomClient {
     peer.outgoingIce.splice(0).forEach(message => this.send(message));
   }
 
-  async offer(id) {
-    await this.ensureIceConfiguration();
-    if (this.closed || !this.stream || !this.ready) return;
+  failPeer(peer) {
+    if (this.closed || this.peers.get(peer.id) !== peer) return;
+    this.removePeer(peer.id);
+    if (this.broadcast) {
+      const previousRequest = this.offerRequests.get(peer.id);
+      if (!peer.useTurn) this.queue = this.queue.then(() => {
+        if (!this.closed && this.ready && this.live && this.offerRequests.get(peer.id) === previousRequest) return this.offer(peer.id, true);
+      }).catch(() => this.onError('Percobaan TURN gagal. Viewer akan mencoba menghubungkan kembali.'));
+    } else {
+      this.onStream(null);
+      this.retryViewer(true);
+    }
+  }
+
+  async offer(id, useTurn = false) {
+    const request = {};
+    this.offerRequests.set(id, request);
+    if (useTurn) await this.ensureIceConfiguration();
+    if (this.closed || !this.stream || !this.ready || this.offerRequests.get(id) !== request) return;
     const call = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const peer = this.createPeer(id, call);
+    const peer = this.createPeer(id, call, useTurn);
     this.stream.getVideoTracks().forEach(track => peer.pc.addTrack(track, this.stream));
     await peer.pc.setLocalDescription(await peer.pc.createOffer());
-    if (this.closed || this.peers.get(id) !== peer) return;
-    this.send({ type: 'offer', peer: id, call, sdp: peer.pc.localDescription.sdp });
+    if (this.closed || this.peers.get(id) !== peer || this.offerRequests.get(id) !== request) return;
+    this.send({ type: 'offer', peer: id, call, useTurn, sdp: peer.pc.localDescription.sdp });
     this.flushIce(peer);
   }
 
-  retryViewer() {
+  retryViewer(useTurn = false) {
     if (this.closed || this.broadcast || !this.live) return;
     this.onStatus('RECONNECTING');
     clearTimeout(this.peerRetry);
     this.peerRetry = setTimeout(() => {
-      if (this.ready && this.live) this.send({ type: 'request-offer' });
+      if (this.ready && this.live) this.send({ type: 'request-offer', useTurn });
       this.waitForOffer();
     }, 3000);
   }
@@ -376,13 +393,14 @@ export class CrisisRoomClient {
     const peer = this.peers.get(id);
     if (!peer) return;
     this.peers.delete(id);
-    if (!this.peers.size) clearTimeout(this.iceRefresh);
+    if (![...this.peers.values()].some(active => active.useTurn)) clearTimeout(this.iceRefresh);
     clearTimeout(peer.timeout);
     clearTimeout(peer.disconnected);
     peer.pc.close();
   }
 
   clearPeers() {
+    this.offerRequests.clear();
     clearTimeout(this.iceRefresh);
     clearTimeout(this.offerWait);
     clearTimeout(this.peerRetry);

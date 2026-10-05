@@ -74,7 +74,7 @@ class SignalingRoom:
                         if not info['broadcaster']:
                             self.send(client_id, {'type': 'viewer-joined', 'peer': peer})
             elif kind == 'request-offer' and not client['broadcaster'] and self.live:
-                self.send(self.broadcaster, {'type': 'viewer-joined', 'peer': client_id})
+                self.send(self.broadcaster, {'type': 'viewer-joined', 'peer': client_id, 'useTurn': message.get('useTurn') is True})
             elif kind in ('offer', 'answer', 'ice') and self.live:
                 peer = message.get('peer')
                 target = self.clients.get(peer)
@@ -88,6 +88,8 @@ class SignalingRoom:
                 if not isinstance(call, str) or len(call) > 100:
                     return
                 payload = {'type': kind, 'peer': client_id, 'call': call}
+                if kind == 'offer':
+                    payload['useTurn'] = message.get('useTurn') is True
                 if kind == 'ice':
                     payload['candidate'] = message.get('candidate')
                 else:

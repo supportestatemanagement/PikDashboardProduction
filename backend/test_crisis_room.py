@@ -92,7 +92,7 @@ class RoomTests(unittest.TestCase):
         self.viewer.reset_mock()
         self.other.reset_mock()
         self.room.handle(self.bid, {'type': 'offer', 'peer': self.vid, 'call': 'one', 'sdp': 'video-sdp'})
-        self.assertEqual(self.messages(self.viewer), [{'type': 'offer', 'peer': self.bid, 'call': 'one', 'sdp': 'video-sdp'}])
+        self.assertEqual(self.messages(self.viewer), [{'type': 'offer', 'peer': self.bid, 'call': 'one', 'useTurn': False, 'sdp': 'video-sdp'}])
         self.other.send.assert_not_called()
         self.broadcast.reset_mock()
         self.room.handle(self.vid, {'type': 'offer', 'peer': self.bid, 'call': 'forged', 'sdp': 'bad'})
@@ -109,7 +109,20 @@ class RoomTests(unittest.TestCase):
         self.room.handle(self.bid, {'type': 'start'})
         self.broadcast.reset_mock()
         self.room.handle(self.vid, {'type': 'request-offer'})
-        self.assertEqual(self.messages(self.broadcast), [{'type': 'viewer-joined', 'peer': self.vid}])
+        self.assertEqual(self.messages(self.broadcast), [{'type': 'viewer-joined', 'peer': self.vid, 'useTurn': False}])
+
+    def test_turn_fallback_is_targeted_and_requires_explicit_boolean(self):
+        self.room.handle(self.bid, {'type': 'start'})
+        self.broadcast.reset_mock()
+        self.room.handle(self.vid, {'type': 'request-offer', 'useTurn': True})
+        self.assertEqual(self.messages(self.broadcast)[-1], {'type': 'viewer-joined', 'peer': self.vid, 'useTurn': True})
+        self.viewer.reset_mock()
+        self.other.reset_mock()
+        self.room.handle(self.bid, {'type': 'offer', 'peer': self.vid, 'call': 'relay', 'sdp': 'video', 'useTurn': True})
+        self.assertTrue(self.messages(self.viewer)[-1]['useTurn'])
+        self.other.send.assert_not_called()
+        self.room.handle(self.oid, {'type': 'request-offer', 'useTurn': 'true'})
+        self.assertFalse(self.messages(self.broadcast)[-1]['useTurn'])
 
 
 class WebSocketAuthorizationTests(unittest.TestCase):

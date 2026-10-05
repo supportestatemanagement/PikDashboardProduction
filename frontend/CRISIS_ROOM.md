@@ -65,15 +65,19 @@ or media is recovering. OFFLINE means no active broadcast.
 
 ## Network and capacity
 
-WebRTC tries a direct connection and can use a separately configured TURN relay
-when NAT/firewalls prevent it. The Render backend supplies signaling and temporary
+Each new viewer first negotiates using STUN only on both ends, without fetching
+TURN credentials or gathering relay candidates. A failed connection, a 30-second
+connection timeout, or an 8-second disconnection triggers a fresh offer for that
+viewer with optional TURN fallback. Other viewers keep their existing connections.
+If no TURN provider is configured, retries remain direct and show a configuration
+message. The Render backend supplies signaling and temporary
 ICE credentials; it never receives or forwards the captured video. No recording,
 Meet integration, or splitting into nine streams is added. Each additional viewer
 adds another outbound copy of the same stream, including when TURN is selected.
 Office upload bandwidth, CPU, and relay bandwidth determine capacity. TURN data
 transfer can incur provider charges. Test on actual office and viewer networks.
 
-## Activate TURN fallback (required for the failing external viewers)
+## Optional TURN fallback
 
 The code alone does not create a TURN server or provider account. Configure ONE
 of the following options in **Render environment variables**, then redeploy the
@@ -111,16 +115,19 @@ restrictive client networks. Render's HTTP signaling service is not the TURN hos
 Temporary credentials use the timestamp/HMAC mechanism documented by
 [coturn](https://github.com/coturn/coturn/blob/master/README.turnserver).
 
-Both Astina and viewers fetch their own temporary ICE configuration before
-negotiation. Valid credentials are cached in memory until near expiry. The client
-renews two minutes before expiry and Astina renegotiates peer connections without
+Only fallback attempts fetch temporary ICE configuration on Astina and the viewer.
+Valid credentials are cached in memory until near expiry. The client
+renews two minutes before expiry and Astina renegotiates only fallback peers without
 stopping the HCP capture. Viewers can briefly reconnect during this renewal.
 Temporary renewal failures preserve unexpired credentials and retry. Missing or
 invalid TURN configuration is visible in the page; direct connections still work.
 
 After deployment, stop/start broadcast once (or reload Astina and reselect HCP)
 and refresh viewers. Verify a mobile viewer on cellular data and a PC on another
-network. **Detail koneksi** shows `turn: CONFIGURED` and `route: TURN` when the
+network. **Detail koneksi** shows `mode: STUN_FIRST`, `attemptMode: STUN_ONLY`,
+and `turn: NOT_REQUESTED` before fallback. `route: DIRECT` confirms the selected
+media path is direct. After failure, `attemptMode: TURN_FALLBACK` indicates the
+second attempt, which still allows direct ICE. It shows `turn: CONFIGURED` and `route: TURN` when the
 selected candidate path uses the relay, or `route: DIRECT` for a direct path.
 Verify renewal beyond one hour and operation for 24 hours before relying on it.
 
@@ -143,6 +150,20 @@ carrying Astina's signed session are denied outside Crisis Room/session endpoint
 Automated tests cover role enforcement, session renewal authorization, signaling
 message routing, heartbeat/reconnect, SDP/ICE order, and cleanup. Real HCP capture
 and office firewall behavior require the above deployment checks.
+
+## Viewer connection lifecycle
+
+Viewers connect only while the Crisis Room menu is mounted. Leaving the menu
+immediately closes the WebRTC peers and signaling socket; the server notifies
+Astina to remove that viewer's outgoing peer. Opening the menu reconnects and
+subscribes automatically.
+
+When a viewer tab or PWA becomes hidden, a 30-second grace timer starts. Returning
+before it expires cancels the timer and preserves the connection. After 30 seconds,
+the viewer disconnects and clears its video; returning to the visible Crisis Room
+automatically creates a fresh connection using the current login session. Browser
+background timer throttling or OS suspension can delay execution of this timer.
+This visibility policy never applies to Astina's publisher connection or capture.
 
 ## Troubleshoot a blank viewer
 

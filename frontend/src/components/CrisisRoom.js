@@ -14,9 +14,53 @@ export default function CrisisRoom({ session, onSessionExpired }) {
   const currentSession = useRef(session);
   currentSession.current = session;
   useEffect(() => {
-    const connection = new CrisisRoomClient({ session: currentSession.current, broadcast, onStatus: setStatus, onStream: setStream, onError: setError, onSessionExpired, onDiagnostics: setDiagnostics });
-    client.current = connection;
-    return () => { connection.destroy(); client.current = null; };
+    let backgroundTimer;
+    let disposed = false;
+    let generation = 0;
+    const disconnect = () => {
+      const connection = client.current;
+      client.current = null;
+      generation += 1;
+      // Closing the viewer socket unsubscribes it on the signaling server,
+      // which tells Astina to close this viewer's outgoing peer as well.
+      connection?.destroy();
+    };
+    const connect = () => {
+      if (disposed || client.current) return;
+      const activeGeneration = ++generation;
+      const guard = callback => value => {
+        if (!disposed && generation === activeGeneration) callback(value);
+      };
+      setStatus('CONNECTING');
+      setError('');
+      client.current = new CrisisRoomClient({ session: currentSession.current, broadcast, onStatus: guard(setStatus), onStream: guard(setStream), onError: guard(setError), onSessionExpired: guard(onSessionExpired), onDiagnostics: guard(setDiagnostics) });
+    };
+    const visibilityChanged = () => {
+      clearTimeout(backgroundTimer);
+      if (document.visibilityState === 'hidden') {
+        backgroundTimer = setTimeout(() => {
+          disconnect();
+          setStream(null);
+          setStatus('OFFLINE');
+          setError('');
+          setDiagnostics({ signaling: 'DISCONNECTED', video: 'PAUSED', reason: 'BACKGROUND' });
+        }, 30000);
+      } else {
+        connect();
+      }
+    };
+    connect();
+    // Publisher capture and signaling must continue regardless of visibility.
+    if (!broadcast) {
+      document.addEventListener('visibilitychange', visibilityChanged);
+      visibilityChanged();
+    }
+    return () => {
+      disposed = true;
+      clearTimeout(backgroundTimer);
+      document.removeEventListener('visibilitychange', visibilityChanged);
+      disconnect();
+    };
   }, [broadcast, onSessionExpired]);
   useEffect(() => { client.current?.updateSession(session); }, [session]);
   useEffect(() => {
