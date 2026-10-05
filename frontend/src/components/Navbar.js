@@ -22,7 +22,8 @@ export default function Navbar({
   onDateChange,
   isSidebarOpen,
   setIsSidebarOpen,
-  isMobile 
+  isMobile,
+  broadcasterOnly = false
 }) {
   const formatDate = (date) => {
     return date.toLocaleDateString("id-ID", {
@@ -50,6 +51,8 @@ export default function Navbar({
     perparkiran: "911 Dashboard / Parking",
     pump: "Pump Station Dashboard",
     waterquality: "Water Quality Dashboard",
+    'crisis-room': 'Crisis Room',
+    'crisis-broadcast': 'Crisis Room Broadcast',
     availableparking: "Lot Parking Dashboard",
     "pantau-bencana-develop": "Pantau Bencana Dashboard",
   }[activeTab] || "Dashboard";
@@ -341,6 +344,7 @@ export default function Navbar({
 
           <nav style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {[
+              { id: broadcasterOnly ? 'crisis-broadcast' : 'crisis-room', label: broadcasterOnly ? 'Crisis Room Broadcast' : 'Crisis Room', icon: 'camera' },
               { id: "dashboard", label: "Traffic", icon: "road" },
               { id: "vehicletracker", label: "Patrol Tracker", icon: "car" },
               { id: "callcenter", label: "911", icon: "call" },
@@ -350,7 +354,7 @@ export default function Navbar({
               { id: "waterquality", label: "Water Quality", icon: "water" },
               { id: "availableparking", label: "Lot Parking", icon: "parking" },
               { id: "pantau-bencana-develop", label: "Pantau Bencana", icon: "disaster" },
-            ].map(tab => {
+            ].filter(tab => !broadcasterOnly || tab.id === 'crisis-broadcast').map(tab => {
               const isGroup = tab.id === "callcenter";
               const isActive = activeTab === tab.id || (isGroup && activeTab === "perparkiran");
               return (

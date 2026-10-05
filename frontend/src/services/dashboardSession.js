@@ -1,5 +1,6 @@
 export const SESSION_KEY = 'cc_dashboardSession';
 export const API_URL = process.env.REACT_APP_API_URL || '';
+export const isCrisisBroadcaster = user => user?.username === 'Astina' && user?.role === 'crisis_broadcaster';
 
 export async function dashboardRequest(path, session, signal) {
   const controller = new AbortController();
@@ -29,6 +30,6 @@ export async function dashboardRequest(path, session, signal) {
 export function readDashboardSession() {
   try {
     const value = JSON.parse(localStorage.getItem(SESSION_KEY));
-    return value?.sessionToken && value?.expiresAt > Date.now() ? value : null;
+    return value?.sessionToken && (isCrisisBroadcaster(value.user) || value?.expiresAt > Date.now()) ? value : null;
   } catch { return null; }
 }

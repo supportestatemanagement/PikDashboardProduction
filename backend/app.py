@@ -18,11 +18,13 @@ from disaster_maritime import register_maritime_routes
 from disaster_enso import register_enso_routes
 from water_distribution import build_water_locations
 from customer_service import register_customer_service_routes
+from crisis_room import register_crisis_room
 
 # Menggunakan RapidOCR (Ringan, Cepat, dan Akurat untuk Angka CCTV)
 from rapidocr_onnxruntime import RapidOCR
 
 app = Flask(__name__)
+register_crisis_room(app)
 register_maritime_routes(app)
 register_enso_routes(app)
 

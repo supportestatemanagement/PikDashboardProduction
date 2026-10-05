@@ -22,4 +22,4 @@ COPY . .
 
 # 6. Jalankan Gunicorn menggunakan port dari Render (default 5000)
 ENV PORT=5000
-CMD gunicorn -b 0.0.0.0:$PORT app:app
+CMD gunicorn --workers 1 --threads 100 --timeout 120 -b 0.0.0.0:$PORT app:app

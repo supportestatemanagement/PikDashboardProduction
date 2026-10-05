@@ -40,3 +40,22 @@ test('network failure exposes retry without trusting saved identity', async () =
   expect(result.current.session).toBeNull();
   expect(localStorage.getItem(SESSION_KEY)).not.toBeNull();
 });
+
+test('Astina stays logged in beyond 24 hours during a network outage and can logout manually', async () => {
+  jest.useFakeTimers();
+  try {
+    const user = { username: 'Astina', role: 'crisis_broadcaster' };
+    const original = { sessionToken: 'original', expiresAt: null, user };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(original));
+    dashboardRequest.mockResolvedValueOnce({ user }).mockRejectedValue(new Error('network'));
+    const { result } = renderHook(useDashboardSession);
+    await act(async () => {});
+    expect(result.current.session.sessionToken).toBe('original');
+    await act(async () => { jest.advanceTimersByTime(48 * 3600000); });
+    expect(result.current.session.sessionToken).toBe('original');
+    expect(JSON.parse(localStorage.getItem(SESSION_KEY)).sessionToken).toBe('original');
+    act(() => result.current.logout());
+    expect(result.current.session).toBeNull();
+    expect(localStorage.getItem(SESSION_KEY)).toBeNull();
+  } finally { jest.useRealTimers(); }
+});

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { dashboardRequest, readDashboardSession, SESSION_KEY } from './dashboardSession';
 import { disconnectFirebase } from './firebaseAuth';
+import { isCrisisBroadcaster } from './crisisRoom';
 
 export default function useDashboardSession() {
   const [session, setSession] = useState(null);
@@ -14,7 +15,7 @@ export default function useDashboardSession() {
     void disconnectFirebase().catch(() => {});
   }, []);
   const login = useCallback(data => {
-    if (!data.sessionToken || !data.user || !Number.isFinite(data.expiresAt)) throw new Error('Missing dashboard session');
+    if (!data.sessionToken || !data.user || !(Number.isFinite(data.expiresAt) || (isCrisisBroadcaster(data.user) && data.expiresAt === null))) throw new Error('Missing dashboard session');
     const next = { sessionToken: data.sessionToken, expiresAt: data.expiresAt, user: data.user };
     localStorage.setItem(SESSION_KEY, JSON.stringify(next));
     localStorage.removeItem('cc_isLoggedIn');
@@ -39,17 +40,18 @@ export default function useDashboardSession() {
   useEffect(() => {
     if (!session) return undefined;
     const controller = new AbortController();
+    const persistent = isCrisisBroadcaster(session.user);
     const check = () => {
-      if (Date.now() >= session.expiresAt) { logout(); return; }
+      if (!persistent && Date.now() >= session.expiresAt) { logout(); return; }
       dashboardRequest('/api/session', session, controller.signal).catch(error => {
         if (!controller.signal.aborted && error.code === 'session-expired') logout();
       });
     };
     const interval = setInterval(check, 60000);
-    const expiry = setTimeout(logout, Math.max(0, session.expiresAt - Date.now()));
+    const expiry = persistent ? null : setTimeout(logout, Math.max(0, session.expiresAt - Date.now()));
     window.addEventListener('focus', check);
     return () => { controller.abort(); clearInterval(interval); clearTimeout(expiry); window.removeEventListener('focus', check); };
-  }, [session, logout]);
+  }, [session, logout, login]);
   useEffect(() => {
     const changed = event => {
       if (event.key === SESSION_KEY) { setSession(null); setAttempt(value => value + 1); }

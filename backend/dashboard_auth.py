@@ -5,6 +5,25 @@ from functools import wraps
 
 from flask import g, jsonify, request
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from werkzeug.security import check_password_hash
+
+BROADCASTER_ROLE = 'crisis_broadcaster'
+
+
+def is_crisis_broadcaster(user):
+    return user.get('username') == 'Astina' and user.get('role') == BROADCASTER_ROLE
+
+
+def decode_dashboard_session(token):
+    # Verify the signature before deciding whether this identity expires.
+    payload = session_serializer().loads(token)
+    if not isinstance(payload, dict) or not payload.get('username'):
+        raise BadSignature('Invalid identity')
+    if payload['username'] == 'Astina':
+        payload['role'] = BROADCASTER_ROLE
+    else:
+        session_serializer().loads(token, max_age=session_lifetime())
+    return payload
 
 
 def session_serializer():
@@ -28,7 +47,7 @@ def officer_identity(records, username, password):
             return {
                 'username': str(name),
                 'email': str(fields.get('email') or ''),
-                'role': str(fields.get('role') or fields.get('level') or ''),
+                'role': BROADCASTER_ROLE if str(name) == 'Astina' else str(fields.get('role') or fields.get('level') or ''),
             }
     return None
 
@@ -40,9 +59,7 @@ def require_dashboard_session(handler):
         if not authorization.startswith('Bearer '):
             return jsonify({'status': 'unauthorized'}), 401
         try:
-            payload = session_serializer().loads(authorization[7:], max_age=session_lifetime())
-            if not isinstance(payload, dict) or not payload.get('username'):
-                raise BadSignature('Invalid identity')
+            payload = decode_dashboard_session(authorization[7:])
         except (BadSignature, SignatureExpired):
             return jsonify({'status': 'unauthorized'}), 401
         except Exception:
@@ -53,9 +70,22 @@ def require_dashboard_session(handler):
 
 
 def register_dashboard_auth(app, load_officers, create_firebase_token):
+    @app.before_request
+    def restrict_broadcaster():
+        # Existing public read APIs retain their contract. Signed broadcaster
+        # sessions are never accepted outside the explicitly scoped endpoints.
+        allowed = {'/api/login', '/api/session', '/api/session/refresh', '/api/crisis-room/ws'}
+        authorization = request.headers.get('Authorization', '')
+        if request.path.startswith('/api/') and request.path not in allowed and authorization.startswith('Bearer '):
+            try:
+                if is_crisis_broadcaster(decode_dashboard_session(authorization[7:])):
+                    return jsonify({'status': 'forbidden'}), 403
+            except (BadSignature, SignatureExpired):
+                return jsonify({'status': 'unauthorized'}), 401
+
     @app.after_request
     def private_auth_responses(response):
-        if request.path in ('/api/login', '/api/session', '/api/firebase-token'):
+        if request.path in ('/api/login', '/api/session', '/api/session/refresh', '/api/firebase-token'):
             response.headers['Cache-Control'] = 'no-store'
         return response
 
@@ -67,12 +97,16 @@ def register_dashboard_auth(app, load_officers, create_firebase_token):
         if not data['username'] or not data['password']:
             return jsonify({'status': 'failed'}), 401
         try:
-            user = officer_identity(load_officers(), data['username'], data['password'])
+            astina_hash = os.environ.get('CRISIS_ASTINA_PASSWORD_HASH', '')
+            if data['username'] == 'Astina' and astina_hash:
+                user = {'username': 'Astina', 'email': '', 'role': BROADCASTER_ROLE} if check_password_hash(astina_hash, data['password']) else None
+            else:
+                user = officer_identity(load_officers(), data['username'], data['password'])
             if user is None:
                 return jsonify({'status': 'failed'}), 401
             token = session_serializer().dumps(user)
             return jsonify({'status': 'success', 'user': user, 'sessionToken': token,
-                            'expiresAt': (int(time.time()) + session_lifetime()) * 1000})
+                            'expiresAt': None if is_crisis_broadcaster(user) else (int(time.time()) + session_lifetime()) * 1000})
         except Exception:
             return jsonify({'status': 'error', 'message': 'Login service unavailable'}), 503
 
@@ -80,6 +114,14 @@ def register_dashboard_auth(app, load_officers, create_firebase_token):
     @require_dashboard_session
     def dashboard_session():
         return jsonify({'user': g.dashboard_user})
+
+    @app.get('/api/session/refresh')
+    @require_dashboard_session
+    def refresh_broadcaster_session():
+        if not is_crisis_broadcaster(g.dashboard_user):
+            return jsonify({'status': 'forbidden'}), 403
+        return jsonify({'user': g.dashboard_user, 'sessionToken': session_serializer().dumps(g.dashboard_user),
+                        'expiresAt': None})
 
     @app.get('/api/firebase-token')
     @require_dashboard_session
