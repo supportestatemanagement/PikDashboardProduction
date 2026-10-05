@@ -1,5 +1,5 @@
 import L from 'leaflet';
-import { LayerGroup, Marker, Popup, useMap } from 'react-leaflet';
+import { LayerGroup, Marker, Popup, Tooltip, useMap } from 'react-leaflet';
 import { focusMapToCoordinates, validEarthquakeCoordinates } from './earthquakeMap';
 
 const waterIcon = L.divIcon({
@@ -29,6 +29,9 @@ export default function WaterLocationsLayer({ locations = [] }) {
           } }}
           zIndexOffset={600}
         >
+          <Tooltip permanent direction="top" offset={[0, -10]} className="water-location-label" opacity={1}>
+            {location.name}
+          </Tooltip>
           <Popup className="traffic-popup water-distribution-popup" autoPan={false} maxHeight={320} minWidth={280}>
             <div className="popup-title" style={{ color: '#38bdf8' }}>Distribusi Air Bersih</div>
             <div className="popup-row"><span>Nama Lokasi</span><strong>{location.name}</strong></div>

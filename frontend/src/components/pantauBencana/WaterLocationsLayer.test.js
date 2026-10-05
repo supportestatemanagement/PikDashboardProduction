@@ -6,6 +6,7 @@ jest.mock('react-leaflet', () => ({
   LayerGroup: ({ children }) => <div>{children}</div>,
   Marker: ({ children, title }) => <div role="region" aria-label={title}>{children}</div>,
   Popup: ({ children }) => <div>{children}</div>,
+  Tooltip: ({ children }) => <div role="tooltip">{children}</div>,
 }));
 
 test('one marker shows all distribution records and hides undated or invalid locations', () => {
@@ -16,6 +17,7 @@ test('one marker shows all distribution records and hides undated or invalid loc
     { id: 'invalid', name: 'Koordinat salah', position: [91, 106], distributions: [entry] },
   ]} />);
   expect(screen.getAllByRole('region')).toHaveLength(1);
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Tanjung Pasir');
   for (const text of ['09/09/2026', '13/09/2026', '320', '1280', '375', '1500']) {
     expect(screen.getByText(text)).toBeInTheDocument();
   }

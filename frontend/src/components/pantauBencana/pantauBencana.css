@@ -88,6 +88,8 @@
 .ppb-root .leaflet-popup-content p { margin: 6px 0; }
 .ppb-root .water-distribution-popup .leaflet-popup-content { box-sizing: border-box; padding-right: 14px; scrollbar-gutter: stable; }
 .ppb-root .water-distribution-popup .leaflet-popup-scrolled { overflow-x: hidden; }
+.ppb-root .water-location-label { background: #0f172ae6; border: 1px solid #38bdf880; border-radius: 4px; color: #e0f2fe; padding: 3px 7px; font-size: 11px; font-weight: 600; box-shadow: 0 1px 4px #0006; pointer-events: none; }
+.ppb-root .water-location-label.leaflet-tooltip-top::before { border-top-color: #38bdf880; }
 .ppb-root .water-distribution-popup .popup-row > span { flex-shrink: 0; }
 .ppb-root .water-distribution-popup .popup-row > strong { min-width: 0; text-align: right; overflow-wrap: anywhere; }
 .ppb-root .leaflet-control-layers { color: var(--ppb-text); background:rgba(14,23,41,.96); border:1px solid #34445b; }
