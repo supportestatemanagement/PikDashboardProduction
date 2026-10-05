@@ -168,3 +168,37 @@ test('a stale broadcaster slot during reconnect does not stop HCP capture', asyn
   await receive(replacement, { type: 'ready', live: false });
   expect(replacement.sent.at(-1)).toEqual({ type: 'start' });
 });
+
+test('origin rejection is visible and retries without terminating capture', async () => {
+  const track = { stop: jest.fn(), addEventListener: jest.fn() };
+  const stream = { getVideoTracks: () => [track], getTracks: () => [track] };
+  Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getDisplayMedia: jest.fn().mockResolvedValue(stream) } });
+  client = new CrisisRoomClient({ session, broadcast: true, ...callbacks });
+  await client.start();
+  const socket = FakeSocket.instances[0];
+  socket.open();
+  await receive(socket, { type: 'error', code: 'origin-not-allowed', message: 'Atur CRISIS_ALLOWED_ORIGINS sesuai URL dashboard.' });
+  expect(callbacks.onError).toHaveBeenLastCalledWith(expect.stringContaining('CRISIS_ALLOWED_ORIGINS'));
+  expect(track.stop).not.toHaveBeenCalled();
+  expect(client.closed).toBe(false);
+});
+
+test('transport failure reports the signaling URL rather than silently reconnecting', () => {
+  const onDiagnostics = jest.fn();
+  client = new CrisisRoomClient({ session, broadcast: false, onDiagnostics, ...callbacks });
+  FakeSocket.instances[0].onerror();
+  expect(callbacks.onError).toHaveBeenLastCalledWith(expect.stringContaining('/api/crisis-room/ws'));
+  expect(onDiagnostics).toHaveBeenLastCalledWith(expect.objectContaining({ signaling: 'RECONNECTING' }));
+});
+
+test('missing offer is distinguished from direct WebRTC connectivity failure', async () => {
+  client = new CrisisRoomClient({ session, broadcast: false, ...callbacks });
+  const socket = FakeSocket.instances[0];
+  socket.open();
+  await receive(socket, { type: 'ready', live: true, serverId: 'same-worker' });
+  jest.advanceTimersByTime(15000);
+  expect(callbacks.onError).toHaveBeenLastCalledWith(expect.stringContaining('belum mengirim tawaran video'));
+  await receive(socket, { type: 'offer', peer: 'astina', call: 'grid', sdp: 'offer' });
+  jest.advanceTimersByTime(30000);
+  expect(callbacks.onError).toHaveBeenLastCalledWith(expect.stringContaining('koneksi video WebRTC belum berhasil'));
+});

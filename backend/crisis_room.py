@@ -6,6 +6,7 @@ import uuid
 
 from flask import request
 from flask_sock import Sock
+from simple_websocket import ConnectionClosed
 from itsdangerous import BadSignature
 from dashboard_auth import decode_dashboard_session, is_crisis_broadcaster
 
@@ -16,6 +17,7 @@ class SignalingRoom:
         self.clients = {}
         self.broadcaster = None
         self.live = False
+        self.server_id = uuid.uuid4().hex[:12]
 
     def send(self, client_id, message):
         client = self.clients.get(client_id)
@@ -40,7 +42,7 @@ class SignalingRoom:
             self.clients[client_id] = {'socket': socket, 'broadcaster': broadcaster}
             if broadcaster:
                 self.broadcaster = client_id
-            self.send(client_id, {'type': 'ready', 'id': client_id, 'live': self.live})
+            self.send(client_id, {'type': 'ready', 'id': client_id, 'live': self.live, 'serverId': self.server_id})
             if not broadcaster and self.live:
                 self.send(self.broadcaster, {'type': 'viewer-joined', 'peer': client_id})
             return client_id
@@ -102,8 +104,12 @@ def register_crisis_room(app):
 
     @sock.route('/api/crisis-room/ws')
     def signaling(socket):
-        origins = {value.strip() for value in os.environ.get('CRISIS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',') if value.strip()}
+        configured_origins = os.environ.get('CRISIS_ALLOWED_ORIGINS', '').strip()
+        origins = {value.strip().rstrip('/') for value in configured_origins.split(',') if value.strip()} if configured_origins else {
+            'https://pikdashboard.vercel.app', 'http://localhost:3000', 'http://127.0.0.1:3000', request.host_url.rstrip('/')}
         if request.headers.get('Origin') not in origins:
+            app.logger.warning('Crisis Room WebSocket rejected an unconfigured frontend origin')
+            socket.send(json.dumps({'type': 'error', 'code': 'origin-not-allowed', 'message': 'Origin dashboard belum diizinkan. Atur CRISIS_ALLOWED_ORIGINS di backend sesuai URL dashboard.'}))
             socket.close(reason=1008, message='Origin not allowed')
             return
         client_id = None
@@ -125,6 +131,7 @@ def register_crisis_room(app):
             client_id = room.join(socket, broadcaster)
             if not client_id:
                 return
+            app.logger.info('Crisis Room signaling joined: mode=%s server=%s', 'broadcast' if broadcaster else 'viewer', room.server_id)
             while True:
                 raw = socket.receive(timeout=65)
                 if raw is None:
@@ -145,9 +152,15 @@ def register_crisis_room(app):
                 socket.send(json.dumps({'type': 'unauthorized'}))
             except Exception:
                 pass
-        except Exception:
-            # Disconnects and malformed messages never expose credentials.
+        except ConnectionClosed:
             pass
+        except Exception as failure:
+            # Log only exception type, never tokens, SDP, or credentials.
+            app.logger.error('Crisis Room signaling failed: %s', type(failure).__name__)
+            try:
+                socket.send(json.dumps({'type': 'error', 'code': 'signaling-unavailable', 'message': 'Layanan signaling backend gagal. Periksa log backend Crisis Room.'}))
+            except Exception:
+                pass
         finally:
             if client_id:
                 room.leave(client_id)

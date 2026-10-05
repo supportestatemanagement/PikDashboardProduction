@@ -28,8 +28,12 @@ and session only on the designated office PC.
   `gunicorn --workers 1 --threads 100 --timeout 120 -b 0.0.0.0:$PORT app:app`.
   The Dockerfile already uses this command. Room membership is in memory; multiple
   instances/workers need shared signaling coordination before scaling.
+  `backend/gunicorn.conf.py` also sets the defaults for a native Render service
+  started with `gunicorn app:app` from the backend directory.
 - Set `CRISIS_ALLOWED_ORIGINS` to the exact frontend origin(s), comma separated,
   e.g. `https://dashboard.example.com,http://localhost:3000`. No trailing slash.
+  If unset, https://pikdashboard.vercel.app, localhost:3000, 127.0.0.1:3000,
+  and the backend's own origin are allowed.
 - Set frontend `REACT_APP_API_URL` to the HTTPS Render backend. WebSockets use WSS
   at `/api/crisis-room/ws`; session tokens are sent in the first frame, not URLs.
 - Configure the frontend static host to rewrite `/crisis-room` and
@@ -89,3 +93,24 @@ carrying Astina's signed session are denied outside Crisis Room/session endpoint
 Automated tests cover role enforcement, session renewal authorization, signaling
 message routing, heartbeat/reconnect, SDP/ICE order, and cleanup. Real HCP capture
 and office firewall behavior require the above deployment checks.
+
+## Troubleshoot a blank viewer
+
+Open **Detail koneksi** on Astina and on the viewer:
+
+- `signaling: RECONNECTING`: video negotiation has not started. Check the shown
+  `signalingUrl`, frontend origin allowlist, and backend WebSocket support. When
+  deploying, `REACT_APP_API_URL` must point to Render, not `localhost:5000` (the
+  latter points to each viewer's own PC). Rebuild the frontend after changing it.
+- `broadcast: OFFLINE`: the server has no active capture. A local screen preview
+  on Astina alone does not confirm publishing; Astina must show LIVE.
+- `signaling: CONNECTED`, `broadcast: ACTIVE`, and `ice: failed`/`checking`: SDP
+  signaling works but the direct peer path is failing. Check office firewall and
+  viewer network; STUN cannot overcome every NAT/firewall configuration.
+- Compare `serverId` on Astina and viewer. Different values mean connections landed
+  in different workers/instances (or one connection has not completed registration).
+  Use one Render instance and one threaded Gunicorn worker for this room.
+
+Origin rejections, transport disconnects, offer timeouts, and media failures now
+show distinct messages in the page. Backend logs record only exception type and
+signaling mode/server ID; tokens, SDP, and credentials are not logged.

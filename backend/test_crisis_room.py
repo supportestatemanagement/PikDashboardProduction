@@ -130,6 +130,47 @@ class WebSocketAuthorizationTests(unittest.TestCase):
             handlers[0](socket)
         self.assertEqual(json.loads(socket.send.call_args.args[0])['type'], 'forbidden')
 
+    def test_origin_rejection_reports_configuration_instead_of_silent_disconnect(self):
+        app = Flask(__name__)
+        with patch('crisis_room.Sock') as sock:
+            handlers = []
+            sock.return_value.route.side_effect = lambda path: lambda handler: handlers.append(handler) or handler
+            register_crisis_room(app)
+        socket = Mock()
+        with patch.dict(os.environ, {'CRISIS_ALLOWED_ORIGINS': 'https://dashboard.example/'}), app.test_request_context('/api/crisis-room/ws', headers={'Origin': 'https://other.example'}):
+            handlers[0](socket)
+        self.assertEqual(json.loads(socket.send.call_args.args[0])['code'], 'origin-not-allowed')
+        socket.close.assert_called_with(reason=1008, message='Origin not allowed')
+        socket.receive.assert_not_called()
+
+    def test_same_origin_and_loopback_frontends_work_without_extra_configuration(self):
+        app = Flask(__name__)
+        with patch('crisis_room.Sock') as sock:
+            handlers = []
+            sock.return_value.route.side_effect = lambda path: lambda handler: handlers.append(handler) or handler
+            register_crisis_room(app)
+        for origin in ['https://pikdashboard.vercel.app', 'http://127.0.0.1:3000', 'http://localhost']:
+            socket = Mock()
+            socket.receive.return_value = json.dumps({'type': 'auth', 'mode': 'viewer', 'token': 'forged'})
+            from itsdangerous import BadSignature
+            with patch.dict(os.environ, {'CRISIS_ALLOWED_ORIGINS': ''}), app.test_request_context('/api/crisis-room/ws', headers={'Origin': origin}), patch('crisis_room.decode_dashboard_session', side_effect=BadSignature('forged')):
+                handlers[0](socket)
+            self.assertEqual(json.loads(socket.send.call_args.args[0])['type'], 'unauthorized')
+
+    def test_server_exception_reports_failure_without_leaking_secrets(self):
+        app = Flask(__name__)
+        with patch('crisis_room.Sock') as sock:
+            handlers = []
+            sock.return_value.route.side_effect = lambda path: lambda handler: handlers.append(handler) or handler
+            register_crisis_room(app)
+        socket = Mock()
+        socket.receive.return_value = json.dumps({'type': 'auth', 'mode': 'viewer', 'token': 'secret-token'})
+        with app.test_request_context('/api/crisis-room/ws', headers={'Origin': 'http://localhost:3000'}), patch('crisis_room.decode_dashboard_session', side_effect=RuntimeError('private-secret')):
+            handlers[0](socket)
+        message = json.loads(socket.send.call_args.args[0])
+        self.assertEqual(message['code'], 'signaling-unavailable')
+        self.assertNotIn('private-secret', json.dumps(message))
+
 
 if __name__ == '__main__':
     unittest.main()

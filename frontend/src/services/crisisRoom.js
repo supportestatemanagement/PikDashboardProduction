@@ -10,7 +10,7 @@ export function crisisSocketUrl() {
 
 // One captured HCP window; one direct peer connection per viewer.
 export class CrisisRoomClient {
-  constructor({ session, broadcast, onStatus, onStream, onError, onSessionExpired }) {
+  constructor({ session, broadcast, onStatus, onStream, onError, onSessionExpired, onDiagnostics = () => {} }) {
     Object.assign(this, { session, broadcast, onStatus, onStream, onError, onSessionExpired });
     this.peers = new Map();
     this.stream = null;
@@ -19,7 +19,14 @@ export class CrisisRoomClient {
     this.ready = false;
     this.attempt = 0;
     this.queue = Promise.resolve();
+    this.onDiagnostics = onDiagnostics;
+    this.diagnostics = { origin: window.location.origin, signalingUrl: crisisSocketUrl(), signaling: 'CONNECTING', broadcast: 'UNKNOWN', video: 'WAITING', ice: 'NEW' };
     this.connect();
+  }
+
+  diagnose(changes) {
+    Object.assign(this.diagnostics, changes);
+    this.onDiagnostics({ ...this.diagnostics });
   }
 
   send(message) {
@@ -34,14 +41,30 @@ export class CrisisRoomClient {
   connect() {
     if (this.closed) return;
     this.onStatus(this.attempt ? 'RECONNECTING' : 'CONNECTING');
-    const socket = new WebSocket(crisisSocketUrl());
+    this.diagnose({ signaling: this.attempt ? 'RECONNECTING' : 'CONNECTING' });
+    this.failureMessage = '';
+    let socket;
+    try {
+      socket = new WebSocket(crisisSocketUrl());
+    } catch {
+      this.onError('URL WebSocket tidak dapat digunakan. Dashboard HTTPS memerlukan backend HTTPS/WSS. Periksa REACT_APP_API_URL.');
+      this.diagnose({ signaling: 'CONFIGURATION_ERROR' });
+      this.onStatus('OFFLINE');
+      return;
+    }
     this.socket = socket;
     this.lastReceived = Date.now();
     this.heartbeat = setInterval(() => {
-      if (Date.now() - this.lastReceived > 60000) socket.close();
+      if (Date.now() - this.lastReceived > 60000) {
+        this.failureMessage = 'Signaling tidak merespons heartbeat. Menghubungkan kembali ke backend.';
+        socket.close();
+      }
       else if (socket.readyState === WebSocket.OPEN) this.send({ type: 'ping' });
     }, 15000);
-    socket.onopen = () => this.send({ type: 'auth', mode: this.broadcast ? 'broadcast' : 'viewer', token: this.session.sessionToken });
+    socket.onopen = () => {
+      this.diagnose({ signaling: 'AUTHENTICATING' });
+      this.send({ type: 'auth', mode: this.broadcast ? 'broadcast' : 'viewer', token: this.session.sessionToken });
+    };
     socket.onmessage = event => {
       this.lastReceived = Date.now();
       this.queue = this.queue.then(async () => {
@@ -51,12 +74,19 @@ export class CrisisRoomClient {
         this.retryViewer();
       });
     };
-    socket.onerror = () => socket.close();
-    socket.onclose = () => {
+    socket.onerror = () => {
+      this.failureMessage = `WebSocket signaling belum dapat tersambung ke ${this.diagnostics.signalingUrl}. Periksa URL backend, layanan WebSocket, dan jaringan.`;
+      socket.close();
+    };
+    socket.onclose = event => {
+      const wasReady = this.ready;
       clearInterval(this.heartbeat);
       this.ready = false;
       this.clearPeers();
       if (this.closed) return;
+      const cause = event?.code === 1008 ? `Origin ${window.location.origin} ditolak. Tambahkan URL ini ke CRISIS_ALLOWED_ORIGINS di backend.` : this.failureMessage || (wasReady ? 'Signaling terputus. Menghubungkan kembali tanpa menghentikan screen sharing.' : 'Signaling belum tersambung. Periksa CRISIS_ALLOWED_ORIGINS dan jalankan backend dengan satu worker serta threads untuk WebSocket.');
+      this.onError(cause);
+      this.diagnose({ signaling: 'RECONNECTING', closeCode: event?.code ?? null, reconnectAttempt: this.attempt + 1, video: 'WAITING' });
       if (!this.broadcast) this.onStream(null);
       this.onStatus('RECONNECTING');
       const delay = Math.min(30000, 1000 * 2 ** Math.min(this.attempt++, 5)) + Math.random() * 500;
@@ -71,6 +101,8 @@ export class CrisisRoomClient {
         this.attempt = 0;
         this.live = message.live;
         this.onError('');
+        this.diagnose({ signaling: 'CONNECTED', broadcast: this.live ? 'ACTIVE' : 'OFFLINE', serverId: message.serverId || 'unknown' });
+        this.waitForOffer();
         if (this.broadcast && this.stream) this.send({ type: 'start' });
         else {
           if (!this.broadcast && !this.live) this.onStream(null);
@@ -79,6 +111,8 @@ export class CrisisRoomClient {
         break;
       case 'status':
         this.live = message.live;
+        this.diagnose({ broadcast: this.live ? 'ACTIVE' : 'OFFLINE' });
+        this.waitForOffer();
         if (!this.live) {
           this.clearPeers();
           if (!this.broadcast) this.onStream(null);
@@ -94,6 +128,7 @@ export class CrisisRoomClient {
         break;
       case 'offer':
         if (!this.broadcast) {
+          clearTimeout(this.offerWait);
           this.clearPeers();
           this.onStatus('CONNECTING');
           const peer = this.createPeer(message.peer, message.call);
@@ -123,7 +158,8 @@ export class CrisisRoomClient {
       case 'forbidden':
       case 'error':
         this.onError(message.message || 'Anda tidak memiliki akses broadcast.');
-        if (message.code === 'broadcaster-busy') {
+        this.failureMessage = message.message || '';
+        if (['broadcaster-busy', 'origin-not-allowed', 'signaling-unavailable'].includes(message.code)) {
           // A broken TCP connection may remain registered until its heartbeat
           // times out. Retry without discarding the active HCP capture.
           this.socket.close();
@@ -141,14 +177,26 @@ export class CrisisRoomClient {
     }
   }
 
+  waitForOffer() {
+    clearTimeout(this.offerWait);
+    if (this.broadcast || !this.live || this.peers.size) return;
+    this.offerWait = setTimeout(() => {
+      if (this.closed || !this.ready || !this.live || this.peers.size) return;
+      this.onError('Signaling terhubung, tetapi Astina belum mengirim tawaran video. Pastikan Astina LIVE dan backend memakai satu worker serta satu instance.');
+      this.retryViewer();
+    }, 15000);
+  }
+
   createPeer(id, call) {
     this.removePeer(id);
     const urls = (process.env.REACT_APP_CRISIS_STUN_URLS || 'stun:stun.cloudflare.com:3478').split(',').map(url => url.trim()).filter(url => /^stuns?:/.test(url));
     const pc = new RTCPeerConnection({ iceServers: urls.length ? [{ urls }] : [] });
     const peer = { id, call, pc, pendingIce: [], outgoingIce: [], sentDescription: false };
     this.peers.set(id, peer);
+    this.diagnose({ video: 'NEGOTIATING', ice: pc.iceConnectionState || 'new', peers: this.peers.size });
     peer.timeout = setTimeout(() => {
       if (pc.connectionState !== 'connected') {
+        this.onError('Signaling terhubung, tetapi koneksi video WebRTC belum berhasil. Periksa jaringan atau firewall antara PC Astina dan viewer.');
         this.removePeer(id);
         this.retryViewer();
       }
@@ -164,11 +212,13 @@ export class CrisisRoomClient {
     };
     pc.onconnectionstatechange = () => {
       if (this.closed || this.peers.get(id) !== peer) return;
+      this.diagnose({ video: pc.connectionState, ice: pc.iceConnectionState || 'unknown' });
       if (pc.connectionState === 'connected') {
         clearTimeout(peer.timeout);
         clearTimeout(peer.disconnected);
         if (!this.broadcast) { this.onError(''); this.onStatus(this.ready ? 'LIVE' : 'RECONNECTING'); }
       } else if (pc.connectionState === 'failed') {
+        this.onError('Koneksi video WebRTC gagal meskipun signaling terhubung. Periksa jaringan atau firewall antara PC Astina dan viewer.');
         this.removePeer(id);
         this.retryViewer();
       } else if (pc.connectionState === 'disconnected') {
@@ -176,6 +226,9 @@ export class CrisisRoomClient {
         clearTimeout(peer.disconnected);
         peer.disconnected = setTimeout(() => { this.removePeer(id); this.retryViewer(); }, 8000);
       }
+    };
+    pc.oniceconnectionstatechange = () => {
+      if (this.peers.get(id) === peer) this.diagnose({ ice: pc.iceConnectionState });
     };
     return peer;
   }
@@ -201,6 +254,7 @@ export class CrisisRoomClient {
     clearTimeout(this.peerRetry);
     this.peerRetry = setTimeout(() => {
       if (this.ready && this.live) this.send({ type: 'request-offer' });
+      this.waitForOffer();
     }, 3000);
   }
 
@@ -239,6 +293,7 @@ export class CrisisRoomClient {
   }
 
   clearPeers() {
+    clearTimeout(this.offerWait);
     clearTimeout(this.peerRetry);
     [...this.peers.keys()].forEach(id => this.removePeer(id));
   }
