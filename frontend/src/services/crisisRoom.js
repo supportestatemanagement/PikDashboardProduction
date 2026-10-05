@@ -1,4 +1,4 @@
-import { API_URL } from './dashboardSession';
+import { API_URL, dashboardRequest } from './dashboardSession';
 
 export { isCrisisBroadcaster } from './dashboardSession';
 
@@ -8,7 +8,7 @@ export function crisisSocketUrl() {
   return url.href;
 }
 
-// One captured HCP window; one direct peer connection per viewer.
+// One captured HCP window; each viewer tries direct ICE with TURN fallback.
 export class CrisisRoomClient {
   constructor({ session, broadcast, onStatus, onStream, onError, onSessionExpired, onDiagnostics = () => {} }) {
     Object.assign(this, { session, broadcast, onStatus, onStream, onError, onSessionExpired });
@@ -19,6 +19,11 @@ export class CrisisRoomClient {
     this.ready = false;
     this.attempt = 0;
     this.queue = Promise.resolve();
+    this.iceAbort = new AbortController();
+    const stunUrls = (process.env.REACT_APP_CRISIS_STUN_URLS || 'stun:stun.cloudflare.com:3478').split(',').map(url => url.trim()).filter(url => /^stuns?:/.test(url));
+    this.defaultIceServers = stunUrls.length ? [{ urls: stunUrls }] : [];
+    this.iceServers = this.defaultIceServers;
+    this.iceExpiresAt = 0;
     this.onDiagnostics = onDiagnostics;
     this.diagnostics = { origin: window.location.origin, signalingUrl: crisisSocketUrl(), signaling: 'CONNECTING', broadcast: 'UNKNOWN', video: 'WAITING', ice: 'NEW' };
     this.connect();
@@ -27,6 +32,64 @@ export class CrisisRoomClient {
   diagnose(changes) {
     Object.assign(this.diagnostics, changes);
     this.onDiagnostics({ ...this.diagnostics });
+  }
+
+  async ensureIceConfiguration(force = false) {
+    if (!force && this.iceExpiresAt > Date.now() + 60000) return;
+    if (this.loadingIce) return this.loadingIce;
+    this.loadingIce = (async () => {
+      try {
+        const config = await dashboardRequest('/api/crisis-room/ice-servers', this.session, this.iceAbort.signal);
+        if (this.closed) return;
+        if (!Array.isArray(config.iceServers) || !Number.isFinite(config.expiresAt) || config.expiresAt <= Date.now() + 60000) throw new Error('Invalid ICE configuration');
+        this.iceServers = config.iceServers;
+        this.iceExpiresAt = config.expiresAt;
+        this.iceRetryAfter = 0;
+        this.turnConfigured = Boolean(config.turnConfigured);
+        this.diagnose({ turn: this.turnConfigured ? 'CONFIGURED' : 'NOT_CONFIGURED' });
+        if (!this.turnConfigured) this.onError('TURN belum dikonfigurasi di backend. Koneksi langsung tetap dicoba; perangkat pada jaringan lain mungkin gagal.');
+      } catch (failure) {
+        if (this.closed) return;
+        if (failure.code === 'session-expired') {
+          this.destroy();
+          this.onSessionExpired();
+          return;
+        }
+        if (this.turnConfigured && this.iceExpiresAt > Date.now() + 30000) {
+          this.iceRetryAfter = Date.now() + 30000;
+          this.diagnose({ turn: 'RENEWAL_RETRY' });
+          this.onError('Pembaruan kredensial TURN tertunda. Koneksi aktif dipertahankan sambil mencoba kembali.');
+          return;
+        }
+        this.iceServers = this.defaultIceServers;
+        this.iceExpiresAt = Date.now() + 90000;
+        this.turnConfigured = false;
+        this.diagnose({ turn: 'UNAVAILABLE' });
+        this.onError('Kredensial TURN belum tersedia dari backend. Koneksi langsung tetap dicoba. Periksa konfigurasi TURN di Render.');
+      }
+    })();
+    try { await this.loadingIce; }
+    finally { this.loadingIce = null; }
+  }
+
+  scheduleIceRefresh() {
+    clearTimeout(this.iceRefresh);
+    if (!this.turnConfigured || !this.peers.size || this.closed) return;
+    this.iceRefresh = setTimeout(() => {
+      this.queue = this.queue.then(async () => {
+        const previousExpiry = this.iceExpiresAt;
+        await this.ensureIceConfiguration(true);
+        if (this.closed || !this.ready) return;
+        if (this.iceExpiresAt <= previousExpiry) { this.scheduleIceRefresh(); return; }
+        // Fresh credentials and a new ICE allocation keep a 24-hour capture
+        // working without putting permanent TURN secrets in the browser.
+        for (const peer of this.peers.values()) peer.pc.setConfiguration({ iceServers: this.iceServers, iceTransportPolicy: 'all' });
+        if (this.broadcast && this.stream) {
+          for (const id of [...this.peers.keys()]) await this.offer(id);
+        }
+        this.scheduleIceRefresh();
+      }).catch(() => { this.retryViewer(); });
+    }, Math.max(1000, this.iceExpiresAt - Date.now() - 120000, (this.iceRetryAfter || 0) - Date.now()));
   }
 
   send(message) {
@@ -128,6 +191,8 @@ export class CrisisRoomClient {
         break;
       case 'offer':
         if (!this.broadcast) {
+          await this.ensureIceConfiguration();
+          if (this.closed || !this.ready) return;
           clearTimeout(this.offerWait);
           this.clearPeers();
           this.onStatus('CONNECTING');
@@ -189,10 +254,10 @@ export class CrisisRoomClient {
 
   createPeer(id, call) {
     this.removePeer(id);
-    const urls = (process.env.REACT_APP_CRISIS_STUN_URLS || 'stun:stun.cloudflare.com:3478').split(',').map(url => url.trim()).filter(url => /^stuns?:/.test(url));
-    const pc = new RTCPeerConnection({ iceServers: urls.length ? [{ urls }] : [] });
+    const pc = new RTCPeerConnection({ iceServers: this.iceServers, iceTransportPolicy: 'all' });
     const peer = { id, call, pc, pendingIce: [], outgoingIce: [], sentDescription: false };
     this.peers.set(id, peer);
+    this.scheduleIceRefresh();
     this.diagnose({ video: 'NEGOTIATING', ice: pc.iceConnectionState || 'new', peers: this.peers.size });
     peer.timeout = setTimeout(() => {
       if (pc.connectionState !== 'connected') {
@@ -217,6 +282,8 @@ export class CrisisRoomClient {
         clearTimeout(peer.timeout);
         clearTimeout(peer.disconnected);
         if (!this.broadcast) { this.onError(''); this.onStatus(this.ready ? 'LIVE' : 'RECONNECTING'); }
+        else this.onError('');
+        this.reportPeerRoute(peer);
       } else if (pc.connectionState === 'failed') {
         this.onError('Koneksi video WebRTC gagal meskipun signaling terhubung. Periksa jaringan atau firewall antara PC Astina dan viewer.');
         this.removePeer(id);
@@ -233,12 +300,34 @@ export class CrisisRoomClient {
     return peer;
   }
 
+  async reportPeerRoute(peer) {
+    if (!peer.pc.getStats) return;
+    try {
+      const stats = await peer.pc.getStats();
+      if (this.closed || this.peers.get(peer.id) !== peer) return;
+      let pair;
+      stats.forEach(entry => {
+        if (entry.type === 'transport' && entry.selectedCandidatePairId) pair = stats.get(entry.selectedCandidatePairId);
+      });
+      if (!pair) stats.forEach(entry => {
+        if (entry.type === 'candidate-pair' && entry.state === 'succeeded' && entry.nominated) pair = entry;
+      });
+      if (pair) {
+        const local = stats.get(pair.localCandidateId);
+        const remote = stats.get(pair.remoteCandidateId);
+        this.diagnose({ route: local?.candidateType === 'relay' || remote?.candidateType === 'relay' ? 'TURN' : 'DIRECT' });
+      }
+    } catch { /* Diagnostics must never disrupt a working video. */ }
+  }
+
   flushIce(peer) {
     peer.sentDescription = true;
     peer.outgoingIce.splice(0).forEach(message => this.send(message));
   }
 
   async offer(id) {
+    await this.ensureIceConfiguration();
+    if (this.closed || !this.stream || !this.ready) return;
     const call = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const peer = this.createPeer(id, call);
     this.stream.getVideoTracks().forEach(track => peer.pc.addTrack(track, this.stream));
@@ -287,12 +376,14 @@ export class CrisisRoomClient {
     const peer = this.peers.get(id);
     if (!peer) return;
     this.peers.delete(id);
+    if (!this.peers.size) clearTimeout(this.iceRefresh);
     clearTimeout(peer.timeout);
     clearTimeout(peer.disconnected);
     peer.pc.close();
   }
 
   clearPeers() {
+    clearTimeout(this.iceRefresh);
     clearTimeout(this.offerWait);
     clearTimeout(this.peerRetry);
     [...this.peers.keys()].forEach(id => this.removePeer(id));
@@ -300,6 +391,7 @@ export class CrisisRoomClient {
 
   destroy() {
     this.closed = true;
+    this.iceAbort.abort();
     this.stop();
     clearInterval(this.heartbeat);
     clearTimeout(this.reconnect);

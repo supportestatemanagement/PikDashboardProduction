@@ -9,6 +9,7 @@ from flask_sock import Sock
 from simple_websocket import ConnectionClosed
 from itsdangerous import BadSignature
 from dashboard_auth import decode_dashboard_session, is_crisis_broadcaster
+from crisis_turn import register_crisis_turn
 
 
 class SignalingRoom:
@@ -98,6 +99,7 @@ class SignalingRoom:
 
 
 def register_crisis_room(app):
+    register_crisis_turn(app)
     app.config['SOCK_SERVER_OPTIONS'] = {'ping_interval': 25, 'max_message_size': 65536}
     sock = Sock(app)
     room = SignalingRoom()

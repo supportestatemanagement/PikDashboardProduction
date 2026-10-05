@@ -74,7 +74,7 @@ def register_dashboard_auth(app, load_officers, create_firebase_token):
     def restrict_broadcaster():
         # Existing public read APIs retain their contract. Signed broadcaster
         # sessions are never accepted outside the explicitly scoped endpoints.
-        allowed = {'/api/login', '/api/session', '/api/session/refresh', '/api/crisis-room/ws'}
+        allowed = {'/api/login', '/api/session', '/api/session/refresh', '/api/crisis-room/ws', '/api/crisis-room/ice-servers'}
         authorization = request.headers.get('Authorization', '')
         if request.path.startswith('/api/') and request.path not in allowed and authorization.startswith('Bearer '):
             try:

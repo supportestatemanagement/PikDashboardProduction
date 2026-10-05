@@ -65,14 +65,64 @@ or media is recovering. OFFLINE means no active broadcast.
 
 ## Network and capacity
 
-Video goes directly from Astina to each viewer using WebRTC; the backend forwards
-only offers, answers, ICE candidates, and room status. Only STUN servers are used
-(`REACT_APP_CRISIS_STUN_URLS`, comma-separated `stun:`/`stuns:` URLs). There is no
-TURN, media relay, recording, Meet integration, or splitting into nine streams.
-Restrictive firewalls or symmetric NAT may prevent a direct connection. Test on
-the actual office and viewer networks. Each extra viewer adds another outbound
-copy of the same captured stream, so office upload bandwidth and CPU determine
-capacity. A backend signaling service alone cannot overcome blocked peer traffic.
+WebRTC tries a direct connection and can use a separately configured TURN relay
+when NAT/firewalls prevent it. The Render backend supplies signaling and temporary
+ICE credentials; it never receives or forwards the captured video. No recording,
+Meet integration, or splitting into nine streams is added. Each additional viewer
+adds another outbound copy of the same stream, including when TURN is selected.
+Office upload bandwidth, CPU, and relay bandwidth determine capacity. TURN data
+transfer can incur provider charges. Test on actual office and viewer networks.
+
+## Activate TURN fallback (required for the failing external viewers)
+
+The code alone does not create a TURN server or provider account. Configure ONE
+of the following options in **Render environment variables**, then redeploy the
+backend and frontend. Do not place provider keys in Vercel or REACT_APP_* variables.
+An authenticated `/api/crisis-room/ice-servers` request returns only short-lived
+credentials with `Cache-Control: no-store`. Credentials remain in browser memory.
+
+Cloudflare TURN (a provider account and TURN key are required):
+
+```env
+CRISIS_TURN_PROVIDER=cloudflare
+CRISIS_TURN_CLOUDFLARE_KEY_ID=YOUR_TURN_KEY_ID
+CRISIS_TURN_CLOUDFLARE_API_TOKEN=YOUR_TURN_CREDENTIAL_GENERATION_TOKEN
+CRISIS_TURN_TTL_SECONDS=3600
+```
+
+Use the token issued for that TURN key, not a public credential or the browser's
+dashboard session token. The backend calls the provider's credential-generation
+API and passes on temporary relay credentials, including TCP/TLS URLs. See
+[Cloudflare credential generation](https://developers.cloudflare.com/realtime/turn/generate-credentials/).
+
+Company coturn server (a reachable TURN host is required):
+
+```env
+CRISIS_TURN_PROVIDER=coturn
+CRISIS_TURN_URLS=turn:turn.COMPANY.example:3478?transport=udp,turns:turn.COMPANY.example:443?transport=tcp
+CRISIS_TURN_SHARED_SECRET=YOUR_RANDOM_SECRET_AT_LEAST_32_CHARACTERS
+CRISIS_TURN_TTL_SECONDS=3600
+```
+
+On coturn, enable `use-auth-secret` and set `static-auth-secret` to exactly the
+same secret. Configure a valid TLS certificate, the actual relay addresses/ports,
+and firewall rules on that separate TURN server. TLS on port 443 is useful for
+restrictive client networks. Render's HTTP signaling service is not the TURN host.
+Temporary credentials use the timestamp/HMAC mechanism documented by
+[coturn](https://github.com/coturn/coturn/blob/master/README.turnserver).
+
+Both Astina and viewers fetch their own temporary ICE configuration before
+negotiation. Valid credentials are cached in memory until near expiry. The client
+renews two minutes before expiry and Astina renegotiates peer connections without
+stopping the HCP capture. Viewers can briefly reconnect during this renewal.
+Temporary renewal failures preserve unexpired credentials and retry. Missing or
+invalid TURN configuration is visible in the page; direct connections still work.
+
+After deployment, stop/start broadcast once (or reload Astina and reselect HCP)
+and refresh viewers. Verify a mobile viewer on cellular data and a PC on another
+network. **Detail koneksi** shows `turn: CONFIGURED` and `route: TURN` when the
+selected candidate path uses the relay, or `route: DIRECT` for a direct path.
+Verify renewal beyond one hour and operation for 24 hours before relying on it.
 
 Existing anonymous dashboard read/upload APIs keep their existing contracts;
 this feature does not retrofit access control across those legacy APIs. Requests
@@ -105,8 +155,9 @@ Open **Detail koneksi** on Astina and on the viewer:
 - `broadcast: OFFLINE`: the server has no active capture. A local screen preview
   on Astina alone does not confirm publishing; Astina must show LIVE.
 - `signaling: CONNECTED`, `broadcast: ACTIVE`, and `ice: failed`/`checking`: SDP
-  signaling works but the direct peer path is failing. Check office firewall and
-  viewer network; STUN cannot overcome every NAT/firewall configuration.
+  signaling works but the media path is failing. If `turn: NOT_CONFIGURED` or
+  `UNAVAILABLE`, configure TURN using the section above. If TURN is configured,
+  check its credentials, connectivity, TLS certificate, and relay firewall ports.
 - Compare `serverId` on Astina and viewer. Different values mean connections landed
   in different workers/instances (or one connection has not completed registration).
   Use one Render instance and one threaded Gunicorn worker for this room.

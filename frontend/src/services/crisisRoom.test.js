@@ -1,4 +1,6 @@
 import { CrisisRoomClient, isCrisisBroadcaster } from './crisisRoom';
+import { dashboardRequest } from './dashboardSession';
+jest.mock('./dashboardSession', () => ({ ...jest.requireActual('./dashboardSession'), dashboardRequest: jest.fn() }));
 
 class FakeSocket {
   static OPEN = 1;
@@ -12,7 +14,8 @@ class FakeSocket {
 
 class FakePeer {
   static instances = [];
-  constructor() { this.connectionState = 'new'; this.tracks = []; this.candidates = []; FakePeer.instances.push(this); }
+  constructor(config) { this.config = config; this.connectionState = 'new'; this.tracks = []; this.candidates = []; FakePeer.instances.push(this); }
+  setConfiguration(config) { this.config = config; }
   addTrack(track, stream) { this.tracks.push([track, stream]); }
   async createOffer() { return { type: 'offer', sdp: 'whole-grid' }; }
   async createAnswer() { return { type: 'answer', sdp: 'viewer-answer' }; }
@@ -42,6 +45,7 @@ beforeEach(() => {
   FakeSocket.instances = [];
   FakePeer.instances = [];
   callbacks = { onStatus: jest.fn(), onStream: jest.fn(), onError: jest.fn(), onSessionExpired: jest.fn() };
+  dashboardRequest.mockResolvedValue({ iceServers: [{ urls: ['stun:test.example:3478'] }], turnConfigured: false, expiresAt: Date.now() + 3600000 });
 });
 afterEach(() => {
   client?.destroy();
@@ -201,4 +205,64 @@ test('missing offer is distinguished from direct WebRTC connectivity failure', a
   await receive(socket, { type: 'offer', peer: 'astina', call: 'grid', sdp: 'offer' });
   jest.advanceTimersByTime(30000);
   expect(callbacks.onError).toHaveBeenLastCalledWith(expect.stringContaining('koneksi video WebRTC belum berhasil'));
+});
+
+test('broadcaster and viewer use temporary backend TURN credentials with direct connections allowed', async () => {
+  const iceServers = [{ urls: ['turns:relay.example:443?transport=tcp'], username: 'temporary', credential: 'temporary-password' }];
+  dashboardRequest.mockResolvedValue({ iceServers, turnConfigured: true, expiresAt: Date.now() + 3600000 });
+  client = new CrisisRoomClient({ session, broadcast: false, ...callbacks });
+  const socket = FakeSocket.instances[0];
+  socket.open();
+  await receive(socket, { type: 'ready', live: true });
+  await receive(socket, { type: 'offer', peer: 'astina', call: 'grid', sdp: 'offer' });
+  expect(dashboardRequest).toHaveBeenCalledWith('/api/crisis-room/ice-servers', session, expect.any(AbortSignal));
+  expect(FakePeer.instances[0].config).toEqual({ iceServers, iceTransportPolicy: 'all' });
+  const pc = FakePeer.instances[0];
+  pc.getStats = jest.fn().mockResolvedValue(new Map([
+    ['transport', { type: 'transport', selectedCandidatePairId: 'pair' }],
+    ['pair', { localCandidateId: 'local', remoteCandidateId: 'remote' }],
+    ['local', { candidateType: 'relay' }], ['remote', { candidateType: 'host' }],
+  ]));
+  await client.reportPeerRoute(client.peers.get('astina'));
+  expect(client.diagnostics.route).toBe('TURN');
+});
+
+test('unavailable TURN credentials preserve the direct path and display a configuration error', async () => {
+  dashboardRequest.mockRejectedValue(new Error('backend unavailable'));
+  client = new CrisisRoomClient({ session, broadcast: false, ...callbacks });
+  const socket = FakeSocket.instances[0];
+  socket.open();
+  await receive(socket, { type: 'ready', live: true });
+  await receive(socket, { type: 'offer', peer: 'astina', call: 'grid', sdp: 'offer' });
+  expect(FakePeer.instances[0].config.iceTransportPolicy).toBe('all');
+  expect(client.diagnostics.turn).toBe('UNAVAILABLE');
+  expect(callbacks.onError).toHaveBeenLastCalledWith(expect.stringContaining('konfigurasi TURN di Render'));
+});
+
+test('temporary TURN credentials renew and renegotiate while keeping Astina capture running', async () => {
+  const track = { stop: jest.fn(), addEventListener: jest.fn() };
+  const stream = { getVideoTracks: () => [track], getTracks: () => [track] };
+  Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getDisplayMedia: jest.fn().mockResolvedValue(stream) } });
+  const originalExpiry = Date.now() + 300000;
+  dashboardRequest.mockResolvedValueOnce({ iceServers: [{ urls: ['turn:relay.example:3478'], username: 'old', credential: 'old-password' }], turnConfigured: true, expiresAt: originalExpiry })
+    .mockImplementation(async () => ({ iceServers: [{ urls: ['turn:relay.example:3478'], username: 'renewed', credential: 'new-password' }], turnConfigured: true, expiresAt: Date.now() + 3600000 }));
+  client = new CrisisRoomClient({ session, broadcast: true, ...callbacks });
+  const socket = FakeSocket.instances[0];
+  socket.open();
+  await receive(socket, { type: 'ready', live: false });
+  await client.start();
+  await receive(socket, { type: 'status', live: true });
+  await receive(socket, { type: 'viewer-joined', peer: 'viewer' });
+  const pc = FakePeer.instances[0];
+  pc.connectionState = 'connected';
+  pc.onconnectionstatechange();
+  const send = socket.send.bind(socket);
+  socket.send = value => { send(value); if (JSON.parse(value).type === 'ping') client.lastReceived = Date.now(); };
+  jest.advanceTimersByTime(180000);
+  await client.queue;
+  expect(dashboardRequest).toHaveBeenCalledTimes(2);
+  expect(FakePeer.instances.at(-1).config.iceServers[0].username).toBe('renewed');
+  expect(track.stop).not.toHaveBeenCalled();
+  expect(client.stream).toBe(stream);
+  expect(socket.sent.filter(message => message.type === 'offer')).toHaveLength(2);
 });
