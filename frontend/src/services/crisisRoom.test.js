@@ -129,7 +129,7 @@ test('viewer answers, receives live video and returns offline when broadcast sto
   await receive(socket, { type: 'offer', peer: 'astina', call: 'grid', sdp: 'offer' });
   expect(socket.sent.slice(-2).map(message => message.type)).toEqual(['answer', 'ice']);
   const peer = FakePeer.instances[0];
-  expect(dashboardRequest).not.toHaveBeenCalled();
+  expect(dashboardRequest).toHaveBeenCalledTimes(1);
   expect(peer.config.iceServers.every(server => !JSON.stringify(server.urls).includes('turn:'))).toBe(true);
   const stream = {};
   peer.ontrack({ streams: [stream] });
@@ -149,7 +149,7 @@ test('viewer requests TURN only after the STUN-only attempt fails', async () => 
   socket.open();
   await receive(socket, { type: 'ready', live: true });
   await receive(socket, { type: 'offer', peer: 'astina', call: 'direct', sdp: 'offer' });
-  expect(dashboardRequest).not.toHaveBeenCalled();
+  expect(dashboardRequest).toHaveBeenCalledTimes(1);
   const direct = FakePeer.instances[0];
   direct.connectionState = 'failed';
   direct.onconnectionstatechange();
@@ -169,7 +169,7 @@ test('publisher timeout falls back for one viewer while another remains STUN-onl
   await receive(socket, { type: 'ready', live: true });
   await receive(socket, { type: 'viewer-joined', peer: 'external' });
   await receive(socket, { type: 'viewer-joined', peer: 'office' });
-  expect(dashboardRequest).not.toHaveBeenCalled();
+  expect(dashboardRequest).toHaveBeenCalledTimes(1);
   const office = client.peers.get('office').pc;
   office.connectionState = 'connected';
   office.onconnectionstatechange();
@@ -287,6 +287,62 @@ test('TURN fallback uses temporary backend credentials with direct connections a
   ]));
   await client.reportPeerRoute(client.peers.get('astina'));
   expect(client.diagnostics.route).toBe('TURN');
+});
+
+test('backend relay debug policy forces TURN on the first attempt at both ends', async () => {
+  const iceServers = [{ urls: ['stun:metered.example:80'] }, { urls: ['turns:metered.example:443?transport=tcp'], username: 'temporary', credential: 'secret' }];
+  dashboardRequest.mockResolvedValue({ iceServers, turnConfigured: true, iceTransportPolicy: 'relay', expiresAt: Date.now() + 3600000 });
+  const track = { stop: jest.fn() };
+  client = new CrisisRoomClient({ session, broadcast: true, ...callbacks });
+  client.stream = { getVideoTracks: () => [track], getTracks: () => [track] };
+  const socket = FakeSocket.instances[0];
+  socket.open();
+  await receive(socket, { type: 'ready', live: true });
+  await receive(socket, { type: 'viewer-joined', peer: 'viewer' });
+  expect(FakePeer.instances[0].config).toEqual({ iceServers, iceTransportPolicy: 'relay' });
+  expect(socket.sent.find(message => message.type === 'offer').useTurn).toBe(true);
+  client.destroy();
+  client = new CrisisRoomClient({ session, broadcast: false, ...callbacks });
+  const viewerSocket = FakeSocket.instances.at(-1);
+  viewerSocket.open();
+  await receive(viewerSocket, { type: 'ready', live: true });
+  await receive(viewerSocket, { type: 'offer', peer: 'astina', call: 'debug', sdp: 'offer' });
+  expect(FakePeer.instances.at(-1).config).toEqual({ iceServers, iceTransportPolicy: 'relay' });
+  expect(client.diagnostics.mode).toBe('FORCE_RELAY_DEBUG');
+});
+
+test('normal initial connection uses only backend STUN even when Metered TURN is available', async () => {
+  dashboardRequest.mockResolvedValue({ iceServers: [{ urls: ['stun:metered.example:80'] }, { urls: ['turn:metered.example:80'], username: 'u', credential: 'p' }], turnConfigured: true, iceTransportPolicy: 'all', expiresAt: Date.now() + 3600000 });
+  client = new CrisisRoomClient({ session, broadcast: false, ...callbacks });
+  const socket = FakeSocket.instances[0];
+  socket.open();
+  await receive(socket, { type: 'ready', live: true });
+  await receive(socket, { type: 'offer', peer: 'astina', call: 'normal', sdp: 'offer' });
+  expect(FakePeer.instances[0].config).toEqual({ iceServers: [{ urls: ['stun:metered.example:80'] }], iceTransportPolicy: 'all' });
+  expect(client.diagnostics.attemptMode).toBe('STUN_ONLY');
+});
+
+test('ICE logging includes states and candidate types without addresses or credentials', async () => {
+  const log = jest.spyOn(console, 'info').mockImplementation(() => {});
+  try {
+    client = new CrisisRoomClient({ session, broadcast: false, ...callbacks });
+    const peer = client.createPeer('astina', 'safe');
+    peer.pc.iceGatheringState = 'complete';
+    peer.pc.iceConnectionState = 'connected';
+    peer.pc.onicegatheringstatechange();
+    peer.pc.oniceconnectionstatechange();
+    peer.pc.getStats = jest.fn().mockResolvedValue(new Map([
+      ['transport', { type: 'transport', selectedCandidatePairId: 'pair' }],
+      ['pair', { localCandidateId: 'local', remoteCandidateId: 'remote', username: 'secret' }],
+      ['local', { candidateType: 'relay', address: 'sensitive-ip' }], ['remote', { candidateType: 'host', credential: 'private-password' }],
+    ]));
+    await client.reportPeerRoute(peer);
+    expect(client.diagnostics.iceGatheringState).toBe('complete');
+    expect(client.diagnostics.selectedCandidatePair).toBe('relay / host');
+    const output = JSON.stringify(log.mock.calls);
+    expect(output).toContain('relay');
+    for (const sensitive of ['sensitive-ip', 'private-password', 'secret']) expect(output).not.toContain(sensitive);
+  } finally { log.mockRestore(); }
 });
 
 test('unavailable TURN credentials preserve the direct path and display a configuration error', async () => {

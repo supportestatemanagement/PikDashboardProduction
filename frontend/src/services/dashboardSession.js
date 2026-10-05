@@ -23,7 +23,15 @@ export async function dashboardRequest(path, session, signal) {
     error.code = 'session-expired';
     throw error;
   }
-  if (!response.ok) throw new Error('Dashboard service unavailable');
+  if (!response.ok) {
+    const error = new Error('Dashboard service unavailable');
+    if (path === '/api/crisis-room/ice-servers') {
+      const body = await response.json().catch(() => ({}));
+      // Only sanitized provider messages from our authenticated backend.
+      if (typeof body.message === 'string' && body.message.startsWith('Metered:')) error.turnMessage = body.message;
+    }
+    throw error;
+  }
   return response.json();
 }
 

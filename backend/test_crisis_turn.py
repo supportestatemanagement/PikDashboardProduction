@@ -5,6 +5,7 @@ import json
 import os
 import unittest
 from unittest.mock import Mock, patch
+from urllib.error import HTTPError
 
 from flask import Flask
 from dashboard_auth import register_dashboard_auth, session_serializer
@@ -76,6 +77,120 @@ class TurnCredentialTests(unittest.TestCase):
         request = call.call_args.args[0]
         self.assertEqual(json.loads(request.data), {'ttl': 3600})
         self.assertEqual(request.headers['Authorization'], 'Bearer private-api-token')
+
+    def metered_env(self):
+        return patch.dict(os.environ, {'CRISIS_TURN_PROVIDER': 'metered',
+            'CRISIS_TURN_METERED_DOMAIN': 'https://office-app.metered.live/',
+            'CRISIS_TURN_METERED_APP_ID': 'app-123',
+            'CRISIS_TURN_METERED_SECRET_KEY': 'private+secret&value',
+            'CRISIS_TURN_FORCE_RELAY': 'false'})
+
+    def fresh_cache(self):
+        return patch('crisis_turn._metered_cache', {'key': None, 'active': None, 'pending': None, 'draft': None, 'retryAt': 0, 'error': None})
+
+    def upstream(self, payload):
+        stream = Mock(read=Mock(return_value=json.dumps(payload).encode()))
+        return Mock(__enter__=Mock(return_value=stream), __exit__=Mock(return_value=False))
+
+    def create_payload(self):
+        return {'username': 'temporary', 'password': 'temporary-password',
+                'apiKey': 'credential-api-key', 'expiryInSeconds': 3600}
+
+    def ice_payload(self):
+        return [{'urls': 'stun:stun.relay.example:80', 'extra': 'discard'},
+                {'urls': ['turn:relay.example:80', 'turns:relay.example:443?transport=tcp'],
+                 'username': 'temporary', 'credential': 'temporary-password',
+                 'secretKey': 'hidden-extra'}]
+
+    def test_metered_creates_expiring_credentials_caches_and_waits_for_propagation(self):
+        with self.metered_env(), self.fresh_cache(), patch('crisis_turn.time.time', return_value=1000) as clock, patch('crisis_turn.urlopen', side_effect=[self.upstream(self.create_payload()), self.upstream(self.ice_payload())]) as call:
+            response = self.client.get('/api/crisis-room/ice-servers', headers=self.headers())
+            self.assertEqual(response.status_code, 503)
+            self.assertIn('2 menit', response.json['message'])
+            create, fetch = [args.args[0] for args in call.call_args_list]
+            self.assertEqual(create.method, 'POST')
+            self.assertEqual(create.full_url, 'https://office-app.metered.live/api/v1/turn/credential?secretKey=private%2Bsecret%26value')
+            self.assertEqual(json.loads(create.data), {'expiryInSeconds': 3600, 'label': 'crisis-room-app-123'})
+            self.assertEqual(fetch.full_url, 'https://office-app.metered.live/api/v1/turn/credentials?apiKey=credential-api-key')
+            clock.return_value = 1119
+            self.assertEqual(self.client.get('/api/crisis-room/ice-servers', headers=self.headers()).status_code, 503)
+            clock.return_value = 1120
+            for username, role in [('Astina', 'crisis_broadcaster'), ('viewer', 'operator')]:
+                response = self.client.get('/api/crisis-room/ice-servers', headers=self.headers(username, role))
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json['expiresAt'], 4600000)
+                self.assertEqual(response.json['iceTransportPolicy'], 'all')
+                self.assertEqual(response.json['iceServers'][-1]['credential'], 'temporary-password')
+                for hidden in ['private+secret', 'credential-api-key', 'secretKey', 'extra', 'app-123']:
+                    self.assertNotIn(hidden, response.get_data(as_text=True))
+                self.assertEqual(response.headers['Cache-Control'], 'no-store')
+            self.assertEqual(call.call_count, 2)
+
+    def test_metered_rotation_keeps_old_credential_until_new_one_propagates(self):
+        replacement = [{'urls': 'turn:relay.example:80', 'username': 'new', 'credential': 'new-password'}]
+        with self.metered_env(), self.fresh_cache(), patch('crisis_turn.time.time', return_value=1000) as clock, patch('crisis_turn.urlopen', side_effect=[self.upstream(self.create_payload()), self.upstream(self.ice_payload()), self.upstream(self.create_payload()), self.upstream(replacement)]) as call:
+            self.assertEqual(self.client.get('/api/crisis-room/ice-servers', headers=self.headers()).status_code, 503)
+            clock.return_value = 1120
+            self.assertEqual(ice_configuration()['iceServers'][-1]['username'], 'temporary')
+            clock.return_value = 4300
+            self.assertEqual(ice_configuration()['expiresAt'], 4600000)
+            clock.return_value = 4419
+            self.assertEqual(ice_configuration()['iceServers'][-1]['username'], 'temporary')
+            clock.return_value = 4420
+            self.assertEqual(ice_configuration()['iceServers'][-1]['username'], 'new')
+            self.assertEqual(ice_configuration()['expiresAt'], 7900000)
+            self.assertEqual(call.call_count, 4)
+
+    def test_metered_failed_ice_fetch_reuses_created_credential_on_retry(self):
+        with self.metered_env(), self.fresh_cache(), patch('crisis_turn.time.time', return_value=1000) as clock, patch('crisis_turn.urlopen', side_effect=[self.upstream(self.create_payload()), TimeoutError('secret'), self.upstream(self.ice_payload())]) as call:
+            self.assertEqual(self.client.get('/api/crisis-room/ice-servers', headers=self.headers()).status_code, 503)
+            self.assertEqual(self.client.get('/api/crisis-room/ice-servers', headers=self.headers()).status_code, 503)
+            self.assertEqual(call.call_count, 2)
+            clock.return_value = 1030
+            self.assertEqual(self.client.get('/api/crisis-room/ice-servers', headers=self.headers()).status_code, 503)
+            self.assertEqual([args.args[0].method for args in call.call_args_list], ['POST', 'GET', 'GET'])
+
+    def test_metered_renewal_failure_keeps_valid_credentials_and_never_returns_expired_ones(self):
+        with self.metered_env(), self.fresh_cache(), patch('crisis_turn.time.time', return_value=1000) as clock, patch('crisis_turn.urlopen', side_effect=[self.upstream(self.create_payload()), self.upstream(self.ice_payload()), TimeoutError('private-secret'), TimeoutError('private-secret')]):
+            self.assertEqual(self.client.get('/api/crisis-room/ice-servers', headers=self.headers()).status_code, 503)
+            clock.return_value = 1120
+            self.assertEqual(ice_configuration()['expiresAt'], 4600000)
+            clock.return_value = 4300
+            self.assertEqual(ice_configuration()['expiresAt'], 4600000)
+            clock.return_value = 4600
+            self.assertEqual(self.client.get('/api/crisis-room/ice-servers', headers=self.headers()).status_code, 503)
+
+    def test_metered_maintenance_starts_only_once_and_only_for_metered(self):
+        from crisis_turn import start_metered_maintenance
+        with patch('crisis_turn._metered_worker_started', False), patch('crisis_turn.threading.Thread') as worker:
+            start_metered_maintenance()
+            worker.assert_not_called()
+            with self.metered_env():
+                start_metered_maintenance()
+                start_metered_maintenance()
+            worker.assert_called_once()
+            self.assertTrue(worker.call_args.kwargs['daemon'])
+            worker.return_value.start.assert_called_once()
+
+    def test_metered_errors_are_safe_and_debug_relay_is_explicit(self):
+        with self.metered_env(), self.fresh_cache():
+            for failure in [HTTPError('https://private-secret', 401, 'private-secret', {}, None), TimeoutError('private-secret')]:
+                with patch('crisis_turn.urlopen', side_effect=failure):
+                    response = self.client.get('/api/crisis-room/ice-servers', headers=self.headers())
+                self.assertEqual(response.status_code, 503)
+                self.assertIn('Metered:', response.json['message'])
+                self.assertNotIn('private-secret', response.get_data(as_text=True))
+            with patch.dict(os.environ, {'CRISIS_TURN_FORCE_RELAY': 'true'}), patch('crisis_turn.metered_servers', return_value=([{'urls': ['turn:relay.example'], 'username': 'user', 'credential': 'pass'}], 9999999999)):
+                self.assertEqual(ice_configuration()['iceTransportPolicy'], 'relay')
+
+    def test_metered_rejects_invalid_host_and_malformed_response(self):
+        with self.metered_env(), self.fresh_cache(), patch.dict(os.environ, {'CRISIS_TURN_METERED_DOMAIN': 'https://attacker.example'}), patch('crisis_turn.urlopen') as call:
+            self.assertEqual(self.client.get('/api/crisis-room/ice-servers', headers=self.headers()).status_code, 503)
+            call.assert_not_called()
+        for payload in [{}, [], [{'urls': 'https://bad', 'username': 'u', 'credential': 'p'}], [{'urls': 'turn:relay.example'}]]:
+            with self.metered_env(), self.fresh_cache(), patch('crisis_turn.urlopen', side_effect=[self.upstream(self.create_payload()), self.upstream(payload)]):
+                response = self.client.get('/api/crisis-room/ice-servers', headers=self.headers())
+                self.assertEqual(response.status_code, 503)
 
 
 if __name__ == '__main__':

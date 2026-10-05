@@ -65,8 +65,9 @@ or media is recovering. OFFLINE means no active broadcast.
 
 ## Network and capacity
 
-Each new viewer first negotiates using STUN only on both ends, without fetching
-TURN credentials or gathering relay candidates. A failed connection, a 30-second
+Each new viewer fetches authenticated ICE configuration from the backend, then
+first negotiates using only its STUN entries on both ends without gathering relay
+candidates. A failed connection, a 30-second
 connection timeout, or an 8-second disconnection triggers a fresh offer for that
 viewer with optional TURN fallback. Other viewers keep their existing connections.
 If no TURN provider is configured, retries remain direct and show a configuration
@@ -78,6 +79,91 @@ Office upload bandwidth, CPU, and relay bandwidth determine capacity. TURN data
 transfer can incur provider charges. Test on actual office and viewer networks.
 
 ## Optional TURN fallback
+
+Metered is the selected provider in `backend/.env.example`. Set these values
+manually in Render; no production deployment or environment mutation is automated:
+
+```env
+CRISIS_TURN_PROVIDER=metered
+CRISIS_TURN_METERED_APP_ID=<APP_ID_FROM_DEVELOPERS>
+CRISIS_TURN_METERED_DOMAIN=<YOUR_APP.metered.live>
+CRISIS_TURN_METERED_SECRET_KEY=<SECRET_KEY_FROM_DEVELOPERS>
+CRISIS_TURN_TTL_SECONDS=3600
+CRISIS_TURN_FORCE_RELAY=false
+```
+
+Copy the app ID, Metered domain, and Secret key from Developers into Render only.
+DOMAIN accepts `example.metered.live` or `https://example.metered.live/`; arbitrary
+hosts, paths, ports, userinfo, or non-HTTPS URLs are rejected. APP_ID identifies
+the credential label `crisis-room-<APP_ID>`; the documented application TURN API
+uses the domain, not APP_ID in an invented URL path or authentication field.
+The backend first performs
+`POST https://<domain>/api/v1/turn/credential?secretKey=...` with JSON
+`{expiryInSeconds: 3600, label: ...}`, then calls
+`GET https://<domain>/api/v1/turn/credentials?apiKey=<CREATED_CREDENTIAL_KEY>`.
+These v1 endpoints remain the documented APIs for this operation, even though
+Metered also offers v2 listing/project APIs. Both calls have a 10-second timeout.
+The backend validates responses and forwards only STUN/TURN URLs and required
+temporary TURN username/password fields plus expiry/policy metadata. Neither the
+Secret key nor generated API key reaches Vercel, frontend code, browser logs, or
+endpoint error responses. Both roles must supply
+their signed dashboard session to `/api/crisis-room/ice-servers`; responses use
+`Cache-Control: no-store`. Backend error messages distinguish invalid configuration,
+rejected keys, service timeouts, and malformed ICE responses without upstream URLs
+or response bodies. See [Metered Create TURN Credential](https://www.metered.ca/docs/turn-rest-api/post-create-credential/)
+and [Metered Get TURN Credential](https://www.metered.ca/docs/turn-rest-api/get-credential/).
+
+Temporary credentials now have provider-side expiration. Metered TTL is clamped
+to 600–86400 seconds (default 3600) to leave time for propagation and renewal.
+A daemon maintenance worker starts with the Metered backend and checks every
+20 seconds. One process-local credential is reused for Astina and authenticated
+viewers, rather than creating one on every request. A replacement is prepared
+five minutes before expiry and held for 120 seconds before becoming active.
+The existing valid credential stays available during preparation or temporary
+renewal failures. A failed ICE fetch retries the created credential's API key,
+instead of creating another credential on every retry.
+Provider failures have a 30-second retry backoff shared across requests.
+
+After backend startup/restart, allow around 2 minutes for initial preparation;
+until ready, the endpoint returns a sanitized 503 preparation message and normal
+mode can still try STUN. In relay debug, wait for preparation, then refresh Astina
+and viewers before testing. Cache is process-local, so preserve the required
+single-worker/single-instance deployment. Render suspension/restart discards the
+cache and triggers another warmup. Returned `expiresAt` uses the actual credential
+creation time plus TTL; requests never extend a cached credential's expiration.
+Expired credentials are never returned, and quota/authentication failures stay
+visible without exposing secrets. Older APP_NAME/API_KEY environment variables
+are no longer used by this provider. See
+[Metered expiring credentials](https://www.metered.ca/docs/turnserver-guides/expiring-turn-credentials/).
+
+For a temporary relay test set `CRISIS_TURN_FORCE_RELAY=true` **in Render**.
+Backend returns `iceTransportPolicy: relay`; Astina and viewer bypass the initial
+STUN-only attempt and use relay from their first peer connection. Normal production
+uses `false` (`iceTransportPolicy: all`, STUN-first then optional relay fallback).
+After toggling, reload both pages and reselect HCP on Astina to use the fresh
+configuration; existing clients may retain their cached policy until refresh.
+There are no TURN secrets or debug configuration required in Vercel.
+
+Testing with Astina on office Wi-Fi and a viewer on mobile cellular/external Wi-Fi:
+
+1. Enter the Developers settings in Render ENV; allow the backend to create and
+   propagate its initial temporary credential before testing (around 2 minutes).
+2. Enable relay debug temporarily. Refresh Astina, start sharing the HCP grid,
+   then open a logged-in viewer on a different network.
+3. Verify `mode: FORCE_RELAY_DEBUG`, `iceTransportPolicy: relay`, LIVE video,
+   `route: TURN`, and candidate types containing `relay`. Browser console logs
+   ICE gathering, ICE connection, and peer connection states plus only selected
+   candidate types; no IP addresses, SDP, API keys, or passwords are logged.
+4. Move viewer to another menu: viewer closes immediately and Astina removes that
+   peer without stopping capture. Return to Crisis Room: reconnect automatically.
+5. Hide viewer tab for <30 seconds: connection stays. Hide >30 seconds: disconnect;
+   returning recreates it. Hide Astina tab: screen sharing continues. Connect a
+   second viewer while capture is active and confirm it receives the current grid.
+6. Set relay debug back to false and refresh both pages. Expect STUN_ONLY initially,
+   then TURN_FALLBACK if direct ICE fails (or after 30 seconds). Check LIVE and
+   `route: TURN` on blocked networks or `route: DIRECT` where P2P succeeds.
+7. Test beyond the refresh interval and provider credential expiration/rotation.
+   Mobile OS suspension can delay the viewer's 30-second background timer.
 
 The code alone does not create a TURN server or provider account. Configure ONE
 of the following options in **Render environment variables**, then redeploy the
@@ -115,7 +201,7 @@ restrictive client networks. Render's HTTP signaling service is not the TURN hos
 Temporary credentials use the timestamp/HMAC mechanism documented by
 [coturn](https://github.com/coturn/coturn/blob/master/README.turnserver).
 
-Only fallback attempts fetch temporary ICE configuration on Astina and the viewer.
+Both Astina and viewers fetch ICE configuration before negotiating a new peer.
 Valid credentials are cached in memory until near expiry. The client
 renews two minutes before expiry and Astina renegotiates only fallback peers without
 stopping the HCP capture. Viewers can briefly reconnect during this renewal.
@@ -125,7 +211,8 @@ invalid TURN configuration is visible in the page; direct connections still work
 After deployment, stop/start broadcast once (or reload Astina and reselect HCP)
 and refresh viewers. Verify a mobile viewer on cellular data and a PC on another
 network. **Detail koneksi** shows `mode: STUN_FIRST`, `attemptMode: STUN_ONLY`,
-and `turn: NOT_REQUESTED` before fallback. `route: DIRECT` confirms the selected
+and `turn: CONFIGURED` if the backend supplies relay credentials (this does not
+mean relay is being used). `route: DIRECT` confirms the selected
 media path is direct. After failure, `attemptMode: TURN_FALLBACK` indicates the
 second attempt, which still allows direct ICE. It shows `turn: CONFIGURED` and `route: TURN` when the
 selected candidate path uses the relay, or `route: DIRECT` for a direct path.

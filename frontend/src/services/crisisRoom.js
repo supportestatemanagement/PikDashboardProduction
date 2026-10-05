@@ -47,8 +47,8 @@ export class CrisisRoomClient {
         this.iceExpiresAt = config.expiresAt;
         this.iceRetryAfter = 0;
         this.turnConfigured = Boolean(config.turnConfigured);
-        this.diagnose({ turn: this.turnConfigured ? 'CONFIGURED' : 'NOT_CONFIGURED' });
-        if (!this.turnConfigured) this.onError('TURN belum dikonfigurasi di backend. Koneksi langsung tetap dicoba; perangkat pada jaringan lain mungkin gagal.');
+        this.forceRelay = config.iceTransportPolicy === 'relay';
+        this.diagnose({ turn: this.turnConfigured ? 'CONFIGURED' : 'NOT_CONFIGURED', mode: this.forceRelay ? 'FORCE_RELAY_DEBUG' : 'STUN_FIRST', iceTransportPolicy: this.forceRelay ? 'relay' : 'all' });
       } catch (failure) {
         if (this.closed) return;
         if (failure.code === 'session-expired') {
@@ -66,7 +66,7 @@ export class CrisisRoomClient {
         this.iceExpiresAt = Date.now() + 90000;
         this.turnConfigured = false;
         this.diagnose({ turn: 'UNAVAILABLE' });
-        this.onError('Kredensial TURN belum tersedia dari backend. Koneksi langsung tetap dicoba. Periksa konfigurasi TURN di Render.');
+        this.onError(failure.turnMessage || 'Kredensial TURN belum tersedia dari backend. Koneksi langsung tetap dicoba. Periksa konfigurasi TURN di Render.');
       }
     })();
     try { await this.loadingIce; }
@@ -84,7 +84,7 @@ export class CrisisRoomClient {
         if (this.iceExpiresAt <= previousExpiry) { this.scheduleIceRefresh(); return; }
         // Fresh credentials and a new ICE allocation keep a 24-hour capture
         // working without putting permanent TURN secrets in the browser.
-        for (const peer of this.peers.values()) if (peer.useTurn) peer.pc.setConfiguration({ iceServers: this.iceServers, iceTransportPolicy: 'all' });
+        for (const peer of this.peers.values()) if (peer.useTurn) peer.pc.setConfiguration({ iceServers: this.iceServers, iceTransportPolicy: this.forceRelay ? 'relay' : 'all' });
         if (this.broadcast && this.stream) {
           for (const peer of [...this.peers.values()]) if (peer.useTurn) await this.offer(peer.id, true);
         }
@@ -193,8 +193,8 @@ export class CrisisRoomClient {
         break;
       case 'offer':
         if (!this.broadcast) {
-          const useTurn = message.useTurn === true;
-          if (useTurn) await this.ensureIceConfiguration();
+          await this.ensureIceConfiguration();
+          const useTurn = message.useTurn === true || this.forceRelay;
           if (this.closed || !this.ready) return;
           clearTimeout(this.offerWait);
           this.clearPeers();
@@ -257,11 +257,18 @@ export class CrisisRoomClient {
 
   createPeer(id, call, useTurn = false) {
     this.removePeer(id);
-    const pc = new RTCPeerConnection({ iceServers: useTurn ? this.iceServers : this.defaultIceServers, iceTransportPolicy: 'all' });
+    useTurn = useTurn || this.forceRelay;
+    if (useTurn && !this.turnConfigured && this.diagnostics.turn !== 'UNAVAILABLE') this.onError('TURN belum dikonfigurasi di backend. Koneksi langsung tetap dicoba; perangkat pada jaringan lain mungkin gagal.');
+    const stunServers = this.iceServers.flatMap(server => {
+      const urls = (Array.isArray(server.urls) ? server.urls : [server.urls]).filter(url => /^stuns?:/.test(url));
+      return urls.length ? [{ urls }] : [];
+    });
+    const pc = new RTCPeerConnection({ iceServers: useTurn ? this.iceServers : (stunServers.length ? stunServers : this.defaultIceServers), iceTransportPolicy: this.forceRelay ? 'relay' : 'all' });
     const peer = { id, call, pc, useTurn, pendingIce: [], outgoingIce: [], sentDescription: false };
     this.peers.set(id, peer);
     this.scheduleIceRefresh();
     this.diagnose({ video: 'NEGOTIATING', ice: pc.iceConnectionState || 'new', peers: this.peers.size, attemptMode: useTurn ? 'TURN_FALLBACK' : 'STUN_ONLY', route: 'PENDING' });
+    this.reportIceStates(peer);
     peer.timeout = setTimeout(() => {
       if (pc.connectionState !== 'connected') {
         this.onError('Signaling terhubung, tetapi koneksi video WebRTC belum berhasil. Periksa jaringan atau firewall antara PC Astina dan viewer.');
@@ -279,7 +286,7 @@ export class CrisisRoomClient {
     };
     pc.onconnectionstatechange = () => {
       if (this.closed || this.peers.get(id) !== peer) return;
-      this.diagnose({ video: pc.connectionState, ice: pc.iceConnectionState || 'unknown' });
+      this.reportIceStates(peer);
       if (pc.connectionState === 'connected') {
         clearTimeout(peer.timeout);
         clearTimeout(peer.disconnected);
@@ -296,9 +303,18 @@ export class CrisisRoomClient {
       }
     };
     pc.oniceconnectionstatechange = () => {
-      if (this.peers.get(id) === peer) this.diagnose({ ice: pc.iceConnectionState });
+      if (this.peers.get(id) === peer) this.reportIceStates(peer);
+    };
+    pc.onicegatheringstatechange = () => {
+      if (this.peers.get(id) === peer) this.reportIceStates(peer);
     };
     return peer;
+  }
+
+  reportIceStates(peer) {
+    const states = { iceGatheringState: peer.pc.iceGatheringState || 'new', iceConnectionState: peer.pc.iceConnectionState || 'new', connectionState: peer.pc.connectionState };
+    this.diagnose({ ...states, video: states.connectionState, ice: states.iceConnectionState });
+    console.info('[Crisis Room ICE]', states);
   }
 
   async reportPeerRoute(peer) {
@@ -316,7 +332,10 @@ export class CrisisRoomClient {
       if (pair) {
         const local = stats.get(pair.localCandidateId);
         const remote = stats.get(pair.remoteCandidateId);
-        this.diagnose({ route: local?.candidateType === 'relay' || remote?.candidateType === 'relay' ? 'TURN' : 'DIRECT' });
+        const safeType = candidate => ['host', 'srflx', 'prflx', 'relay'].includes(candidate?.candidateType) ? candidate.candidateType : 'unknown';
+        const selectedCandidatePair = { local: safeType(local), remote: safeType(remote) };
+        this.diagnose({ route: local?.candidateType === 'relay' || remote?.candidateType === 'relay' ? 'TURN' : 'DIRECT', selectedCandidatePair: `${selectedCandidatePair.local} / ${selectedCandidatePair.remote}` });
+        console.info('[Crisis Room selected ICE pair]', selectedCandidatePair);
       }
     } catch { /* Diagnostics must never disrupt a working video. */ }
   }
@@ -343,7 +362,8 @@ export class CrisisRoomClient {
   async offer(id, useTurn = false) {
     const request = {};
     this.offerRequests.set(id, request);
-    if (useTurn) await this.ensureIceConfiguration();
+    await this.ensureIceConfiguration();
+    useTurn = useTurn || this.forceRelay;
     if (this.closed || !this.stream || !this.ready || this.offerRequests.get(id) !== request) return;
     const call = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const peer = this.createPeer(id, call, useTurn);
