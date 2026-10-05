@@ -70,7 +70,7 @@ export default function WaterQualityTrend({ metric, points, areas, loading = fal
           <rect x={left} y={y(6.5)} width={right - left} height={bottom - y(6.5)} fill="#f8c7c7" />
         </g>}
         {Array.from({ length: 5 }, (_, index) => minimum + (maximum - minimum) * index / 4).map(value => <g key={value}><line x1={left} x2={right} y1={y(value)} y2={y(value)} stroke="#e7edf5" /><text x={left - 10} y={y(value) + 4} textAnchor="end">{metric === 'pH' ? value.toFixed(2) : Math.round(value)}</text></g>)}
-        {(metric === 'TDS' ? [300, 500] : [6.5, 8.5]).map(value => <g key={value}><line x1={left} x2={right} y1={y(value)} y2={y(value)} stroke={metric === 'TDS' && value === 500 ? '#b45309' : '#d95454'} strokeDasharray="5 5" /><text className="water-threshold-label" style={metric === 'TDS' && value === 500 ? { fill: '#b45309' } : undefined} x={right + 6} y={y(value)} dominantBaseline="middle">{metric === 'TDS' && value === 500 ? '<500' : value}</text></g>)}
+        {(metric === 'TDS' ? [300, 500] : [6.5, 8.5]).map(value => <g key={value}><line x1={left} x2={right} y1={y(value)} y2={y(value)} stroke="#d95454" strokeDasharray="5 5" /><text className="water-threshold-label" x={right + 6} y={y(value)} dominantBaseline="middle">{value}</text></g>)}
         {areas.map((name, index) => {
           const series = visible.filter(point => point.area === name);
           return <g key={name}><polyline fill="none" stroke={colors[index]} strokeWidth="1.8" points={series.map(point => `${x(point.time)},${y(point.value)}`).join(' ')} />{series.map(point => <g key={point.id}>
@@ -82,9 +82,9 @@ export default function WaterQualityTrend({ metric, points, areas, loading = fal
         <text x={(left + right) / 2} y={height - 18} textAnchor="middle" className="water-axis-title">Date</text>
       </svg></div> : <div className="water-trend-empty">No measurements with a valid date and {metric} value.</div>}
       <div className="water-trend-detail">
-        {metric === 'TDS' && <div className="water-trend-source">Batas tambahan TDS {'<500'} mg/L: <a href="https://jdih.kemkes.go.id/documents/peraturan-menteri-kesehatan-nomor-492menkesperiv2010" target="_blank" rel="noopener noreferrer">JDIH Kemenkes — Permenkes No. 492/Menkes/Per/IV/2010</a></div>}
         <div role="status">{active ? `${active.area} / ${timestamp(active.time)} / ${statistic} ${metric}: ${displayValue(active.value)} / ${active.count} samples` : 'Hover or focus on a point to see its daily value and sample count.'}</div>
-        <div className="water-trend-source">Parameter wajib air minum ({metric === 'TDS' ? 'TDS <300' : 'pH 6.5–8.5'}): <a href="https://peraturan.bpk.go.id/Details/245563/permenkes-no-2-tahun-2023" target="_blank" rel="noopener noreferrer">JDIH BPK — Permenkes No. 2 Tahun 2023</a></div>
+        <div className="water-trend-source">Parameter wajib air minum ({metric === 'TDS' ? 'TDS <300 mg/L' : 'pH 6.5–8.5'}): <a href="https://peraturan.bpk.go.id/Details/245563/permenkes-no-2-tahun-2023" target="_blank" rel="noopener noreferrer">JDIH BPK — Permenkes No. 2 Tahun 2023</a></div>
+        {metric === 'TDS' && <div className="water-trend-source">Parameter wajib air minum (TDS {'<500'} mg/L): <a href="https://jdih.kemkes.go.id/documents/peraturan-menteri-kesehatan-nomor-492menkesperiv2010" target="_blank" rel="noopener noreferrer">JDIH Kemenkes — Permenkes No. 492/Menkes/Per/IV/2010</a></div>}
       </div>
     </>;
   };
