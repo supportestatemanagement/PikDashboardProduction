@@ -63,7 +63,8 @@ export default function WaterQualityTrend({ metric, points, areas, loading = fal
       {loading ? <div className="water-chart-loading" role="status"><div className="water-loading-grid" aria-hidden="true" /><span>Loading {metric} trend...</span></div> : error ? <div className="water-trend-empty">Trend data could not be loaded.</div> : visible.length ? <div className="water-trend-scroll"><svg className="water-trend-plot" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${metric} ${statistic.toLowerCase()} by date`}>
         <text x="20" y="22" className="water-axis-title">{statistic} {metric}</text>
         {metric === 'TDS' && <g pointerEvents="none">
-          <rect x={left} y={top} width={right - left} height={y(300) - top} fill="#f8c7c7" />
+          <rect x={left} y={top} width={right - left} height={y(500) - top} fill="#f8c7c7" />
+          <rect x={left} y={y(500)} width={right - left} height={y(300) - y(500)} fill="#fff3b0" />
         </g>}
         {metric === 'pH' && <g pointerEvents="none">
           <rect x={left} y={top} width={right - left} height={y(8.5) - top} fill="#f8c7c7" />
