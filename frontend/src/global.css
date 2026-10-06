@@ -238,6 +238,11 @@ body {
 .pw-sea-point{fill:#38bdf8;stroke:white;stroke-width:1;cursor:help}
 .pw-sea-point:focus{outline:none;stroke:#0f172a;stroke-width:3}
 .pw-sea-low circle{fill:#dc3545}.pw-sea-high circle{fill:#259ac9}
+.pw-sea-legend{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 24px;padding:8px 20px 20px;color:#334155;font-size:13px}
+.pw-sea-legend-title{color:#94a3b8;font-weight:600}
+.pw-sea-legend>span{display:inline-flex;align-items:center;gap:10px}
+.pw-sea-legend i{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.pw-sea-legend-high{background:#259ac9}.pw-sea-legend-low{background:#dc3545}
 .pw-sea-low text{fill:#dc3545;font-weight:700}.pw-sea-high text{fill:#259ac9;font-weight:700}
 .pw-current-row article,.pw-panel { border: 1px solid #24364d; border-radius: 10px; background: #101c2e; box-shadow: 0 5px 18px rgba(0,0,0,.18); }
 .pw-current-row article { min-width: 0; min-height: 87px; padding: 13px 14px; display: flex; flex-direction: column; justify-content: center; }

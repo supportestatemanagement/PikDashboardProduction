@@ -199,9 +199,9 @@ function SeaLevelChart({ rows }) {
     {Array.from({ length: 25 }, (_, hour) => <g key={hour}><line x1={x(hour)} x2={x(hour)} y1="300" y2={hour % 2 ? 306 : 311} className="pw-sea-axis" />{hour % 2 === 0 && <text x={x(hour)} y="334" textAnchor="middle">{hour === 24 ? '24:00' : `${hour}:00`}</text>}</g>)}
     {segments.map((points, index) => <polyline key={index} points={points.map(row => `${x(row.hour)},${y(row.value)}`).join(' ')} className="pw-sea-line" />)}
     {available.map(row => <circle key={row.hour} cx={x(row.hour)} cy={y(row.value)} r="4" className="pw-sea-point" tabIndex="0" aria-label={`${row.time}: ${fmt(row.value)} meter`}><title>{row.time}: {fmt(row.value)} M</title></circle>)}
-    {[low, ...(high !== low ? [high] : [])].map((row, index) => <g key={index} className={index ? 'pw-sea-high' : 'pw-sea-low'}><circle cx={x(row.hour)} cy={y(row.value)} r="6" /><text x={Math.min(990, Math.max(130, x(row.hour)))} y={y(row.value) - 17} textAnchor="middle">{index ? 'Tertinggi' : 'Terendah'} · {row.time}</text></g>)}
+    {[low, ...(high !== low ? [high] : [])].map((row, index) => <g key={index} className={index ? 'pw-sea-high' : 'pw-sea-low'}><circle cx={x(row.hour)} cy={y(row.value)} r="6" /><text x={Math.min(990, Math.max(130, x(row.hour)))} y={y(row.value) - 17} textAnchor="middle">{row.time}</text></g>)}
     <text x="560" y="362" textAnchor="middle">Jam (WIB)</text>
-  </svg></div>;
+  </svg><div className="pw-sea-legend" aria-label="Legenda pasang surut"><span className="pw-sea-legend-title">PASANG SURUT</span><span><i className="pw-sea-legend-high" />pasang naik</span><span><i className="pw-sea-legend-low" />pasang surut</span></div></div>;
 }
 
 export function SeaLevelPanel({ data, loading }) {
