@@ -244,7 +244,7 @@ export default function CctvDashboard() {
         .cctv-offline-list li { padding: 9px 12px; overflow-wrap: anywhere; border-bottom: 1px solid #F1F5F9; }
         .cctv-offline-list li:nth-child(even) { background: #F8FAFC; }
         .cctv-offline-list li,.cctv-offline-detail-head { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
-        .cctv-offline-detail-head { padding: 8px 12px; font-size: 11px; font-weight: 700; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; }
+        .cctv-offline-detail-head { padding: 6px 10px; font-size: 9px; line-height: 1.4; gap: 8px; font-weight: 700; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; }
         .cctv-expand-button { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding: 6px 10px; border: 1px solid #CBD5E1; border-radius: 7px; background: white; color: #1E3A8A; cursor: pointer; }
         .cctv-offline-dialog { position: fixed; inset: 0; margin: auto; box-sizing: border-box; width: min(94vw,1600px); max-width: 94vw; height: min(88dvh,900px); max-height: 92dvh; padding: 20px; border: 0; border-radius: 16px; box-shadow: 0 24px 90px #132e5555; background: white; color: #475569; }
         .cctv-offline-dialog::backdrop { background: #13243db3; backdrop-filter: blur(3px); }
