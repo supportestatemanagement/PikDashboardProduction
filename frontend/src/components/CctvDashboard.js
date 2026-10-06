@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from 'react-dom';
 
 const offlineAreaNames = {
   BGM: "Bukit Golf Mediterania",
@@ -9,10 +10,7 @@ const offlineAreaNames = {
 };
 
 function offlineProgress(camera) {
-  const detail = String(camera.Detail ?? '').toLowerCase();
-  if (detail.includes('jaringan')) return 'Dalam proses pembelian';
-  if (detail.includes('rusak') || String(camera.Kondisi ?? '').trim().toUpperCase() === 'RUSAK') return 'Service di distributor';
-  return '—';
+  return String(camera.Progress ?? '').trim() || '—';
 }
 
 export default function CctvDashboard() {
@@ -247,6 +245,13 @@ export default function CctvDashboard() {
         .cctv-offline-list li:nth-child(even) { background: #F8FAFC; }
         .cctv-offline-list li,.cctv-offline-detail-head { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
         .cctv-offline-detail-head { padding: 8px 12px; font-size: 11px; font-weight: 700; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; }
+        .cctv-expand-button { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding: 6px 10px; border: 1px solid #CBD5E1; border-radius: 7px; background: white; color: #1E3A8A; cursor: pointer; }
+        .cctv-offline-dialog { position: fixed; inset: 0; margin: auto; box-sizing: border-box; width: min(94vw,1600px); max-width: 94vw; height: min(88dvh,900px); max-height: 92dvh; padding: 20px; border: 0; border-radius: 16px; box-shadow: 0 24px 90px #132e5555; background: white; color: #475569; }
+        .cctv-offline-dialog::backdrop { background: #13243db3; backdrop-filter: blur(3px); }
+        .cctv-offline-dialog-content { display: flex; flex-direction: column; gap: 16px; height: 100%; min-height: 0; }
+        .cctv-offline-dialog-heading { display: flex; justify-content: space-between; align-items: center; color: #1E3A8A; }
+        .cctv-offline-dialog-heading h2 { margin: 0; font-size: 18px; }
+        .cctv-offline-dialog-body { flex: 1; min-height: 0; }
         .cctv-offline-list p { margin: 0; padding: 12px; color: #64748B; }
         @container (max-width: 700px) {
           .cctv-panels { display: flex; flex-direction: column; }
@@ -460,7 +465,7 @@ export default function CctvDashboard() {
           </div>
 
           <div className="animate-card cctv-offline" style={{ animationDelay: "0.3s" }}>
-            <ChartBox title="CCTV Offline">
+            <OfflineCard>
               <div className="cctv-offline-areas" tabIndex={0} role="region" aria-label="Daftar CCTV offline per area">
                 {loadError ? <p role="alert">Gagal memuat data CCTV offline.</p> : !offlineData ? <p role="status">Memuat data...</p> :
                   <table className="cctv-offline-table" aria-label="CCTV offline menurut area">
@@ -473,7 +478,7 @@ export default function CctvDashboard() {
                     <td key={area} aria-labelledby={`offline-area-${area}`}>
                       <div className="cctv-offline-list">
                         {cameras.length === 0 ? <p>Tidak ada CCTV offline.</p> : (
-                          <><div className="cctv-offline-detail-head"><span>CCTV</span><span>Detail</span><span title="Data dummy berdasarkan detail kerusakan">Progress</span></div><ul>{cameras.map((camera, index) => (
+                          <><div className="cctv-offline-detail-head"><span>CCTV</span><span>Detail</span><span>Progress</span></div><ul>{cameras.map((camera, index) => (
                             <li key={index}><span>{String(camera["Nama Pada Layar (OSD)"] ?? "").trim() || "—"}</span><span>{String(camera["Detail"] ?? "").trim() || "—"}</span><span>{offlineProgress(camera)}</span></li>
                           ))}</ul></>
                         )}
@@ -482,7 +487,7 @@ export default function CctvDashboard() {
                     ))}</tr></tbody>
                   </table>}
               </div>
-            </ChartBox>
+            </OfflineCard>
           </div>
 
           {/* Distribusi di baris keempat agar panel offline mendapat dua kolom. */}
@@ -626,6 +631,23 @@ function GroupedBarChartWithGrid({ data, maxDistCount }) {
 }
 
 // UPDATE: Standarisasi Judul pada fungsi ChartBox
+function OfflineCard({ children }) {
+  const [expanded, setExpanded] = useState(false);
+  const dialogRef = useRef(null);
+  const expandRef = useRef(null);
+  useEffect(() => {
+    if (!expanded) return;
+    const dialog = dialogRef.current;
+    const button = expandRef.current;
+    dialog.showModal();
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { dialog.close(); document.body.style.overflow = previous; button?.focus(); };
+  }, [expanded]);
+  return <><ChartBox title="CCTV Offline" headerRight={<button ref={expandRef} type="button" className="cctv-expand-button" aria-label="Perbesar CCTV Offline" onClick={() => setExpanded(true)}><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4M3 3l5 5m9-5-5 5M3 17l5-5m9 5-5-5" /></svg></button>}>{children}</ChartBox>
+    {expanded && createPortal(<dialog ref={dialogRef} className="cctv-offline-dialog" aria-label="CCTV Offline diperbesar" onCancel={() => setExpanded(false)} onClick={event => { if (event.target === event.currentTarget) setExpanded(false); }}><div className="cctv-offline-dialog-content"><div className="cctv-offline-dialog-heading"><h2>CCTV Offline</h2><button type="button" className="cctv-expand-button" onClick={() => setExpanded(false)}>Tutup</button></div><div className="cctv-offline-dialog-body">{children}</div></div></dialog>, document.body)}</>;
+}
+
 function ChartBox({ title, children, bgColor, textColor, headerRight }) {
   return (
     <div style={{ 

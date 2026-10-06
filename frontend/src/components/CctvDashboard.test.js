@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import CctvDashboard from "./CctvDashboard";
 
 const originalFetch = global.fetch;
@@ -6,7 +6,7 @@ afterEach(() => { global.fetch = originalFetch; });
 
 test("displays offline cameras in four area columns in one body row", async () => {
   global.fetch = jest.fn().mockResolvedValue({ json: async () => ({ status: "success", data: [
-    { Tahun: 2025, Area: " bgm ", Kondisi: "off", "Nama Pada Layar (OSD)": "BGM Camera", "Sub Area": "Gate", Lokasi: "Entrance", Detail: "Kabel jaringan putus" },
+    { Tahun: 2025, Area: " bgm ", Kondisi: "off", "Nama Pada Layar (OSD)": "BGM Camera", "Sub Area": "Gate", Lokasi: "Entrance", Detail: "Kabel jaringan putus", Progress: "Sudah diperbaiki" },
     { Tahun: 2025, Area: "GI", Kondisi: "OFFLINE", "Nama Pada Layar (OSD)": "GI Camera" },
     { Tahun: 2025, Area: "PIK 2", Kondisi: "RUSAK", "Nama Pada Layar (OSD)": "PIK2 Camera" },
     { Tahun: 2025, Area: "BGM", Kondisi: "ON", "Nama Pada Layar (OSD)": "Online Camera" },
@@ -16,8 +16,8 @@ test("displays offline cameras in four area columns in one body row", async () =
   expect(within(bgm).getByText("BGM Camera")).toBeInTheDocument();
   expect(within(bgm).getByText("Detail")).toBeInTheDocument();
   expect(within(bgm).getByText("Kabel jaringan putus")).toBeInTheDocument();
-  expect(within(bgm).getByText("Dalam proses pembelian")).toBeInTheDocument();
-  expect(within(screen.getByRole("cell", { name: "PIK 2 (1)" })).getByText("Service di distributor")).toBeInTheDocument();
+  expect(within(bgm).getByText("Sudah diperbaiki")).toBeInTheDocument();
+  expect(within(screen.getByRole("cell", { name: "PIK 2 (1)" })).getAllByText("—")).toHaveLength(2);
   expect(within(bgm).queryByText("Gate")).not.toBeInTheDocument();
   expect(within(bgm).queryByText("Entrance")).not.toBeInTheDocument();
   expect(within(bgm).getAllByRole("listitem")).toHaveLength(1);
@@ -32,6 +32,24 @@ test("displays offline cameras in four area columns in one body row", async () =
   expect(screen.queryByText("Online Camera")).not.toBeInTheDocument();
   expect(container.querySelector("svg text[transform]")).toBeNull();
   expect([...container.querySelectorAll("svg text")].some(node => node.textContent === "0")).toBe(false);
+});
+
+test('offline table expands into a dialog and restores focus when closed', async () => {
+  const originalShow = HTMLDialogElement.prototype.showModal;
+  const originalClose = HTMLDialogElement.prototype.close;
+  HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
+  HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
+  global.fetch = jest.fn().mockResolvedValue({ json: async () => ({ status: 'success', data: [] }) });
+  render(<CctvDashboard />);
+  const button = await screen.findByRole('button', { name: 'Perbesar CCTV Offline' });
+  fireEvent.click(button);
+  expect(screen.getByRole('dialog', { name: 'CCTV Offline diperbesar' })).toBeInTheDocument();
+  expect(document.body.style.overflow).toBe('hidden');
+  fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Tutup' }));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(button).toHaveFocus();
+  HTMLDialogElement.prototype.showModal = originalShow;
+  HTMLDialogElement.prototype.close = originalClose;
 });
 
 test("shows a fetch error instead of reporting no offline cameras", async () => {
