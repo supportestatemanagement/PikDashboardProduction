@@ -38,7 +38,7 @@ export default function RainfallPanel({ date }) {
   const tooltipY = activeRow ? Math.max(42, y(activeRow.value) - 114) : 0;
   if (!state.loading && !state.error && !rows.some(row => Number.isFinite(row.value))) return null;
   return <article className="pw-panel pw-rain-panel" aria-label="Curah Hujan" aria-busy={state.loading}>
-    <div className="pw-panel-head"><div><h2>CURAH HUJAN</h2><small>Sumber: <a href="https://bbwscc.sdatelemetry.com/?page=pchcilicis" target="_blank" rel="noopener noreferrer" style={{ color: '#7dd3fc' }}>Data BBWSCC (Pos Curah Hujan Cengkareng Drain)</a></small></div></div>
+    <div className="pw-panel-head"><div><h2>CURAH HUJAN PIK 1</h2><small>Sumber: <a href="https://bbwscc.sdatelemetry.com/?page=pchcilicis" target="_blank" rel="noopener noreferrer" style={{ color: '#7dd3fc' }}>Data BBWSCC (Pos Curah Hujan Cengkareng Drain)</a></small></div></div>
     {state.loading ? <LoadingChart height={300} /> : state.error ? <p className="pw-no-data" role="alert">{state.error}</p> : !rows.length ? <p className="pw-no-data">Belum ada data curah hujan pada tanggal ini.</p> : <div className="pw-rain-scroll"><svg viewBox="0 0 980 410" preserveAspectRatio="none" className="pw-rain-chart" role="img" aria-label="Grafik Curah Hujan dalam milimeter">
       <g><rect x="784" y="14" width="24" height="12" fill="#bbdefb" stroke="#1976d2" strokeWidth="2" /><text x="816" y="24" fontSize="12">Curah Hujan (mm)</text></g>
       {Array.from({ length: max / 4 + 1 }, (_, i) => i * 4).map(value => <g key={value}><line x1="80" x2="940" y1={y(value)} y2={y(value)} stroke="#f1f1f1" /><text x="65" y={y(value) + 5} textAnchor="end">{value}</text></g>)}

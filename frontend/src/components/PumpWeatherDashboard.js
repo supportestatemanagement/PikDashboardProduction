@@ -213,10 +213,13 @@ function SeaLevelChart({ rows }) {
     <text x="18" y="30">Ketinggian (m)</text>
     {Array.from({ length: 6 }, (_, i) => { const value = minimum + (maximum - minimum) * i / 5; return <g key={i}><line x1="80" x2="1040" y1={y(value)} y2={y(value)} className="pw-sea-grid" /><text x="66" y={y(value) + 5} textAnchor="end">{fmt(value)}</text></g>; })}
     <path d="M80 60V300H1040" className="pw-sea-axis" />
+    <line x1="80" x2="1040" y1={y(2)} y2={y(2)} stroke="#dc3545" strokeWidth="2" strokeDasharray="8 6" />
+    <text x="1048" y={y(2) + 5} className="pw-sea-limit-label">+2 pp*</text>
     {Array.from({ length: 25 }, (_, hour) => <g key={hour}><line x1={x(hour)} x2={x(hour)} y1="300" y2={hour % 2 ? 306 : 311} className="pw-sea-axis" />{hour % 2 === 0 && <text x={x(hour)} y="334" textAnchor="middle">{hour === 24 ? '24:00' : `${hour}:00`}</text>}</g>)}
     {segments.map((points, index) => <path key={index} d={curve(points)} className="pw-sea-line" />)}
     {available.map(row => <circle key={row.hour} cx={x(row.hour)} cy={y(row.value)} r="4" className="pw-sea-point" tabIndex="0" aria-label={`${row.time}: ${fmt(row.value)} meter`}><title>{row.time}: {fmt(row.value)} M</title></circle>)}
     {[low, ...(high !== low ? [high] : [])].map((row, index) => <g key={index} className={index ? 'pw-sea-high' : 'pw-sea-low'}><circle cx={x(row.hour)} cy={y(row.value)} r="6" /><text x={Math.min(990, Math.max(130, x(row.hour)))} y={y(row.value) - 17} textAnchor="middle">{row.time}</text></g>)}
+    <text x="560" y="362" textAnchor="middle">Referensi level pp* (2022)</text>
   </svg><div className="pw-sea-legend" aria-label="Legenda pasang surut"><span><i className="pw-sea-legend-high" />pasang naik</span><span><i className="pw-sea-legend-low" />pasang surut</span></div></div>;
 }
 

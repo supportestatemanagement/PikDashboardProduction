@@ -236,6 +236,7 @@ body {
 .pw-sea-chart-scroll{position:relative;margin:0 16px 16px;overflow-x:auto;border-radius:12px;background:#fff}
 .pw-sea-chart{display:block;width:100%;min-width:680px;height:360px;font-family:inherit}
 .pw-sea-chart text{fill:#334155;font-size:13px}
+.pw-sea-chart .pw-sea-limit-label{fill:#dc3545;font-size:12px;font-weight:700}
 .pw-sea-grid{stroke:#fff;stroke-opacity:.6;stroke-width:1}
 .pw-sea-axis{stroke:#334155;stroke-width:2;fill:none}
 .pw-sea-line{stroke:#38bdf8;stroke-width:3;stroke-linejoin:round;stroke-linecap:round;fill:none}
