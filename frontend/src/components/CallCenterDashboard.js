@@ -113,7 +113,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
     const detailedCounts = {};
     filteredData.forEach(row => {
       if (issueArea && String(row.Area ?? '').trim() !== issueArea) return;
-      const detail = row.Detailed ? String(row.Detailed).toLowerCase() : "n/a";
+      const detail = String(row.Category ?? '').trim().toLowerCase() || 'n/a';
       detailedCounts[detail] = (detailedCounts[detail] || 0) + 1;
     });
 
@@ -446,7 +446,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
           }}>
             <div style={{ fontWeight: "800", fontSize: "16px", color: "#1E3A8A", marginBottom: "15px", display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
               <span>Top Reported Issues</span>
-              <label style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }}>Area<select aria-label="Top Reported Issues Area" value={issueArea} disabled={isLoading} onChange={event => setIssueArea(event.target.value)} style={{ ...navButtonStyle, maxWidth: '100%' }}><option value="">Semua Area</option>{issueAreas.map(area => <option key={area} value={area}>{area}</option>)}</select></label>
+              <select aria-label="Top Reported Issues Area" value={issueArea} disabled={isLoading} onChange={event => setIssueArea(event.target.value)} style={{ ...navButtonStyle, maxWidth: '100%' }}><option value="">Semua Area</option>{issueAreas.map(area => <option key={area} value={area}>{area}</option>)}</select>
             </div>
             
             <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
