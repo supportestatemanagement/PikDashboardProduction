@@ -9,9 +9,10 @@ test("dedicated Sea Level card never falls back to PumpStation values", () => {
 
 test("dedicated Sea Level card uses sheet readings and preserves empty hours", () => {
   render(<SeaLevelPanel data={{ analytics: { seaLevelSheet: { latest: { date: '2026-04-01', time: '02:00', sea: null }, highest: 1.33, lowest: 1.33, hours: [{ period: '2026-04-01 01:00', SEA: 1.33 }, { period: '2026-04-01 02:00', SEA: null }] } }, chart: [{ period: '2026-04-01 01:00', SEA: 9 }] }} />);
-  expect(screen.getByText('01:00')).toBeInTheDocument();
-  expect(screen.getByText('02:00')).toBeInTheDocument();
-  expect(screen.getAllByText('1,33 M')).toHaveLength(3);
+  expect(screen.getByRole('img', { name: /Grafik level air laut/ })).toBeInTheDocument();
+  expect(screen.getByLabelText('01:00: 1,33 meter')).toBeInTheDocument();
+  expect(screen.queryByLabelText(/02:00: .* meter/)).not.toBeInTheDocument();
+  expect(screen.getAllByText('1,33 M')).toHaveLength(2);
   expect(screen.queryByText('9 M')).not.toBeInTheDocument();
 });
 

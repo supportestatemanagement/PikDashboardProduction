@@ -170,6 +170,40 @@ export function StatusPanel({ data, station, filter, loading = false }) {
   </article>;
 }
 
+function SeaLevelChart({ rows }) {
+  const readings = rows.map(row => ({ hour: Number(row.period.slice(-5, -3)) || 24, time: row.period.slice(-5), value: row.SEA })).sort((a, b) => a.hour - b.hour);
+  const available = readings.filter(row => Number.isFinite(row.value));
+  if (!available.length) return <p className="pw-no-data">Belum ada nilai level air laut pada tanggal ini.</p>;
+  const low = available.reduce((a, b) => b.value < a.value ? b : a);
+  const high = available.reduce((a, b) => b.value > a.value ? b : a);
+  const minimum = Math.floor(Math.min(0, low.value) * 2) / 2;
+  const maximum = Math.ceil(Math.max(2, high.value + .2) * 2) / 2;
+  const x = hour => 80 + hour / 24 * 960;
+  const y = value => 300 - (value - minimum) / (maximum - minimum) * 240;
+  const segments = [];
+  let segment = [];
+  readings.forEach((row, index) => {
+    if (!Number.isFinite(row.value) || (index && row.hour - readings[index - 1].hour > 1)) {
+      if (segment.length) segments.push(segment);
+      segment = [];
+    }
+    if (Number.isFinite(row.value)) segment.push(row);
+  });
+  if (segment.length) segments.push(segment);
+  return <div className="pw-sea-chart-scroll"><svg className="pw-sea-chart" viewBox="0 0 1100 370" role="img" aria-label="Grafik level air laut per jam dari sheet SeaLevel">
+    <defs><linearGradient id="sea-level-background" x2="0" y2="1"><stop stopColor="#eef7fa" /><stop offset="1" stopColor="#badde8" /></linearGradient></defs>
+    <rect x="80" y="60" width="960" height="240" fill="url(#sea-level-background)" />
+    <text x="18" y="30">Ketinggian (m)</text>
+    {Array.from({ length: 6 }, (_, i) => { const value = minimum + (maximum - minimum) * i / 5; return <g key={i}><line x1="80" x2="1040" y1={y(value)} y2={y(value)} className="pw-sea-grid" /><text x="66" y={y(value) + 5} textAnchor="end">{fmt(value)}</text></g>; })}
+    <path d="M80 60V300H1040" className="pw-sea-axis" />
+    {Array.from({ length: 25 }, (_, hour) => <g key={hour}><line x1={x(hour)} x2={x(hour)} y1="300" y2={hour % 2 ? 306 : 311} className="pw-sea-axis" />{hour % 2 === 0 && <text x={x(hour)} y="334" textAnchor="middle">{hour === 24 ? '24:00' : `${hour}:00`}</text>}</g>)}
+    {segments.map((points, index) => <polyline key={index} points={points.map(row => `${x(row.hour)},${y(row.value)}`).join(' ')} className="pw-sea-line" />)}
+    {available.map(row => <circle key={row.hour} cx={x(row.hour)} cy={y(row.value)} r="4" className="pw-sea-point" tabIndex="0" aria-label={`${row.time}: ${fmt(row.value)} meter`}><title>{row.time}: {fmt(row.value)} M</title></circle>)}
+    {[low, ...(high !== low ? [high] : [])].map((row, index) => <g key={index} className={index ? 'pw-sea-high' : 'pw-sea-low'}><circle cx={x(row.hour)} cy={y(row.value)} r="6" /><text x={Math.min(990, Math.max(130, x(row.hour)))} y={y(row.value) - 17} textAnchor="middle">{index ? 'Tertinggi' : 'Terendah'} · {row.time}</text></g>)}
+    <text x="560" y="362" textAnchor="middle">Jam (WIB)</text>
+  </svg></div>;
+}
+
 export function SeaLevelPanel({ data, loading }) {
   const sheet = data?.analytics?.seaLevelSheet;
   const latest = sheet?.latest;
@@ -180,7 +214,7 @@ export function SeaLevelPanel({ data, loading }) {
     <dl className="pw-sea-summary">
       {[["Level terakhir", latest?.sea], ["Tertinggi", levels?.highest], ["Terendah", levels?.lowest]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{loading ? <LoadingValue /> : value == null ? "—" : `${fmt(value)} M`}</dd></div>)}
     </dl>
-    {loading ? <LoadingChart height={100} /> : rows.length ? <div className="pw-sea-hours">{rows.map(row => <div key={row.period}><time>{row.period.slice(-5)}</time><strong>{row.SEA == null ? "—" : `${fmt(row.SEA)} M`}</strong></div>)}</div> : <p className="pw-no-data">Belum ada data level air laut pada tanggal ini.</p>}
+    {loading ? <LoadingChart height={300} /> : rows.length ? <SeaLevelChart rows={rows} /> : <p className="pw-no-data">Belum ada data level air laut pada tanggal ini.</p>}
   </article>;
 }
 
