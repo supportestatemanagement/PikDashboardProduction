@@ -21,6 +21,12 @@ export default function RainfallPanel({ date }) {
     return () => controller.abort();
   }, [date]);
   const rows = state.rows;
+  const rainfallValues = rows.map(row => row.value).filter(Number.isFinite);
+  const rainfallSummary = [
+    ['Curah Hujan Terakhir', rows[rows.length - 1]?.value],
+    ['Tertinggi', rainfallValues.length ? Math.max(...rainfallValues) : null],
+    ['Terendah', rainfallValues.length ? Math.min(...rainfallValues) : null],
+  ];
   const max = Math.ceil(Math.max(24, ...rows.map(row => Number.isFinite(row.value) ? row.value : 0)) / 4) * 4;
   const x = index => 80 + index / Math.max(1, rows.length - 1) * 860;
   const y = value => 310 - value / max * 270;
@@ -39,7 +45,8 @@ export default function RainfallPanel({ date }) {
   if (!state.loading && !state.error && !rows.some(row => Number.isFinite(row.value))) return null;
   return <article className="pw-panel pw-rain-panel" aria-label="Curah Hujan" aria-busy={state.loading}>
     <div className="pw-panel-head"><div><h2>CURAH HUJAN</h2><small>Sumber: <a href="https://bbwscc.sdatelemetry.com/?page=pchcilicis" target="_blank" rel="noopener noreferrer" style={{ color: '#7dd3fc' }}>Data BBWSCC (Pos Curah Hujan Cengkareng Drain)</a></small></div></div>
-    {state.loading ? <LoadingChart height={300} /> : state.error ? <p className="pw-no-data" role="alert">{state.error}</p> : !rows.length ? <p className="pw-no-data">Belum ada data curah hujan pada tanggal ini.</p> : <div className="pw-rain-scroll"><svg viewBox="0 0 980 410" className="pw-rain-chart" role="img" aria-label="Grafik Curah Hujan dalam milimeter">
+    {!state.loading && !state.error && <dl className="pw-sea-summary">{rainfallSummary.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{Number.isFinite(value) ? `${new Intl.NumberFormat('id-ID').format(value)} mm` : '—'}</dd></div>)}</dl>}
+    {state.loading ? <LoadingChart height={300} /> : state.error ? <p className="pw-no-data" role="alert">{state.error}</p> : !rows.length ? <p className="pw-no-data">Belum ada data curah hujan pada tanggal ini.</p> : <div className="pw-rain-scroll"><svg viewBox="0 0 980 410" preserveAspectRatio="none" className="pw-rain-chart" role="img" aria-label="Grafik Curah Hujan dalam milimeter">
       <g><rect x="310" y="8" width="70" height="24" fill="#bbdefb" stroke="#1976d2" strokeWidth="4" /><text x="392" y="27" fontSize="20">Curah Hujan (mm)</text></g>
       {Array.from({ length: max / 4 + 1 }, (_, i) => i * 4).map(value => <g key={value}><line x1="80" x2="940" y1={y(value)} y2={y(value)} stroke="#f1f1f1" /><text x="65" y={y(value) + 5} textAnchor="end">{value}</text></g>)}
       <path d="M80 40V310H940" fill="none" stroke="#e5e7eb" />
