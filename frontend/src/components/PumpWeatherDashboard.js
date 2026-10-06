@@ -190,6 +190,22 @@ function SeaLevelChart({ rows }) {
     if (Number.isFinite(row.value)) segment.push(row);
   });
   if (segment.length) segments.push(segment);
+  const curve = points => {
+    const coords = points.map(row => [x(row.hour), y(row.value)]);
+    const slopes = coords.slice(1).map((point, i) => (point[1] - coords[i][1]) / (point[0] - coords[i][0]));
+    // Monotone tangents keep the curve inside the measured levels, including plateaus.
+    const tangents = coords.map((_, i) => {
+      if (i === 0) return slopes[0] || 0;
+      if (i === coords.length - 1) return slopes[i - 1] || 0;
+      const before = slopes[i - 1], after = slopes[i];
+      return before * after <= 0 ? 0 : 2 * before * after / (before + after);
+    });
+    return coords.reduce((path, point, i) => {
+      if (!i) return `M ${point[0]},${point[1]}`;
+      const previous = coords[i - 1], step = (point[0] - previous[0]) / 3;
+      return `${path} C ${previous[0] + step},${previous[1] + step * tangents[i - 1]} ${point[0] - step},${point[1] - step * tangents[i]} ${point[0]},${point[1]}`;
+    }, '');
+  };
   return <div className="pw-sea-chart-scroll"><svg className="pw-sea-chart" viewBox="0 0 1100 370" role="img" aria-label="Grafik level air laut per jam dari sheet SeaLevel">
     <defs><linearGradient id="sea-level-background" x2="0" y2="1"><stop stopColor="#eef7fa" /><stop offset="1" stopColor="#badde8" /></linearGradient></defs>
     <rect x="80" y="60" width="960" height="240" fill="url(#sea-level-background)" />
@@ -197,7 +213,7 @@ function SeaLevelChart({ rows }) {
     {Array.from({ length: 6 }, (_, i) => { const value = minimum + (maximum - minimum) * i / 5; return <g key={i}><line x1="80" x2="1040" y1={y(value)} y2={y(value)} className="pw-sea-grid" /><text x="66" y={y(value) + 5} textAnchor="end">{fmt(value)}</text></g>; })}
     <path d="M80 60V300H1040" className="pw-sea-axis" />
     {Array.from({ length: 25 }, (_, hour) => <g key={hour}><line x1={x(hour)} x2={x(hour)} y1="300" y2={hour % 2 ? 306 : 311} className="pw-sea-axis" />{hour % 2 === 0 && <text x={x(hour)} y="334" textAnchor="middle">{hour === 24 ? '24:00' : `${hour}:00`}</text>}</g>)}
-    {segments.map((points, index) => <polyline key={index} points={points.map(row => `${x(row.hour)},${y(row.value)}`).join(' ')} className="pw-sea-line" />)}
+    {segments.map((points, index) => <path key={index} d={curve(points)} className="pw-sea-line" />)}
     {available.map(row => <circle key={row.hour} cx={x(row.hour)} cy={y(row.value)} r="4" className="pw-sea-point" tabIndex="0" aria-label={`${row.time}: ${fmt(row.value)} meter`}><title>{row.time}: {fmt(row.value)} M</title></circle>)}
     {[low, ...(high !== low ? [high] : [])].map((row, index) => <g key={index} className={index ? 'pw-sea-high' : 'pw-sea-low'}><circle cx={x(row.hour)} cy={y(row.value)} r="6" /><text x={Math.min(990, Math.max(130, x(row.hour)))} y={y(row.value) - 17} textAnchor="middle">{row.time}</text></g>)}
   </svg><div className="pw-sea-legend" aria-label="Legenda pasang surut"><span><i className="pw-sea-legend-high" />pasang naik</span><span><i className="pw-sea-legend-low" />pasang surut</span></div></div>;
