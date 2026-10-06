@@ -225,6 +225,14 @@ body {
 .pw-loading,.pw-error { position: fixed; top: 68px; left: 50%; z-index: 1200; transform: translateX(-50%); padding: 7px 14px; border: 1px solid #1e4f68; border-radius: 7px; background: #0b1a2b; color: #67e8f9; font-size: 10px; box-shadow: 0 8px 25px #0008; }
 .pw-error { border-color: #7f1d1d; color: #fecaca; }
 .pw-current-row { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 10px; margin-bottom: 12px; }
+.pw-sea-panel{margin-bottom:16px;min-width:0}
+.pw-sea-summary{display:flex;flex-wrap:wrap;gap:24px;margin:16px 0;padding:0 16px}
+.pw-sea-summary dt{font-size:12px;color:#94a3b8}
+.pw-sea-summary dd{margin:6px 0 0;font-size:24px;font-weight:700;color:#67e8f9}
+.pw-sea-hours{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;padding:0 16px 16px}
+.pw-sea-hours>div{display:flex;flex-direction:column;gap:6px;background:#0b1525;border:1px solid #24364d;border-radius:8px;padding:10px;min-width:0}
+.pw-sea-hours time{font-size:12px;color:#94a3b8}
+.pw-sea-hours strong{font-size:14px;color:#e2e8f0}
 .pw-current-row article,.pw-panel { border: 1px solid #24364d; border-radius: 10px; background: #101c2e; box-shadow: 0 5px 18px rgba(0,0,0,.18); }
 .pw-current-row article { min-width: 0; min-height: 87px; padding: 13px 14px; display: flex; flex-direction: column; justify-content: center; }
 .pw-current-row span { color: #8292aa; font-size: 9px; font-weight: 800; letter-spacing: .7px; }

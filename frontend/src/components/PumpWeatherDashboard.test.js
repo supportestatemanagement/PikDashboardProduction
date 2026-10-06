@@ -1,5 +1,19 @@
 import { render, screen } from "@testing-library/react";
-import { PeakPanel, StatusPanel, summarizePumpDays } from "./PumpWeatherDashboard";
+import { PeakPanel, StatusPanel, SeaLevelPanel, summarizePumpDays } from "./PumpWeatherDashboard";
+
+test("dedicated Sea Level card never falls back to PumpStation values", () => {
+  render(<SeaLevelPanel data={{ analytics: { latestSea: { sea: 9 }, levelRange: { SEA: { highest: 9, lowest: 9 } } }, chart: [{ period: '2026-04-01 01:00', SEA: 9 }] }} />);
+  expect(screen.getByText(/Belum ada data level air laut/)).toBeInTheDocument();
+  expect(screen.queryByText('9 M')).not.toBeInTheDocument();
+});
+
+test("dedicated Sea Level card uses sheet readings and preserves empty hours", () => {
+  render(<SeaLevelPanel data={{ analytics: { seaLevelSheet: { latest: { date: '2026-04-01', time: '02:00', sea: null }, highest: 1.33, lowest: 1.33, hours: [{ period: '2026-04-01 01:00', SEA: 1.33 }, { period: '2026-04-01 02:00', SEA: null }] } }, chart: [{ period: '2026-04-01 01:00', SEA: 9 }] }} />);
+  expect(screen.getByText('01:00')).toBeInTheDocument();
+  expect(screen.getByText('02:00')).toBeInTheDocument();
+  expect(screen.getAllByText('1,33 M')).toHaveLength(3);
+  expect(screen.queryByText('9 M')).not.toBeInTheDocument();
+});
 
 test("shows a single weighted total for the selected range", () => {
   render(<StatusPanel station="PS1" filter={{ start: "2026-09-01", end: "2026-09-09" }} data={{ pumpStatusEvents: [

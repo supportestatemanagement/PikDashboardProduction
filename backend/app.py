@@ -17,6 +17,7 @@ from firebase_admin_service import create_dashboard_token
 from disaster_maritime import register_maritime_routes
 from disaster_enso import register_enso_routes
 from water_distribution import build_water_locations
+from pump_sea_level import apply_sea_levels
 from customer_service import register_customer_service_routes
 from crisis_room import register_crisis_room
 
@@ -170,14 +171,12 @@ def parse_pump_record(row):
     return result
 
 
-def load_pump_records():
+def load_pump_records(sea_values=None):
     records = []
     # Read formatted cell text so decimal commas (for example -1,97) are not
     # numericised by gspread into -197 before numeric_level parses them.
     values = pump_station_sheet.get_all_values()
-    if not values:
-        return records
-    headers = values[0]
+    headers = values[0] if values else []
     for cells in values[1:]:
         row = dict(zip(headers, cells + [""] * max(0, len(headers) - len(cells))))
         parsed = parse_pump_record(row)
@@ -185,8 +184,10 @@ def load_pump_records():
             continue
         # Keep same-hour updates: changes in pump counts represent starts/stops.
         records.append(parsed)
-    # Preserve worksheet row order: the final row for a date is the latest update.
-    return records
+    # Merge hourly SeaLevel observations, preserving same-hour pump updates.
+    if sea_values is None:
+        sea_values = cc_spreadsheet.worksheet("SeaLevel").get_all_values()
+    return apply_sea_levels(records, sea_values)
 
 
 @app.route('/api/pump-peak-events', methods=['GET'])
@@ -200,7 +201,10 @@ def get_pump_peak_events():
         if start_date > end_date:
             return jsonify({"status": "error", "message": "startDate must be before endDate"}), 400
 
-        records = [row for row in load_pump_records() if start_date <= datetime.date.fromisoformat(row["date"]) <= end_date]
+        sea_values = cc_spreadsheet.worksheet("SeaLevel").get_all_values()
+        sea_records = [row for row in apply_sea_levels([], sea_values) if start_date <= datetime.date.fromisoformat(row["date"]) <= end_date]
+        sea_readings = [row["sea"] for row in sea_records if row["sea"] is not None]
+        records = [row for row in load_pump_records(sea_values) if start_date <= datetime.date.fromisoformat(row["date"]) <= end_date]
         events = []
         for row in records:
             context = {key: row[key] for key in ("weather", "sea", "twa", "tds") if row.get(key) is not None}
@@ -242,6 +246,7 @@ def get_pump_peak_events():
         range_days = (end_date - start_date).days + 1
         chart_mode = "monthly" if range_days >= 62 else "observations"
         chart_map = {}
+        pump_records = [row for row in records if not row.get("seaOnly")]
         if station_filter == "ALL":
             chart_stations = ("PS1", "PS2", "PS3", "PS4", "TWA", "SEA")
         elif station_filter == "TWA":
@@ -256,7 +261,10 @@ def get_pump_peak_events():
             current = chart_map[bucket].get(event["station"])
             chart_map[bucket][event["station"]] = event["level"] if current is None else max(current, event["level"])
 
-        latest = records[-1] if records else None
+        latest = pump_records[-1] if pump_records else (records[-1] if records else None)
+        if chart_mode == "observations" and "SEA" in chart_stations:
+            for row in records:
+                chart_map.setdefault(f'{row["date"]} {row["time"]}', {}).setdefault("SEA", row["sea"])
         level_range = {}
         for station in ("PS1", "PS2", "PS3", "PS4", "SEA", "TWA"):
             values = [event["level"] for event in events if event["station"] == station]
@@ -267,7 +275,7 @@ def get_pump_peak_events():
             for values in row["stations"].values():
                 if (values.get("status") or "").startswith("Run"):
                     run_occurrences[values["status"]] += 1
-        expected_values = len(records) * 6
+        expected_values = len(pump_records) * 5 + len(records)
         actual_values = sum(1 for row in records for value in [row["twa"], row["sea"], *[item["level"] for item in row["stations"].values()]] if value is not None)
         latest_payload = None
         if latest:
@@ -285,14 +293,21 @@ def get_pump_peak_events():
             "chartMode": chart_mode,
             "chart": [{"period": key, **values} for key, values in sorted(chart_map.items())],
             "analytics": {
+                "seaLevelSheet": {
+                    "latest": {"date": sea_records[-1]["date"], "time": sea_records[-1]["time"], "sea": sea_records[-1]["sea"]} if sea_records else None,
+                    "highest": max(sea_readings) if sea_readings else None,
+                    "lowest": min(sea_readings) if sea_readings else None,
+                    "hours": [{"period": f'{row["date"]} {row["time"]}', "SEA": row["sea"]} for row in sea_records],
+                },
                 "latest": latest_payload, "levelRange": level_range,
+                "latestSea": {"date": records[-1]["date"], "time": records[-1]["time"], "sea": records[-1]["sea"]} if records else None,
                 "runOccurrences": dict(run_occurrences),
-                "statusTimeline": records[-24:],
-                "weatherTimeline": [{"date": row["date"], "time": row["time"], "weather": row["weather"]} for row in records],
+                "statusTimeline": pump_records[-24:],
+                "weatherTimeline": [{"date": row["date"], "time": row["time"], "weather": row["weather"]} for row in pump_records],
                 "tdsTrend": [{"date": row["date"], "time": row["time"], "value": row["tds"]} for row in records if row["tds"] is not None],
                 "completeness": round((actual_values / expected_values * 100), 1) if expected_values else 0,
             },
-            "meta": {"recordCount": len(records), "twaSeparated": True, "sources": ["PumpStation"]},
+            "meta": {"recordCount": len(records), "twaSeparated": True, "sources": ["PumpStation", "SeaLevel"]},
         })
     except ValueError:
         return jsonify({"status": "error", "message": "Invalid date or limit parameter"}), 400

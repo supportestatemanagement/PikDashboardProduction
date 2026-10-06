@@ -56,11 +56,11 @@ function DateRangeFilter({ start, end, onStart, onEnd, onPreset, active }) {
   </details>;
 }
 
-function CurrentCards({ latest, loading = false }) {
+function CurrentCards({ latest, latestSea, loading = false }) {
   const cards = [
     ...["PS1", "PS2", "PS3", "PS4"].map((key) => ({ key, label: key, value: fmt(latest?.stations?.[key]?.level), status: latest?.stations?.[key]?.status || "-" })),
     { key: "twa", label: "TWA", value: fmt(latest?.twa), status: "Latest level" },
-    { key: "sea", label: "SEA", value: fmt(latest?.sea), status: "Latest level" },
+    { key: "sea", label: "SEA", value: fmt(latestSea ? latestSea.sea : latest?.sea), status: latestSea ? `${niceDate(latestSea.date)} / ${latestSea.time}` : "Latest level" },
   ];
   return <section className="pw-current-row">{cards.map((card) => {
     const isPump = /^PS[1-4]$/.test(card.key);
@@ -170,6 +170,20 @@ export function StatusPanel({ data, station, filter, loading = false }) {
   </article>;
 }
 
+export function SeaLevelPanel({ data, loading }) {
+  const sheet = data?.analytics?.seaLevelSheet;
+  const latest = sheet?.latest;
+  const levels = sheet;
+  const rows = sheet?.hours || [];
+  return <article className="pw-panel pw-sea-panel" aria-label="Sea Level" aria-busy={loading}>
+    <div className="pw-panel-head"><div><h2>SEA LEVEL</h2><small>Level air laut per jam · Sheet SeaLevel</small></div><UpdatedLabel latest={latest} loading={loading} /></div>
+    <dl className="pw-sea-summary">
+      {[["Level terakhir", latest?.sea], ["Tertinggi", levels?.highest], ["Terendah", levels?.lowest]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{loading ? <LoadingValue /> : value == null ? "—" : `${fmt(value)} M`}</dd></div>)}
+    </dl>
+    {loading ? <LoadingChart height={100} /> : rows.length ? <div className="pw-sea-hours">{rows.map(row => <div key={row.period}><time>{row.period.slice(-5)}</time><strong>{row.SEA == null ? "—" : `${fmt(row.SEA)} M`}</strong></div>)}</div> : <p className="pw-no-data">Belum ada data level air laut pada tanggal ini.</p>}
+  </article>;
+}
+
 export default function PumpWeatherDashboard({ dateRange, isSidebarOpen = false }) {
   const navbarKey = iso(dateRange.start);
   const [peakFilter, setPeakFilter] = useState(yearToDate);
@@ -186,8 +200,9 @@ export default function PumpWeatherDashboard({ dateRange, isSidebarOpen = false 
     <WeatherPanel loading={base.loading} rows={base.data?.analytics?.weatherTimeline || []} />
     <section className="pw-panel pw-level-section" aria-label="Water levels">
       <div className="pw-status-toolbar"><h2>WATER LEVELS</h2><UpdatedLabel loading={base.loading} latest={base.data?.analytics?.latest} /></div>
-      <CurrentCards loading={base.loading} latest={base.data?.analytics?.latest} />
+      <CurrentCards loading={base.loading} latest={base.data?.analytics?.latest} latestSea={base.data?.analytics?.latestSea} />
     </section>
+    <SeaLevelPanel loading={base.loading} data={base.data} />
     <section className="pw-main-grid"><PeakPanel loading={peaks.loading} data={peaks.data} filter={peakFilter} setFilter={setPeakFilter} navbarKey={navbarKey} /><TrendChart loading={base.loading} rows={base.data?.chart || []} latest={base.data?.analytics?.latest} /></section>
     <section className="pw-panel pw-status-section" aria-label="Pump Run Summary">
       <div className="pw-status-toolbar"><h2>PUMP RUN SUMMARY</h2><DateRangeFilter {...statusFilter} active={statusFilter.start !== navbarKey || statusFilter.end !== navbarKey} onPreset={(months) => setStatusFilter(presetRange(navbarKey, months))} onStart={(start) => start && setStatusFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => end && setStatusFilter((old) => ({ ...old, start: old.start > end ? end : old.start, end }))} /></div>
