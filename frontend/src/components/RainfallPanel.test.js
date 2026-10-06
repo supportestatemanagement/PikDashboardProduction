@@ -28,7 +28,8 @@ test('shows rainfall thresholds, sorts readings, and preserves zero and blank va
   expect(screen.getByRole('link', { name: 'Data BBWSCC (Pos Curah Hujan Cengkareng Drain)' })).toHaveAttribute('href', 'https://bbwscc.sdatelemetry.com/?page=pchcilicis');
   const label = screen.getByText('Siaga 2: 10');
   const group = label.parentElement;
-  expect(Number(group.querySelector('rect').getAttribute('y')) + 17).toBe(Number(group.querySelector('line').getAttribute('y1')));
+  expect(Number(group.querySelector('rect').getAttribute('y')) + 11).toBe(Number(group.querySelector('line').getAttribute('y1')));
+  expect(screen.queryByText('Terendah')).not.toBeInTheDocument();
 });
 
 test('hides rainfall card when selected date has no readings', async () => {
