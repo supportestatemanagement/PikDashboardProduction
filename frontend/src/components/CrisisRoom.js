@@ -76,10 +76,10 @@ export default function CrisisRoom({ session, onSessionExpired }) {
     finally { setSelecting(false); }
   };
   return <section className="crisis-room" aria-label={broadcast ? 'Crisis Room Broadcast' : 'Crisis Room'}>
-    <header className="crisis-room-header"><div><h1>Crisis Room{broadcast ? ' Broadcast' : ''}</h1><p>{broadcast ? 'Pilih window HCP Hikvision yang menampilkan CCTV 3×3.' : 'Live CCTV Command Center PIK'}</p></div><span className={`crisis-status crisis-status-${status.toLowerCase()}`} role="status"><i />{status}</span></header>
+    <header className="crisis-room-header"><div><h1>Crisis Room{broadcast ? ' Broadcast' : ''}</h1>{broadcast && <p>Pilih window HCP Hikvision yang menampilkan CCTV 3×3.</p>}</div><span className={`crisis-status crisis-status-${status.toLowerCase()}`} role="status"><i />{status}</span></header>
     {broadcast && <div className="crisis-actions"><button onClick={start} disabled={selecting || Boolean(stream)}>{selecting ? 'Memilih window…' : 'Start Share Screen'}</button><button className="crisis-stop" onClick={() => client.current.stop()} disabled={!stream}>Stop Broadcast</button><span>Biarkan window HCP dan halaman ini tetap terbuka.</span></div>}
     {error && <p className="crisis-error" role="alert">{error}</p>}
-    <details className="crisis-connection-details"><summary>Detail koneksi</summary><dl>{Object.entries(diagnostics).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl></details>
+    {broadcast && <details className="crisis-connection-details"><summary>Detail koneksi</summary><dl>{Object.entries(diagnostics).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl></details>}
     <div className="crisis-video-stage"><video ref={video} autoPlay muted playsInline controls={!broadcast && Boolean(stream)} aria-label="Live CCTV HCP Hikvision" />{!stream && <div className="crisis-placeholder"><span className="crisis-placeholder-icon">▣</span><h2>{status === 'OFFLINE' ? 'Broadcast belum aktif' : 'Menghubungkan Crisis Room…'}</h2><p>{broadcast ? 'Tekan Start Share Screen untuk memulai.' : 'Video akan tampil otomatis saat broadcaster terhubung.'}</p></div>}</div>
   </section>;
 }
