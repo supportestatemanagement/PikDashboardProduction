@@ -1,11 +1,13 @@
 import { divIcon } from 'leaflet';
 export const EARTHQUAKE_LAYERS = { latest: 'Gempa terbaru', history: 'Gempa M >= 5', felt: 'Gempa dirasakan' };
 export const validEarthquakeCoordinates = coordinates => Array.isArray(coordinates) && coordinates.length === 2 && coordinates.every(Number.isFinite) && Math.abs(coordinates[0]) <= 90 && Math.abs(coordinates[1]) <= 180;
-export function focusMapToCoordinates(map, coordinates, zoom = 8) {
+export function focusMapToCoordinates(map, coordinates, zoom = 8, onFocused) {
   if (!validEarthquakeCoordinates(coordinates)) return false;
   map.stop();
   map.closePopup();
+  if (onFocused && map.once) map.once('moveend', onFocused);
   map.flyTo(coordinates, zoom, { duration: 1.2, animate: !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches });
+  if (onFocused && !map.once) onFocused();
   return true;
 }
 export function focusMapToEarthquake(map, marker, group) {
@@ -13,9 +15,7 @@ export function focusMapToEarthquake(map, marker, group) {
   const { lat, lng } = marker.getLatLng();
   if (!validEarthquakeCoordinates([lat, lng])) return false;
   if (!map.hasLayer(group)) map.addLayer(group);
-  focusMapToCoordinates(map, [lat, lng]);
-  // autoPan=false on the popup prevents it from interrupting the flyTo.
-  marker.openPopup();
+  focusMapToCoordinates(map, [lat, lng], 8, () => marker.openPopup());
   return true;
 }
 const iconCache = new Map();

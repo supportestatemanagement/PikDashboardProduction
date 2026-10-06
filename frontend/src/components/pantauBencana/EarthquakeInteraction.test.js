@@ -64,3 +64,13 @@ test('invalid coordinates cannot navigate and latest uses its distinct pulse cla
   render(<EarthquakePanel latestSource={{ data: { latest: { ...quake, coordinates: null } } }} historySource={{}} />);
   expect(screen.getByRole('button')).toBeDisabled();
 });
+
+test('popup waits for map navigation to finish so auto pan does not interrupt the flight', () => {
+  const map = { ...mockMap, once: jest.fn() };
+  const open = jest.fn();
+  focusMapToCoordinates(map, [-6, 106], 8, open);
+  expect(open).not.toHaveBeenCalled();
+  expect(map.once).toHaveBeenCalledWith('moveend', open);
+  map.once.mock.calls[0][1]();
+  expect(open).toHaveBeenCalledTimes(1);
+});

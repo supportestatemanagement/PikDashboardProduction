@@ -24,15 +24,14 @@ export default function WaterLocationsLayer({ locations = [] }) {
           title={`Distribusi Air Bersih: ${location.name}`}
           alt={`Lokasi distribusi air bersih ${location.name}`}
           eventHandlers={{ click: event => {
-            focusMapToCoordinates(map, location.position, Math.max(map.getZoom(), 15));
-            event.target.openPopup();
+            focusMapToCoordinates(map, location.position, Math.max(map.getZoom(), 15), () => event.target.openPopup());
           } }}
           zIndexOffset={600}
         >
           <Tooltip permanent direction="top" offset={[0, -10]} className="water-location-label" opacity={1}>
             {location.name}
           </Tooltip>
-          <Popup className="traffic-popup water-distribution-popup" autoPan={false} maxHeight={320} minWidth={280}>
+          <Popup className="traffic-popup water-distribution-popup" autoPanPadding={[24, 24]} maxHeight={240} minWidth={220} maxWidth={300}>
             <div className="popup-title" style={{ color: '#38bdf8' }}>Distribusi Air Bersih</div>
             <div className="popup-row"><span>Nama Lokasi</span><strong>{location.name}</strong></div>
             <div className="popup-row"><span>Koordinat</span><strong>{location.position.join(', ')}</strong></div>

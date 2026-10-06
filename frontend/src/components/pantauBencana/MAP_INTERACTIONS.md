@@ -18,7 +18,8 @@ The existing dashboard layout and data sources remain unchanged.
 - Root selection and explicit focus requests are separate. Card/history/felt
   list clicks create a request; marker clicks only update selection. The helper
   activates the Leaflet layer, closes the old popup, flies to zoom 8 and opens
-  the chosen popup with autoPan disabled. Repeated clicks also work.
+  the chosen popup after the flight finishes, with autoPan keeping it inside
+  the map. Popup content has a bounded height and scrolls. Repeated clicks also work.
 - Source refreshes do not create focus requests. Layer/marker refs avoid DOM
   searches and shared globals; no moveend listeners or animation timers are added.
 - Small earthquake layers stay mounted even when hidden, allowing their refs to

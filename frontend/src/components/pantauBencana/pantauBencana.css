@@ -84,7 +84,7 @@
 .ppb-root .ppb-weather > .ppb-source-note { flex-basis: 100%; padding: 0; }
 .ppb-root .ppb-weather-icon img { width: 48px; height: 48px; object-fit: contain; }
 .ppb-root .ppb-weather small { color: var(--ppb-text-dim); }
-.ppb-root .leaflet-popup-content { color: var(--ppb-text); line-height: 1.5; }
+.ppb-root .leaflet-popup-content { color: var(--ppb-text); font-size:12px; line-height: 1.5; max-width:calc(100vw - 80px); max-height:min(240px,calc(100dvh - 190px)); overflow-y:auto; overflow-x:hidden; overflow-wrap:anywhere; }
 .ppb-root .leaflet-popup-content p { margin: 6px 0; }
 .ppb-root .water-distribution-popup .leaflet-popup-content { box-sizing: border-box; padding-right: 14px; scrollbar-gutter: stable; }
 .ppb-root .water-distribution-popup .leaflet-popup-scrolled { overflow-x: hidden; }

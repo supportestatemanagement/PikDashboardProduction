@@ -9,7 +9,7 @@ const EarthquakeMarker = memo(function EarthquakeMarker({ quake, kind, selected,
     zIndexOffset={selected ? 1200 : kind === 'latest' ? 1000 : 0}
     title={`M ${quake.magnitude ?? '-'} — ${quake.region}`}
     eventHandlers={{ click: () => onSelect?.(quake, kind, false) }}>
-    <Popup autoPan={false} maxWidth={320}><EarthquakeDetails quake={quake} isLatest={kind === 'latest'} /></Popup>
+    <Popup autoPanPadding={[24, 24]} maxWidth={300} maxHeight={240}><EarthquakeDetails quake={quake} isLatest={kind === 'latest'} /></Popup>
   </Marker>;
 });
 
