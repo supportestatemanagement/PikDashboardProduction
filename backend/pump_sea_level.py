@@ -1,4 +1,4 @@
-"""Apply hourly SeaLevel readings without filling missing observations."""
+"""Apply hourly AirLaut readings without filling missing observations."""
 import datetime
 import math
 
@@ -42,7 +42,7 @@ def apply_sea_levels(records, values):
             record = {**record, 'sea': dates[date].get(hour)}
             observed.add((date, hour))
         result.append(record)
-    # SeaLevel can contain hours with no PumpStation observation.
+    # AirLaut can contain hours with no PumpStation observation.
     for date, readings in dates.items():
         for hour, level in readings.items():
             if (date, hour) not in observed:

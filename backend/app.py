@@ -184,9 +184,9 @@ def load_pump_records(sea_values=None):
             continue
         # Keep same-hour updates: changes in pump counts represent starts/stops.
         records.append(parsed)
-    # Merge hourly SeaLevel observations, preserving same-hour pump updates.
+    # Merge hourly AirLaut observations, preserving same-hour pump updates.
     if sea_values is None:
-        sea_values = cc_spreadsheet.worksheet("SeaLevel").get_all_values()
+        sea_values = cc_spreadsheet.worksheet("AirLaut").get_all_values()
     return apply_sea_levels(records, sea_values)
 
 
@@ -201,7 +201,7 @@ def get_pump_peak_events():
         if start_date > end_date:
             return jsonify({"status": "error", "message": "startDate must be before endDate"}), 400
 
-        sea_values = cc_spreadsheet.worksheet("SeaLevel").get_all_values()
+        sea_values = cc_spreadsheet.worksheet("AirLaut").get_all_values()
         sea_records = [row for row in apply_sea_levels([], sea_values) if start_date <= datetime.date.fromisoformat(row["date"]) <= end_date]
         sea_readings = [row["sea"] for row in sea_records if row["sea"] is not None]
         records = [row for row in load_pump_records(sea_values) if start_date <= datetime.date.fromisoformat(row["date"]) <= end_date]
@@ -307,7 +307,7 @@ def get_pump_peak_events():
                 "tdsTrend": [{"date": row["date"], "time": row["time"], "value": row["tds"]} for row in records if row["tds"] is not None],
                 "completeness": round((actual_values / expected_values * 100), 1) if expected_values else 0,
             },
-            "meta": {"recordCount": len(records), "twaSeparated": True, "sources": ["PumpStation", "SeaLevel"]},
+            "meta": {"recordCount": len(records), "twaSeparated": True, "sources": ["PumpStation", "AirLaut"]},
         })
     except ValueError:
         return jsonify({"status": "error", "message": "Invalid date or limit parameter"}), 400
