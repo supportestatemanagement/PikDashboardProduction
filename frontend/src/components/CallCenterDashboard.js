@@ -113,7 +113,10 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
     const detailedCounts = {};
     filteredData.forEach(row => {
       if (issueArea && String(row.Area ?? '').trim() !== issueArea) return;
-      const detail = String(row.Category ?? '').trim().toLowerCase() || 'n/a';
+      const category = String(row.Category ?? '').trim().toLowerCase();
+      const detail = /\bair\b/.test(category)
+        ? category
+        : String(row.Detailed ?? '').trim().toLowerCase() || 'n/a';
       detailedCounts[detail] = (detailedCounts[detail] || 0) + 1;
     });
 
