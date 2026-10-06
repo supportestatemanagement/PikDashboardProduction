@@ -16,6 +16,8 @@ test("displays offline cameras in four area columns in one body row", async () =
   expect(within(bgm).getByText("BGM Camera")).toBeInTheDocument();
   expect(within(bgm).getByText("Detail")).toBeInTheDocument();
   expect(within(bgm).getByText("Kabel jaringan putus")).toBeInTheDocument();
+  expect(within(bgm).getByText("Dalam proses pembelian")).toBeInTheDocument();
+  expect(within(screen.getByRole("cell", { name: "PIK 2 (1)" })).getByText("Service di distributor")).toBeInTheDocument();
   expect(within(bgm).queryByText("Gate")).not.toBeInTheDocument();
   expect(within(bgm).queryByText("Entrance")).not.toBeInTheDocument();
   expect(within(bgm).getAllByRole("listitem")).toHaveLength(1);

@@ -8,6 +8,13 @@ const offlineAreaNames = {
   PIK2: "PIK 2",
 };
 
+function offlineProgress(camera) {
+  const detail = String(camera.Detail ?? '').toLowerCase();
+  if (detail.includes('jaringan')) return 'Dalam proses pembelian';
+  if (detail.includes('rusak') || String(camera.Kondisi ?? '').trim().toUpperCase() === 'RUSAK') return 'Service di distributor';
+  return '—';
+}
+
 export default function CctvDashboard() {
   const [trendData, setTrendData] = useState([]);
   const [totalCctv, setTotalCctv] = useState(0);
@@ -228,7 +235,7 @@ export default function CctvDashboard() {
         .cctv-condition { grid-area: 1 / 1 / 2 / 3; }
         .cctv-distribution { grid-area: 3 / 1 / 4 / 7; }
         .cctv-offline-areas { height: 100%; box-sizing: border-box; overflow: auto; border: 1px solid #E2E8F0; border-radius: 10px; }
-        .cctv-offline-table { width: 100%; min-width: 1000px; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+        .cctv-offline-table { width: 100%; min-width: 1400px; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
         .cctv-offline-table th { padding: 12px 10px; background: #F1F5F9; color: #1E3A8A; font-size: 11px; font-weight: 800; text-align: left; border-bottom: 1px solid #E2E8F0; }
         .cctv-offline-table th { position: sticky; top: 0; z-index: 1; }
         .cctv-offline-table th + th, .cctv-offline-table td + td { border-left: 1px solid #E2E8F0; }
@@ -238,7 +245,7 @@ export default function CctvDashboard() {
         .cctv-offline-list ul { list-style: none; margin: 0; padding: 0; }
         .cctv-offline-list li { padding: 9px 12px; overflow-wrap: anywhere; border-bottom: 1px solid #F1F5F9; }
         .cctv-offline-list li:nth-child(even) { background: #F8FAFC; }
-        .cctv-offline-list li,.cctv-offline-detail-head { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+        .cctv-offline-list li,.cctv-offline-detail-head { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
         .cctv-offline-detail-head { padding: 8px 12px; font-size: 11px; font-weight: 700; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; }
         .cctv-offline-list p { margin: 0; padding: 12px; color: #64748B; }
         @container (max-width: 700px) {
@@ -466,8 +473,8 @@ export default function CctvDashboard() {
                     <td key={area} aria-labelledby={`offline-area-${area}`}>
                       <div className="cctv-offline-list">
                         {cameras.length === 0 ? <p>Tidak ada CCTV offline.</p> : (
-                          <><div className="cctv-offline-detail-head"><span>CCTV</span><span>Detail</span></div><ul>{cameras.map((camera, index) => (
-                            <li key={index}><span>{String(camera["Nama Pada Layar (OSD)"] ?? "").trim() || "—"}</span><span>{String(camera["Detail"] ?? "").trim() || "—"}</span></li>
+                          <><div className="cctv-offline-detail-head"><span>CCTV</span><span>Detail</span><span title="Data dummy berdasarkan detail kerusakan">Progress (dummy)</span></div><ul>{cameras.map((camera, index) => (
+                            <li key={index}><span>{String(camera["Nama Pada Layar (OSD)"] ?? "").trim() || "—"}</span><span>{String(camera["Detail"] ?? "").trim() || "—"}</span><span>{offlineProgress(camera)}</span></li>
                           ))}</ul></>
                         )}
                       </div>
