@@ -201,6 +201,12 @@
 @media(max-width:640px){.ppb-root .ppb-type-tooltip{position:fixed;left:16px;right:16px;bottom:16px;top:auto;width:auto;max-width:none}}
 
 .ppb-root button,.ppb-root select{font-family:inherit}
+.ppb-maritime-info{margin:12px 0;font-size:12px;line-height:1.6;color:var(--ppb-text-dim);overflow-wrap:anywhere}
+.ppb-maritime-info summary{display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--ppb-text)}
+.ppb-maritime-info summary:focus-visible{outline:2px solid #67d9f4;outline-offset:4px;border-radius:4px}
+.ppb-info-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border:1px solid currentColor;border-radius:50%;font-weight:700;font-style:normal;flex-shrink:0}
+.ppb-maritime-info ul{padding-left:18px;margin:10px 0}
+.ppb-maritime-info li{margin:6px 0}
 .ppb-metric-icon{display:inline-flex;align-items:center;color:#ff913c;cursor:help;flex-shrink:0}
 .ppb-map-symbol{display:grid;place-items:center;filter:drop-shadow(0 1px 2px #000);background:transparent;border:0}
 .ppb-legend-row svg{flex-shrink:0}
