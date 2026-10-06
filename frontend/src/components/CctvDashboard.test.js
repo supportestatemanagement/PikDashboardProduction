@@ -6,7 +6,7 @@ afterEach(() => { global.fetch = originalFetch; });
 
 test("displays offline cameras in four area columns in one body row", async () => {
   global.fetch = jest.fn().mockResolvedValue({ json: async () => ({ status: "success", data: [
-    { Tahun: 2025, Area: " bgm ", Kondisi: "off", "Nama Pada Layar (OSD)": "BGM Camera", "Sub Area": "Gate", Lokasi: "Entrance" },
+    { Tahun: 2025, Area: " bgm ", Kondisi: "off", "Nama Pada Layar (OSD)": "BGM Camera", "Sub Area": "Gate", Lokasi: "Entrance", Detail: "Kabel jaringan putus" },
     { Tahun: 2025, Area: "GI", Kondisi: "OFFLINE", "Nama Pada Layar (OSD)": "GI Camera" },
     { Tahun: 2025, Area: "PIK 2", Kondisi: "RUSAK", "Nama Pada Layar (OSD)": "PIK2 Camera" },
     { Tahun: 2025, Area: "BGM", Kondisi: "ON", "Nama Pada Layar (OSD)": "Online Camera" },
@@ -14,6 +14,8 @@ test("displays offline cameras in four area columns in one body row", async () =
   const { container } = render(<CctvDashboard />);
   const bgm = await screen.findByRole("cell", { name: "Bukit Golf Mediterania (1)" });
   expect(within(bgm).getByText("BGM Camera")).toBeInTheDocument();
+  expect(within(bgm).getByText("Detail")).toBeInTheDocument();
+  expect(within(bgm).getByText("Kabel jaringan putus")).toBeInTheDocument();
   expect(within(bgm).queryByText("Gate")).not.toBeInTheDocument();
   expect(within(bgm).queryByText("Entrance")).not.toBeInTheDocument();
   expect(within(bgm).getAllByRole("listitem")).toHaveLength(1);
