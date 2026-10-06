@@ -18,6 +18,7 @@ from disaster_maritime import register_maritime_routes
 from disaster_enso import register_enso_routes
 from water_distribution import build_water_locations
 from pump_sea_level import apply_sea_levels
+from pump_rainfall import register_rainfall_routes
 from customer_service import register_customer_service_routes
 from crisis_room import register_crisis_room
 
@@ -56,6 +57,7 @@ client = gspread.authorize(creds)
 spreadsheet = client.open("PIK Dashboard")
 
 cc_spreadsheet = client.open("Master Data Dashboard")
+register_rainfall_routes(app, lambda: cc_spreadsheet.worksheet("CurahHujan").get_all_values())
 register_customer_service_routes(app, lambda: cc_spreadsheet.worksheet("CustomerRelation").get_all_records(numericise_ignore=['all']))
 cc_sheet = cc_spreadsheet.worksheet("CallCenter")
 cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
@@ -184,9 +186,9 @@ def load_pump_records(sea_values=None):
             continue
         # Keep same-hour updates: changes in pump counts represent starts/stops.
         records.append(parsed)
-    # Merge hourly AirLaut observations, preserving same-hour pump updates.
+    # Merge hourly AirLautGI observations, preserving same-hour pump updates.
     if sea_values is None:
-        sea_values = cc_spreadsheet.worksheet("AirLaut").get_all_values()
+        sea_values = cc_spreadsheet.worksheet("AirLautGI").get_all_values()
     return apply_sea_levels(records, sea_values)
 
 
@@ -201,7 +203,7 @@ def get_pump_peak_events():
         if start_date > end_date:
             return jsonify({"status": "error", "message": "startDate must be before endDate"}), 400
 
-        sea_values = cc_spreadsheet.worksheet("AirLaut").get_all_values()
+        sea_values = cc_spreadsheet.worksheet("AirLautGI").get_all_values()
         sea_records = [row for row in apply_sea_levels([], sea_values) if start_date <= datetime.date.fromisoformat(row["date"]) <= end_date]
         sea_readings = [row["sea"] for row in sea_records if row["sea"] is not None]
         records = [row for row in load_pump_records(sea_values) if start_date <= datetime.date.fromisoformat(row["date"]) <= end_date]
@@ -307,7 +309,7 @@ def get_pump_peak_events():
                 "tdsTrend": [{"date": row["date"], "time": row["time"], "value": row["tds"]} for row in records if row["tds"] is not None],
                 "completeness": round((actual_values / expected_values * 100), 1) if expected_values else 0,
             },
-            "meta": {"recordCount": len(records), "twaSeparated": True, "sources": ["PumpStation", "AirLaut"]},
+            "meta": {"recordCount": len(records), "twaSeparated": True, "sources": ["PumpStation", "AirLautGI"]},
         })
     except ValueError:
         return jsonify({"status": "error", "message": "Invalid date or limit parameter"}), 400

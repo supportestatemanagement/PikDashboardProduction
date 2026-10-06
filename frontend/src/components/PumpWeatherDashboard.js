@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { LoadingValue, LoadingChart } from "./DashboardLoading";
 import { fetchPumpAnalytics } from "../services/pumpService";
+import RainfallPanel from './RainfallPanel';
 
 const SERIES = [
   { key: "PS1", label: "PS1", color: "#35d6bd" },
@@ -206,7 +207,7 @@ function SeaLevelChart({ rows }) {
       return `${path} C ${previous[0] + step},${previous[1] + step * tangents[i - 1]} ${point[0] - step},${point[1] - step * tangents[i]} ${point[0]},${point[1]}`;
     }, '');
   };
-  return <div className="pw-sea-chart-scroll"><svg className="pw-sea-chart" viewBox="0 0 1100 370" role="img" aria-label="Grafik level air laut per jam dari sheet AirLaut">
+  return <div className="pw-sea-chart-scroll"><svg className="pw-sea-chart" viewBox="0 0 1100 370" role="img" aria-label="Grafik level air laut per jam dari sheet AirLautGI">
     <defs><linearGradient id="sea-level-background" x2="0" y2="1"><stop stopColor="#eef7fa" /><stop offset="1" stopColor="#badde8" /></linearGradient></defs>
     <rect x="80" y="60" width="960" height="240" fill="url(#sea-level-background)" />
     <text x="18" y="30">Ketinggian (m)</text>
@@ -252,6 +253,7 @@ export default function PumpWeatherDashboard({ dateRange, isSidebarOpen = false 
       <CurrentCards loading={base.loading} latest={base.data?.analytics?.latest} latestSea={base.data?.analytics?.latestSea} />
     </section>
     <SeaLevelPanel loading={base.loading} data={base.data} />
+    <RainfallPanel date={navbarKey} />
     <section className="pw-main-grid"><PeakPanel loading={peaks.loading} data={peaks.data} filter={peakFilter} setFilter={setPeakFilter} navbarKey={navbarKey} /><TrendChart loading={base.loading} rows={base.data?.chart || []} latest={base.data?.analytics?.latest} /></section>
     <section className="pw-panel pw-status-section" aria-label="Pump Run Summary">
       <div className="pw-status-toolbar"><h2>PUMP RUN SUMMARY</h2><DateRangeFilter {...statusFilter} active={statusFilter.start !== navbarKey || statusFilter.end !== navbarKey} onPreset={(months) => setStatusFilter(presetRange(navbarKey, months))} onStart={(start) => start && setStatusFilter((old) => ({ ...old, start, end: old.end < start ? start : old.end }))} onEnd={(end) => end && setStatusFilter((old) => ({ ...old, start: old.start > end ? end : old.start, end }))} /></div>
