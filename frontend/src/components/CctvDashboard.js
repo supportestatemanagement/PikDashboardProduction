@@ -473,7 +473,7 @@ export default function CctvDashboard() {
                     <td key={area} aria-labelledby={`offline-area-${area}`}>
                       <div className="cctv-offline-list">
                         {cameras.length === 0 ? <p>Tidak ada CCTV offline.</p> : (
-                          <><div className="cctv-offline-detail-head"><span>CCTV</span><span>Detail</span><span title="Data dummy berdasarkan detail kerusakan">Progress (dummy)</span></div><ul>{cameras.map((camera, index) => (
+                          <><div className="cctv-offline-detail-head"><span>CCTV</span><span>Detail</span><span title="Data dummy berdasarkan detail kerusakan">Progress</span></div><ul>{cameras.map((camera, index) => (
                             <li key={index}><span>{String(camera["Nama Pada Layar (OSD)"] ?? "").trim() || "—"}</span><span>{String(camera["Detail"] ?? "").trim() || "—"}</span><span>{offlineProgress(camera)}</span></li>
                           ))}</ul></>
                         )}
