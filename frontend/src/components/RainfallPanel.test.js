@@ -23,8 +23,9 @@ test('shows rainfall thresholds, sorts readings, and preserves zero and blank va
   fireEvent.click(point);
   fireEvent.mouseLeave(point);
   expect(screen.getByRole('tooltip')).toHaveTextContent('Hujan');
-  fireEvent.keyDown(point, { key: 'Escape' });
+  fireEvent.click(screen.getByRole('button', { name: 'Tutup popup curah hujan' }));
   expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Data BBWSCC (Pos Curah Hujan Cengkareng Drain)' })).toHaveAttribute('href', 'https://bbwscc.sdatelemetry.com/?page=pchcilicis');
   const label = screen.getByText('Siaga 2: 10');
   const group = label.parentElement;
   expect(Number(group.querySelector('rect').getAttribute('y')) + 17).toBe(Number(group.querySelector('line').getAttribute('y1')));

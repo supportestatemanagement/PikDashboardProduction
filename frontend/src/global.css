@@ -228,7 +228,7 @@ body {
 .pw-sea-panel{margin-bottom:16px;min-width:0}
 .pw-rain-panel{margin-bottom:16px;min-width:0}
 .pw-rain-scroll{margin:0 16px 16px;overflow-x:auto;border-radius:12px;background:#fff}
-.pw-rain-chart{display:block;width:100%;min-width:680px;height:auto;font-family:inherit;color:#555}
+.pw-rain-chart{display:block;width:100%;min-width:680px;height:auto;max-height:360px;font-family:inherit;color:#555}
 .pw-rain-chart text:not([fill]){fill:currentColor}
 .pw-sea-summary{display:flex;flex-wrap:wrap;gap:24px;margin:16px 0;padding:0 16px}
 .pw-sea-summary dt{font-size:12px;color:#94a3b8}
