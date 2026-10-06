@@ -16,6 +16,7 @@ const navButtonStyle = {
 export default function CallCenterDashboard({ dateRange, isSidebarOpen = true }) {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [issueArea, setIssueArea] = useState('');
 
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -83,6 +84,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
     });
   }, [data, dateRange]);
 
+  const issueAreas = useMemo(() => [...new Set(data.map(row => String(row.Area ?? '').trim()).filter(Boolean))].sort(), [data]);
   const processedData = useMemo(() => {
     if (!filteredData || filteredData.length === 0) {
       return { 
@@ -110,6 +112,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
 
     const detailedCounts = {};
     filteredData.forEach(row => {
+      if (issueArea && String(row.Area ?? '').trim() !== issueArea) return;
       const detail = row.Detailed ? String(row.Detailed).toLowerCase() : "n/a";
       detailedCounts[detail] = (detailedCounts[detail] || 0) + 1;
     });
@@ -162,7 +165,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
       },
       dailyData
     };
-  }, [filteredData]);
+  }, [filteredData, issueArea]);
 
   const sortedData = useMemo(() => {
     if (!filteredData) return [];
@@ -441,8 +444,9 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
             display: "flex",
             flexDirection: "column"
           }}>
-            <div style={{ fontWeight: "800", fontSize: "16px", color: "#1E3A8A", marginBottom: "15px" }}>
-              Top Reported Issues
+            <div style={{ fontWeight: "800", fontSize: "16px", color: "#1E3A8A", marginBottom: "15px", display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+              <span>Top Reported Issues</span>
+              <label style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }}>Area<select aria-label="Top Reported Issues Area" value={issueArea} disabled={isLoading} onChange={event => setIssueArea(event.target.value)} style={{ ...navButtonStyle, maxWidth: '100%' }}><option value="">Semua Area</option>{issueAreas.map(area => <option key={area} value={area}>{area}</option>)}</select></label>
             </div>
             
             <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -617,7 +621,7 @@ function StackedBar({ done, total, label }) {
 }
 
 function TopIssueVerticalChart({ issues }) {
-  if (!issues || issues.length === 0) return null;
+  if (!issues || issues.length === 0) return <p style={{ textAlign: 'center', fontSize: 12, color: '#64748B' }}>Tidak ada laporan untuk area dan periode ini.</p>;
 
   const chartAreaHeight = 150; 
   
