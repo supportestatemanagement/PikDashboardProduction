@@ -178,7 +178,7 @@ function SeaLevelChart({ rows }) {
   const low = available.reduce((a, b) => b.value < a.value ? b : a);
   const high = available.reduce((a, b) => b.value > a.value ? b : a);
   const minimum = Math.floor(Math.min(0, low.value) * 2) / 2;
-  const maximum = Math.ceil(Math.max(2, high.value + .2) * 2) / 2;
+  const maximum = Math.ceil(Math.max(2.5, high.value + .2) * 2) / 2;
   const x = hour => 80 + hour / 24 * 960;
   const y = value => 300 - (value - minimum) / (maximum - minimum) * 240;
   const segments = [];
