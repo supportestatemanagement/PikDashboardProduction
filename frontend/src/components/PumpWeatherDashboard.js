@@ -190,8 +190,8 @@ function SeaLevelChart({ rows }) {
     if (Number.isFinite(row.value)) segment.push(row);
   });
   if (segment.length) segments.push(segment);
-  return <div className="pw-sea-chart-scroll"><svg className="pw-sea-chart" viewBox="0 0 1100 370" role="img" aria-label="Grafik level air laut per jam dari sheet SeaLevel">
-    <defs><linearGradient id="sea-level-background" x2="0" y2="1"><stop stopColor="#eef7fa" /><stop offset="1" stopColor="#badde8" /></linearGradient></defs>
+  return <div className="pw-sea-chart-scroll"><svg className="pw-sea-chart" viewBox="Grafik level air laut per jam">
+    <defs><linearGradient id="sea-level-background" x2="0" y2="1"><stop stopColor="#eef7fa"0 0 1100 370" role="img" aria-label=" /><stop offset="1" stopColor="#badde8" /></linearGradient></defs>
     <rect x="80" y="60" width="960" height="240" fill="url(#sea-level-background)" />
     <text x="18" y="30">Ketinggian (m)</text>
     {Array.from({ length: 6 }, (_, i) => { const value = minimum + (maximum - minimum) * i / 5; return <g key={i}><line x1="80" x2="1040" y1={y(value)} y2={y(value)} className="pw-sea-grid" /><text x="66" y={y(value) + 5} textAnchor="end">{fmt(value)}</text></g>; })}
@@ -200,8 +200,7 @@ function SeaLevelChart({ rows }) {
     {segments.map((points, index) => <polyline key={index} points={points.map(row => `${x(row.hour)},${y(row.value)}`).join(' ')} className="pw-sea-line" />)}
     {available.map(row => <circle key={row.hour} cx={x(row.hour)} cy={y(row.value)} r="4" className="pw-sea-point" tabIndex="0" aria-label={`${row.time}: ${fmt(row.value)} meter`}><title>{row.time}: {fmt(row.value)} M</title></circle>)}
     {[low, ...(high !== low ? [high] : [])].map((row, index) => <g key={index} className={index ? 'pw-sea-high' : 'pw-sea-low'}><circle cx={x(row.hour)} cy={y(row.value)} r="6" /><text x={Math.min(990, Math.max(130, x(row.hour)))} y={y(row.value) - 17} textAnchor="middle">{row.time}</text></g>)}
-    <text x="560" y="362" textAnchor="middle">Jam (WIB)</text>
-  </svg><div className="pw-sea-legend" aria-label="Legenda pasang surut"><span className="pw-sea-legend-title">PASANG SURUT</span><span><i className="pw-sea-legend-high" />pasang naik</span><span><i className="pw-sea-legend-low" />pasang surut</span></div></div>;
+  </svg><div className="pw-sea-legend" aria-label="Legenda pasang surut"><span><i className="pw-sea-legend-high" />pasang naik</span><span><i className="pw-sea-legend-low" />pasang surut</span></div></div>;
 }
 
 export function SeaLevelPanel({ data, loading }) {
@@ -210,7 +209,7 @@ export function SeaLevelPanel({ data, loading }) {
   const levels = sheet;
   const rows = sheet?.hours || [];
   return <article className="pw-panel pw-sea-panel" aria-label="Sea Level" aria-busy={loading}>
-    <div className="pw-panel-head"><div><h2>SEA LEVEL</h2><small>Level air laut per jam · Sheet SeaLevel</small></div><UpdatedLabel latest={latest} loading={loading} /></div>
+    <div className="pw-panel-head"><div><h2>SEA LEVEL</h2><small>Level air laut per jam</small></div><UpdatedLabel latest={latest} loading={loading} /></div>
     <dl className="pw-sea-summary">
       {[["Level terakhir", latest?.sea], ["Tertinggi", levels?.highest], ["Terendah", levels?.lowest]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{loading ? <LoadingValue /> : value == null ? "—" : `${fmt(value)} M`}</dd></div>)}
     </dl>
