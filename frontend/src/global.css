@@ -303,8 +303,8 @@ body {
 .traffic-command-center { position: relative; height: calc(100vh - 60px); min-height: 0; width: 100%; overflow: hidden; color: #e2e8f0; }
 .traffic-map-layer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; background: #08131c; }
 .traffic-map-layer .leaflet-container { background: #08131c; }
-.traffic-map-layer .traffic-street-tiles,
-.traffic-map-layer .vehicle-street-tiles { filter: brightness(.47) saturate(.55) contrast(1.15) hue-rotate(165deg); }
+.traffic-map-layer .traffic-street-tiles { filter: invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) saturate(.85); }
+.traffic-map-layer .vehicle-street-tiles { filter: invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) saturate(.85); }
 .traffic-map-layer .leaflet-control-layers { background: #0f172aeb; color: #f8fafc; border: 1px solid #475569; border-radius: 7px; }
 .traffic-map-layer .leaflet-control-layers label { cursor: pointer; }
 .vehicle-tracker-dashboard .traffic-map-layer,

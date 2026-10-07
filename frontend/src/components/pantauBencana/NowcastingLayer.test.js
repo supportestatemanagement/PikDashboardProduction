@@ -13,7 +13,7 @@ jest.mock('react-leaflet', () => {
   LayersControl.Overlay = ({ children, name, checked }) => <div data-testid={name} data-checked={Boolean(checked)}>{children}</div>;
   LayersControl.BaseLayer = Container;
   return { MapContainer: Container, LayerGroup: Container, Pane: Container, Popup: Container, CircleMarker: Container, Marker: ({ children, title, eventHandlers }) => <div title={title} onClick={() => eventHandlers?.click({ target: { openPopup: mockOpenPopup } })}>{children}</div>,
-    Tooltip: Container, LayersControl, TileLayer: () => null, useMap: () => mockMap,
+    AttributionControl: () => null, Tooltip: Container, LayersControl, TileLayer: () => null, useMap: () => mockMap,
     useMapEvents: handlers => { mockEvents = handlers; },
     GeoJSON: ({ children, data }) => <div data-testid={`polygon-${data.id}`}>{children}</div>,
   };

@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import { divIcon } from 'leaflet';
-import { MapContainer, TileLayer, Marker, Popup, LayersControl, LayerGroup, useMap } from 'react-leaflet';
+import { AttributionControl, MapContainer, TileLayer, Marker, Popup, LayersControl, LayerGroup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { formatWib } from '../../services/disaster/client';
 import EarthquakeLayer from './EarthquakeLayer';
@@ -49,9 +49,9 @@ function DisasterMap({ latestSource, historySource, feltSource = EMPTY_SOURCE, n
     [RDCA_LAYER_NAME, 'cloud', '#a3e635', rdca.length > 0],
   ].filter(([name, , , available]) => available && enabled(name));
   return <section className="ppb-map-surface" aria-label="Peta Bencana Indonesia">
-    <div className="ppb-map-frame"><MapContainer center={[-2.5, 118]} zoom={5} scrollWheelZoom preferCanvas className="ppb-leaflet-map"><ResizeMap />
+    <div className="ppb-map-frame"><MapContainer attributionControl={false} center={[-2.5, 118]} zoom={5} scrollWheelZoom preferCanvas className="ppb-leaflet-map"><ResizeMap /><AttributionControl position="bottomright" prefix={false} />
       <NowcastingEvents onToggle={() => {}} onLayerToggle={(name, visible) => setOverlays(previous => ({ ...previous, [name]: visible }))} />
-      <TileLayer className="ppb-dark-tiles" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <TileLayer className="ppb-dark-tiles" attribution='Map data from &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> | <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener noreferrer">ODbL</a>' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <LayersControl position="topleft">
         <LayersControl.Overlay checked name="Distribusi Air Bersih"><WaterLocationsLayer locations={waterLocations} /></LayersControl.Overlay>
         <LayersControl.Overlay checked name="Gempa terbaru"><EarthquakeLayer kind="latest" earthquakes={latestQuakes} selection={selection} focusRequest={focusRequest} onSelect={onEarthquakeSelect} /></LayersControl.Overlay>

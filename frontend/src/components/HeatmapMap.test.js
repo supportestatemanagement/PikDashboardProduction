@@ -23,7 +23,8 @@ jest.mock('react-leaflet', () => {
 const water = [{ id: 'water-1', name: 'Pos Air', position: [-6.11, 106.75] }];
 test('basemaps retain linked provider attribution and use the canonical OSM endpoint', () => {
   render(<HeatmapMap mode="vehicle-tracker" isActive={false} showLiveVehicles={false} />);
-  expect(screen.getByRole('link', { name: 'Powered by Esri' })).toHaveAttribute('href', 'https://www.esri.com/');
+  expect(screen.queryByRole('link', { name: 'Powered by Esri' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'Satelit' })).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'OpenStreetMap contributors' })).toHaveAttribute('href', 'https://www.openstreetmap.org/copyright');
   expect(screen.getByRole('link', { name: 'ODbL' })).toHaveAttribute('href', 'https://opendatacommons.org/licenses/odbl/1-0/');
   expect(screen.getByTestId('vehicle-street-tiles')).toHaveAttribute('data-url', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
@@ -57,7 +58,8 @@ test('Vehicle Tracker opens road map with GPS and labels without traffic counts 
 
 test('Traffic retains counting and checkpoint data, without GPS/water or new tracker boundary', () => {
   render(<HeatmapMap isActive={false} waterLocations={water} traffic={{ vehicles: { bgm: 12345 } }} />);
-  expect(screen.getByRole('region', { name: 'Satelit' })).toHaveAttribute('data-active', 'true');
+  expect(screen.getByRole('region', { name: 'Peta Jalan' })).toHaveAttribute('data-active', 'true');
+  expect(screen.getByTestId('traffic-street-tiles')).toHaveAttribute('data-url', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
   expect(screen.getAllByText('12.345').length).toBeGreaterThan(0);
   expect(screen.getByTitle('Titik masuk BGM Toll')).toBeInTheDocument();
   expect(screen.queryByText('Realtime GPS layer')).not.toBeInTheDocument();
