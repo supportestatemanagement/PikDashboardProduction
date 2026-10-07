@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import SulapProgramCredit from './SulapProgramCredit';
 import { ENSO_SOURCE_URL } from '../../services/disaster/noaaEnsoService';
 import { NOWCASTING_LAYER_URL } from '../../services/disaster/bmkgNowcasting';
 import { RDCA_URL } from '../../services/disaster/bmkgRdca';
@@ -33,7 +34,7 @@ export default function SourceInfo() {
       <header><h2 id="ppb-info-title">Informasi sumber data</h2><button autoFocus aria-label="Tutup informasi sumber" onClick={() => setOpen(false)}>×</button></header>
       <dl>{sources.map(([title, name, url, interval]) => <div key={title}>
         <dt>{title}</dt>
-        <dd>Sumber data: {url ? <a href={url} target="_blank" rel="noreferrer">{name} ↗</a> : name}<br />Pembaruan otomatis setiap {interval}.</dd>
+        <dd>{title === 'Distribusi Air Bersih' && <SulapProgramCredit />}Sumber data: {url ? <a href={url} target="_blank" rel="noreferrer">{name} ↗</a> : name}<br />Pembaruan otomatis setiap {interval}.</dd>
       </div>)}</dl>
     </dialog>, document.body)}
   </>;

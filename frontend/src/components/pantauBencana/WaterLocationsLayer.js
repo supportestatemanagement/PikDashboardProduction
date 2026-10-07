@@ -1,4 +1,5 @@
 import L from 'leaflet';
+import SulapProgramCredit from './SulapProgramCredit';
 import { LayerGroup, Marker, Popup, Tooltip, useMap } from 'react-leaflet';
 import { focusMapToCoordinates, validEarthquakeCoordinates } from './earthquakeMap';
 
@@ -33,6 +34,7 @@ export default function WaterLocationsLayer({ locations = [] }) {
           </Tooltip>
           <Popup className="traffic-popup water-distribution-popup" autoPanPadding={[24, 24]} maxHeight={240} minWidth={220} maxWidth={300}>
             <div className="popup-title" style={{ color: '#38bdf8' }}>Distribusi Air Bersih</div>
+            <SulapProgramCredit />
             <div className="popup-row"><span>Nama Lokasi</span><strong>{location.name}</strong></div>
             <div className="popup-row"><span>Koordinat</span><strong>{location.position.join(', ')}</strong></div>
             {location.distributions.filter(entry => entry.date).map(entry => <section key={entry.id} style={{ borderTop: '1px solid #475569', marginTop: 10, paddingTop: 8 }}>
