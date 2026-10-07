@@ -1,0 +1,14 @@
+.cctv-group-map-card { grid-column: span 2; min-width: 0; padding: 20px; border-radius: 16px; background: white; box-shadow: 0 4px 16px #203b5c12; color: #475569; }
+.cctv-group-map-card header,.cctv-group-map-dialog header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.cctv-group-map-card h2,.cctv-group-map-dialog h2 { margin:0; font-size:16px; color:#1e3a8a; }
+.cctv-group-map-card button,.cctv-group-map-dialog button,.cctv-map-tools select { background:#f8fafc; color:#203b5c; border:1px solid #cbd5e1; border-radius:6px; padding:7px 10px; cursor:pointer; font-size:12px; }
+.cctv-group-map-card button:disabled,.cctv-group-map-dialog button:disabled { opacity:.5; cursor:default; }
+.cctv-group-map-canvas { height:280px; border-radius:10px; overflow:hidden; margin:10px 0; }
+.cctv-map-tools { display:flex; flex-wrap:wrap; gap:8px; }
+.cctv-map-tools small { width:100%; }
+.cctv-group-pin span { display:block; background:#0e7490; color:white; border:2px solid white; border-radius:50%; text-align:center; box-shadow:0 2px 8px #0005; }
+.cctv-group-map-dialog { width:min(94vw,1400px); height:85dvh; box-sizing:border-box; border:0; border-radius:16px; padding:20px; display:flex; flex-direction:column; color:#475569; }
+.cctv-group-map-dialog::backdrop { background:#13243db3; }
+.cctv-group-map-dialog .cctv-group-map-canvas { flex:1; min-height:200px; }
+.cctv-group-map-card small,.cctv-group-map-dialog small { font-size:11px; }
+.cctv-panels > .cctv-group-map-card { grid-area: 4 / 1 / 5 / 3; }

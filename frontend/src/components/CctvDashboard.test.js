@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import CctvDashboard from "./CctvDashboard";
+jest.mock('./CctvGroupMap', () => () => <div>Peta Kelompok CCTV</div>);
 
 const originalFetch = global.fetch;
 afterEach(() => { global.fetch = originalFetch; });

@@ -21,6 +21,7 @@ from pump_sea_level import apply_sea_levels
 from pump_rainfall import register_rainfall_routes
 from customer_service import register_customer_service_routes
 from crisis_room import register_crisis_room
+from cctv_map import register_cctv_map
 
 # Menggunakan RapidOCR (Ringan, Cepat, dan Akurat untuk Angka CCTV)
 from rapidocr_onnxruntime import RapidOCR
@@ -61,6 +62,7 @@ register_rainfall_routes(app, lambda: cc_spreadsheet.worksheet("CurahHujan").get
 register_customer_service_routes(app, lambda: cc_spreadsheet.worksheet("CustomerRelation").get_all_records(numericise_ignore=['all']))
 cc_sheet = cc_spreadsheet.worksheet("CallCenter")
 cctv2026_sheet = cc_spreadsheet.worksheet("CCTV")
+register_cctv_map(app, cc_spreadsheet, lambda: cctv2026_sheet.get_all_records())
 perparkiran_sheet = cc_spreadsheet.worksheet("Perparkiran")
 pump_station_sheet = cc_spreadsheet.worksheet("PumpStation")
 
