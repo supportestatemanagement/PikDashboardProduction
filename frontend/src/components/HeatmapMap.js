@@ -1,6 +1,6 @@
 import React from 'react';
 import VehicleTrackingLayer from './VehicleTrackingLayer';
-import { AttributionControl, LayersControl, MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { AttributionControl, MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getAreaTrafficStage } from '../services/trafficService';
@@ -606,8 +606,6 @@ export default function HeatmapMap({ traffic, isActive = true, mode = 'traffic',
         {isTracker && showLiveVehicles && <VehicleTrackingLayer isActive={isActive} />}
         {children}
         <AttributionControl position="bottomright" prefix={false} />
-        <LayersControl position="topleft" collapsed={false}>
-          <LayersControl.BaseLayer checked name="Peta Jalan">
             <TileLayer
               className={isTracker ? 'vehicle-street-tiles' : 'traffic-street-tiles'}
               attribution='Map data from &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> | <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener noreferrer">ODbL</a>'
@@ -615,8 +613,6 @@ export default function HeatmapMap({ traffic, isActive = true, mode = 'traffic',
               maxNativeZoom={19}
               maxZoom={22}
             />
-          </LayersControl.BaseLayer>
-        </LayersControl>
 
         <GeoJSON
           key={Object.values(areaStages).map((stage) => stage.stage).join('-')}

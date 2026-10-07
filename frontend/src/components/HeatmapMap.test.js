@@ -31,7 +31,7 @@ test('basemaps retain linked provider attribution and use the canonical OSM endp
 });
 test('history shares live basemap and area boundaries while displaying only its own tracking layer', () => {
   render(<HeatmapMap mode="vehicle-tracker" isActive={false} showLiveVehicles={false}><div>History route</div></HeatmapMap>);
-  expect(screen.getByRole('region', { name: 'Peta Jalan' })).toHaveAttribute('data-active', 'true');
+  expect(screen.queryByRole('region', { name: 'Peta Jalan' })).not.toBeInTheDocument();
   expect(screen.getByText('History route')).toBeInTheDocument();
   expect(screen.queryByText('Realtime GPS layer')).not.toBeInTheDocument();
   expect(screen.getByText('BGM')).toBeInTheDocument();
@@ -42,7 +42,7 @@ test('history shares live basemap and area boundaries while displaying only its 
 
 test('Vehicle Tracker opens road map with GPS and labels without traffic counts or checkpoints', () => {
   render(<HeatmapMap mode="vehicle-tracker" isActive={false} waterLocations={water} traffic={{ vehicles: { bgm: 12345 } }} />);
-  expect(screen.getByRole('region', { name: 'Peta Jalan' })).toHaveAttribute('data-active', 'true');
+  expect(screen.queryByRole('region', { name: 'Peta Jalan' })).not.toBeInTheDocument();
   expect(screen.getByTestId('vehicle-street-tiles')).toBeInTheDocument();
   expect(screen.getByText('Realtime GPS layer')).toBeInTheDocument();
   expect(screen.queryByTitle('Berbagi Air: Pos Air')).not.toBeInTheDocument();
@@ -58,7 +58,7 @@ test('Vehicle Tracker opens road map with GPS and labels without traffic counts 
 
 test('Traffic retains counting and checkpoint data, without GPS/water or new tracker boundary', () => {
   render(<HeatmapMap isActive={false} waterLocations={water} traffic={{ vehicles: { bgm: 12345 } }} />);
-  expect(screen.getByRole('region', { name: 'Peta Jalan' })).toHaveAttribute('data-active', 'true');
+  expect(screen.queryByRole('region', { name: 'Peta Jalan' })).not.toBeInTheDocument();
   expect(screen.getByTestId('traffic-street-tiles')).toHaveAttribute('data-url', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
   expect(screen.getAllByText('12.345').length).toBeGreaterThan(0);
   expect(screen.getByTitle('Titik masuk BGM Toll')).toBeInTheDocument();
