@@ -13,7 +13,7 @@ const sources = [
   ['RDCA', 'BMKG', RDCA_URL, '5 menit'],
   ['Kondisi Maritim', 'BMKG Maritim', 'https://maritim.bmkg.go.id/', '30 menit'],
   ['ENSO / El Niño–La Niña', 'NOAA/CPC', ENSO_SOURCE_URL, '6 jam'],
-  ['Distribusi Air Bersih', 'Rekap Sample Air oleh Officer', null, '30 menit'],
+  ['Distribusi Air Bersih', 'Program SULAP by CSR PIK', null, '30 menit'],
 ];
 export default function SourceInfo() {
   const [open, setOpen] = useState(false);
@@ -34,7 +34,7 @@ export default function SourceInfo() {
       <header><h2 id="ppb-info-title">Informasi sumber data</h2><button autoFocus aria-label="Tutup informasi sumber" onClick={() => setOpen(false)}>×</button></header>
       <dl>{sources.map(([title, name, url, interval]) => <div key={title}>
         <dt>{title}</dt>
-        <dd>{title === 'Distribusi Air Bersih' && <SulapProgramCredit />}Sumber data: {url ? <a href={url} target="_blank" rel="noreferrer">{name} ↗</a> : name}<br />Pembaruan otomatis setiap {interval}.</dd>
+        <dd>{title === 'Distribusi Air Bersih' && <SulapProgramCredit showText={false} />}Sumber data: {url ? <a href={url} target="_blank" rel="noreferrer">{name} ↗</a> : name}<br />Pembaruan otomatis setiap {interval}.</dd>
       </div>)}</dl>
     </dialog>, document.body)}
   </>;
