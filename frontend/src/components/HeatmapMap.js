@@ -618,7 +618,7 @@ export default function HeatmapMap({ traffic, isActive = true, mode = 'traffic',
           <LayersControl.BaseLayer checked={isTracker} name="Peta Jalan">
             <TileLayer
               className={isTracker ? 'vehicle-street-tiles' : 'traffic-street-tiles'}
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
+              attribution='Map data &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> | <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener noreferrer">ODbL</a>'
               url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
               maxNativeZoom={19}
               maxZoom={22}

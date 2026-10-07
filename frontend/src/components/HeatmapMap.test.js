@@ -25,6 +25,7 @@ test('basemaps retain linked provider attribution and use the canonical OSM endp
   render(<HeatmapMap mode="vehicle-tracker" isActive={false} showLiveVehicles={false} />);
   expect(screen.getByRole('link', { name: 'Powered by Esri' })).toHaveAttribute('href', 'https://www.esri.com/');
   expect(screen.getByRole('link', { name: 'OpenStreetMap contributors' })).toHaveAttribute('href', 'https://www.openstreetmap.org/copyright');
+  expect(screen.getByRole('link', { name: 'ODbL' })).toHaveAttribute('href', 'https://opendatacommons.org/licenses/odbl/1-0/');
   expect(screen.getByTestId('vehicle-street-tiles')).toHaveAttribute('data-url', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
 });
 test('history shares live basemap and area boundaries while displaying only its own tracking layer', () => {
