@@ -648,7 +648,9 @@ function TopIssueVerticalChart({ issues }) {
       position: "relative", 
       width: "100%",
       marginTop: "40px",
-      paddingLeft: "35px"
+      paddingLeft: "35px",
+      paddingBottom: "32px",
+      boxSizing: "border-box"
     }}>
       
       <div style={{ 
@@ -715,13 +717,13 @@ function TopIssueVerticalChart({ issues }) {
 
               <div style={{ 
                 position: "absolute",
-                top: "105%", 
+                top: "calc(100% + 6px)", 
                 width: "100%",
                 textAlign: "center",
-                fontSize: "10px",
+                fontSize: "9px",
                 fontWeight: "700",
                 color: "#475569",
-                lineHeight: "1.2",
+                lineHeight: "1.3",
                 wordWrap: "break-word",
                 display: "-webkit-box",
                 WebkitLineClamp: 2, 
