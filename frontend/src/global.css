@@ -873,11 +873,16 @@ body {
 .traffic-map-layer .leaflet-control-attribution {
   padding: 1px 5px;
   border-radius: 4px 0 0 0;
-  background: rgba(255, 255, 255, .72);
+  background: rgba(255, 255, 255, .94);
   color: #334155;
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.4;
+  max-width: calc(100vw - 32px);
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .traffic-map-layer .leaflet-control-attribution a { color: #334155; }
 .traffic-map-layer .leaflet-control-attribution a:hover,
 .traffic-map-layer .leaflet-control-attribution a:focus-visible { color: #075985; text-decoration: underline; }
+.traffic-map-layer .leaflet-bottom.leaflet-right { max-width: 100%; }
+.traffic-command-center .traffic-overlay:not(.modal-open) { max-height: calc(100% - 72px); }

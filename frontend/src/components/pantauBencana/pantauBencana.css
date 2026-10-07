@@ -102,7 +102,7 @@
 .ppb-root .leaflet-popup-content a{color:#67d9f4}
 .ppb-root .leaflet-bar a{background:#101c30;color:#e7edf6;border-color:#34445b}
 .ppb-root .leaflet-bar a:hover{background:#26374d}
-.ppb-root .leaflet-control-attribution{background:rgba(14,23,41,.94);color:#c5cfde}
+.ppb-root .leaflet-control-attribution{background:rgba(14,23,41,.94);color:#c5cfde;font-size:11px;line-height:1.4;white-space:normal;overflow-wrap:anywhere;max-width:calc(100vw - 24px)}
 .ppb-root .leaflet-control-attribution a{color:#67d9f4}
 .ppb-root .ppb-legend{color:#ccd5e3;background:rgba(10,16,28,.94);border-color:#34445b}
 .ppb-earthquake-marker{--quake-color:#f7943c;--radar-period:3.6s;--radar-strength:.45;background:transparent;border:0}

@@ -11,7 +11,7 @@ jest.mock('react-leaflet', () => {
   LayersControl.BaseLayer = ({ name, checked, children }) => <section aria-label={name} data-active={Boolean(checked)}>{children}</section>;
   return {
     MapContainer: Container, LayersControl, AttributionControl: () => null,
-    TileLayer: ({ className }) => <div data-testid={className || 'satellite-tiles'} />,
+    TileLayer: ({ className, attribution, url }) => <div data-testid={className || 'satellite-tiles'} data-url={url} dangerouslySetInnerHTML={{ __html: attribution }} />,
     GeoJSON: ({ data }) => <div data-testid="boundaries" data-geometry={JSON.stringify(data)} />,
     Marker: ({ children, icon, title }) => <div title={title}><span dangerouslySetInnerHTML={{ __html: icon.html }} />{children}</div>,
     Popup: Container,
@@ -21,6 +21,12 @@ jest.mock('react-leaflet', () => {
 });
 
 const water = [{ id: 'water-1', name: 'Pos Air', position: [-6.11, 106.75] }];
+test('basemaps retain linked provider attribution and use the canonical OSM endpoint', () => {
+  render(<HeatmapMap mode="vehicle-tracker" isActive={false} showLiveVehicles={false} />);
+  expect(screen.getByRole('link', { name: 'Powered by Esri' })).toHaveAttribute('href', 'https://www.esri.com/');
+  expect(screen.getByRole('link', { name: 'OpenStreetMap contributors' })).toHaveAttribute('href', 'https://www.openstreetmap.org/copyright');
+  expect(screen.getByTestId('vehicle-street-tiles')).toHaveAttribute('data-url', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+});
 test('history shares live basemap and area boundaries while displaying only its own tracking layer', () => {
   render(<HeatmapMap mode="vehicle-tracker" isActive={false} showLiveVehicles={false}><div>History route</div></HeatmapMap>);
   expect(screen.getByRole('region', { name: 'Peta Jalan' })).toHaveAttribute('data-active', 'true');

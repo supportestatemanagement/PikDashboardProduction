@@ -609,7 +609,7 @@ export default function HeatmapMap({ traffic, isActive = true, mode = 'traffic',
         <LayersControl position="topleft" collapsed={false}>
           <LayersControl.BaseLayer checked={!isTracker} name="Satelit">
             <TileLayer
-              attribution='Tiles &copy; <a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Esri</a> &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+              attribution='<a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">Powered by Esri</a> | Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
               url="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
               maxNativeZoom={19}
               maxZoom={22}
@@ -619,7 +619,7 @@ export default function HeatmapMap({ traffic, isActive = true, mode = 'traffic',
             <TileLayer
               className={isTracker ? 'vehicle-street-tiles' : 'traffic-street-tiles'}
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
               maxNativeZoom={19}
               maxZoom={22}
             />
