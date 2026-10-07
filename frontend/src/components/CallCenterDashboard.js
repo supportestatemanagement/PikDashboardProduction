@@ -17,6 +17,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [issueArea, setIssueArea] = useState('');
+  const [issueDepartment, setIssueDepartment] = useState('');
 
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -85,6 +86,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
   }, [data, dateRange]);
 
   const issueAreas = useMemo(() => [...new Set(data.map(row => String(row.Area ?? '').trim()).filter(Boolean))].sort(), [data]);
+  const issueDepartments = useMemo(() => [...new Set(data.filter(row => !issueArea || String(row.Area ?? '').trim() === issueArea).map(row => String(row.Dept ?? '').trim().toUpperCase()).filter(Boolean))].sort(), [data, issueArea]);
   const processedData = useMemo(() => {
     if (!filteredData || filteredData.length === 0) {
       return { 
@@ -113,10 +115,9 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
     const detailedCounts = {};
     filteredData.forEach(row => {
       if (issueArea && String(row.Area ?? '').trim() !== issueArea) return;
-      const category = String(row.Category ?? '').trim().toLowerCase();
-      const detail = /\bair\b/.test(category)
-        ? category
-        : String(row.Detailed ?? '').trim().toLowerCase() || 'n/a';
+      const department = String(row.Dept ?? '').trim().toUpperCase() || 'N/A';
+      if (issueDepartment && department !== issueDepartment) return;
+      const detail = issueDepartment ? String(row.Detailed ?? '').trim().toLowerCase() || 'n/a' : department;
       detailedCounts[detail] = (detailedCounts[detail] || 0) + 1;
     });
 
@@ -168,7 +169,7 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
       },
       dailyData
     };
-  }, [filteredData, issueArea]);
+  }, [filteredData, issueArea, issueDepartment]);
 
   const sortedData = useMemo(() => {
     if (!filteredData) return [];
@@ -449,7 +450,10 @@ export default function CallCenterDashboard({ dateRange, isSidebarOpen = true })
           }}>
             <div style={{ fontWeight: "800", fontSize: "16px", color: "#1E3A8A", marginBottom: "15px", display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
               <span>Top Reported Issues</span>
-              <select aria-label="Top Reported Issues Area" value={issueArea} disabled={isLoading} onChange={event => setIssueArea(event.target.value)} style={{ ...navButtonStyle, maxWidth: '100%' }}><option value="">Semua Area</option>{issueAreas.map(area => <option key={area} value={area}>{area}</option>)}</select>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, maxWidth: '100%' }}>
+                <select aria-label="Top Reported Issues Area" value={issueArea} disabled={isLoading} onChange={event => { setIssueArea(event.target.value); setIssueDepartment(''); }} style={{ ...navButtonStyle, maxWidth: '100%' }}><option value="">Semua Area</option>{issueAreas.map(area => <option key={area} value={area}>{area}</option>)}</select>
+                <select aria-label="Top Reported Issues Department" value={issueDepartment} disabled={isLoading} onChange={event => setIssueDepartment(event.target.value)} style={{ ...navButtonStyle, maxWidth: '100%' }}><option value="">Semua Department</option>{issueDepartments.map(department => <option key={department} value={department}>{department}</option>)}</select>
+              </div>
             </div>
             
             <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>

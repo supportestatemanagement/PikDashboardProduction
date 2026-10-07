@@ -13,16 +13,20 @@ test('area selection filters only the top reported issues chart', async () => {
     const select = await screen.findByLabelText('Top Reported Issues Area');
     await waitFor(() => expect(select).toBeEnabled());
     const card = select.closest('.chart-card');
-    expect(within(card).getByText('keluhan listrik bermasalah')).toBeInTheDocument();
-    expect(within(card).queryByText('keluhan listrik')).not.toBeInTheDocument();
-    expect(within(card).getByText('keluhan air')).toBeInTheDocument();
-    expect(within(card).getByText('2')).toBeInTheDocument();
+    const department = screen.getByLabelText('Top Reported Issues Department');
+    expect(within(card).getAllByText('TEKNIK')).toHaveLength(2);
+    expect(within(card).getAllByText('3')).toHaveLength(2);
     expect(within(card).queryByText('air tidak mengalir')).not.toBeInTheDocument();
-    expect(within(card).queryByText('kebocoran air')).not.toBeInTheDocument();
-    fireEvent.change(select, { target: { value: 'BGM' } });
-    expect(within(card).getByText('keluhan listrik bermasalah')).toBeInTheDocument();
+    fireEvent.change(department, { target: { value: 'TEKNIK' } });
+    expect(within(card).getByText('air tidak mengalir')).toBeInTheDocument();
+    expect(within(card).getByText('kebocoran air')).toBeInTheDocument();
     expect(within(card).queryByText('keluhan air')).not.toBeInTheDocument();
+    fireEvent.change(select, { target: { value: 'BGM' } });
+    expect(department).toHaveValue('');
+    fireEvent.change(department, { target: { value: 'TEKNIK' } });
+    expect(within(card).getByText('keluhan listrik bermasalah')).toBeInTheDocument();
+    expect(within(card).queryByText('air tidak mengalir')).not.toBeInTheDocument();
     fireEvent.change(select, { target: { value: '' } });
-    expect(within(card).getByText('keluhan air')).toBeInTheDocument();
+    expect(within(card).getAllByText('3')).toHaveLength(2);
   } finally { global.fetch = originalFetch; }
 });
