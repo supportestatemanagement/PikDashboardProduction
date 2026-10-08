@@ -65,7 +65,9 @@ test('combines totals, shows PIK2 offline quantities, and switches brand indepen
     { 'Jumlah Kamera': 20, Area: 'PIK 2 MILENIAL', 'Sub Area': 'ALABAMA', Brand: 'Dahua', Tahun: 2024, Kondisi: 'ON', 'Detail Offline': '3 Kamera Gangguan Port', 'Progress Perbaikan': 'Proses garansi' },
   ] : [{ Tahun: 2025, Area: 'GI', Brand: 'Hikvision', Kondisi: 'ON' }] }) }));
   const { container } = render(<CctvDashboard />);
-  expect(await screen.findByText('PIK 1: 1 · PIK 2: 20')).toBeInTheDocument();
+  const breakdown = await screen.findByLabelText('Jumlah CCTV per wilayah');
+  expect(within(breakdown).getByText('1')).toBeInTheDocument();
+  expect(within(breakdown).getByText('20')).toBeInTheDocument();
   const offline = screen.getByRole('region', { name: 'Daftar CCTV offline PIK 2' });
   expect(within(offline).getByText('Proses garansi')).toBeInTheDocument();
   expect(within(offline).getByText('(3 offline)')).toBeInTheDocument();

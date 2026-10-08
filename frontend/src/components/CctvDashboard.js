@@ -138,6 +138,10 @@ export default function CctvDashboard() {
         .cctv-offline-pik2 { grid-area: 3 / 1 / 4 / 7; }
         .cctv-pik2-table { min-width: 800px; }
         .cctv-choice { display:flex; gap:4px; margin-top:6px; }
+        .cctv-total-breakdown { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; width:min(100%,320px); margin:16px 0 0; }
+        .cctv-total-breakdown > div { padding:10px 18px; border:1px solid rgba(255,255,255,.18); border-radius:8px; background:rgba(255,255,255,.06); text-align:center; }
+        .cctv-total-breakdown dt { font-size:10px; font-weight:600; letter-spacing:1px; color:#CBD5F5; }
+        .cctv-total-breakdown dd { margin:4px 0 0; font-size:22px; line-height:1.2; font-weight:700; color:white; font-variant-numeric:tabular-nums; }
         .cctv-choice button { border:1px solid #CBD5E1; border-radius:5px; padding:4px 8px; font-size:10px; background:#F8FAFC; color:#475569; cursor:pointer; }
         .cctv-choice button[aria-pressed="true"] { background:#1E3A8A; color:white; border-color:#1E3A8A; }
         .cctv-panels > [hidden] { display:none !important; }
@@ -312,7 +316,7 @@ export default function CctvDashboard() {
                 {errors.pik1 || errors.pik2 ? "—" : totalCctv ?? "..."}
               </div>
               <div style={{ fontSize: "12px", opacity: 0.8, letterSpacing: "2px", marginTop: "5px" }}>UNITS INSTALLED</div> 
-              <div style={{ fontSize: 11, marginTop: 8 }}>{datasets.pik1 && datasets.pik2 ? `PIK 1: ${metrics.pik1.total} · PIK 2: ${metrics.pik2.total}` : errors.pik1 || errors.pik2 ? 'Gagal memuat total CCTV.' : 'Memuat kedua sheet…'}</div>
+              {datasets.pik1 && datasets.pik2 ? <dl className="cctv-total-breakdown" aria-label="Jumlah CCTV per wilayah"><div><dt>PIK 1</dt><dd>{metrics.pik1.total.toLocaleString('id-ID')}</dd></div><div><dt>PIK 2</dt><dd>{metrics.pik2.total.toLocaleString('id-ID')}</dd></div></dl> : <div style={{ fontSize: 11, marginTop: 8 }}>{errors.pik1 || errors.pik2 ? 'Gagal memuat total CCTV.' : 'Memuat kedua sheet…'}</div>}
               <div style={{ marginTop: "15px", display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", fontWeight: "600" }}> 
                   <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10B981", animation: "pulse 2s infinite" }}></span>
                   Live Update
