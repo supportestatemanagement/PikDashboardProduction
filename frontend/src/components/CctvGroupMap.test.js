@@ -1,28 +1,34 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import CctvGroupMap from './CctvGroupMap';
-jest.mock('leaflet', () => ({ divIcon: () => ({}) }));
+import { CCTV_AREAS } from './cctvAreas';
 jest.mock('react-leaflet', () => {
-  const React = require('react');
   const Container = ({ children }) => <div>{children}</div>;
   return { MapContainer: Container, Popup: Container, Tooltip: Container,
-    Marker: ({ children, draggable }) => <div data-testid="marker" data-draggable={String(draggable)}>{children}</div>,
+    Polygon: ({ children, positions }) => <div data-testid="polygon" data-first={JSON.stringify(positions[0])}>{children}</div>,
     TileLayer: () => null, AttributionControl: () => null,
-    useMap: () => ({ fitBounds: jest.fn() }), useMapEvents: () => null };
+    useMap: () => ({ fitBounds: jest.fn() }) };
 });
-const records = [{ Tahun: 2026, Kelompok: 'Gate' }, { 'Nama Pada Layar (OSD)': 'Camera', Kelompok: 'Gate' }];
-beforeEach(() => { global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ status: 'success', data: [{ Kelompok: 'Gate', Latitude: -6.1, Longitude: 106.7 }] }) }); });
-afterEach(() => jest.restoreAllMocks());
-test('groups cameras and keeps other accounts read only', async () => {
-  render(<CctvGroupMap records={records} session={{ user: { username: 'Other' } }} />);
-  expect(await screen.findByText('Total CCTV:')).toHaveTextContent('Total CCTV: 2');
+test('counts Area Kelompok regardless of old group or coordinate fields', () => {
+  render(<CctvGroupMap records={[
+    { Tahun: 2026, 'Area Kelompok': 'Sektor Tengah', Kelompok: 'A' },
+    { 'Nama Pada Layar (OSD)': 'Camera', 'Area Kelompok': ' sektor tengah ', Kelompok: 'B' },
+    { Tahun: 2026, 'Area Kelompok': 'Other', Kelompok: 'Sektor Tengah' },
+    { 'Area Kelompok': 'Sektor Tengah' },
+  ]} />);
+  expect(screen.getByText('Total CCTV:')).toHaveTextContent('Total CCTV: 2');
+  expect(screen.getByTestId('polygon')).toHaveAttribute('data-first', '[-6.1025433,106.7421972]');
+  expect(CCTV_AREAS[0].coordinates.at(-1)).toEqual(CCTV_AREAS[0].coordinates[0]);
   expect(screen.queryByText('Edit lokasi')).not.toBeInTheDocument();
-  expect(screen.getByTestId('marker')).toHaveAttribute('data-draggable', 'false');
 });
-test('Daniel explicitly enables dragging and can cancel editing', async () => {
-  render(<CctvGroupMap records={records} session={{ user: { username: 'Daniel' }, sessionToken: 'signed' }} />);
-  fireEvent.click(await screen.findByText('Edit lokasi'));
-  expect(screen.getByTestId('marker')).toHaveAttribute('data-draggable', 'true');
-  expect(screen.getByText('Simpan lokasi')).toBeDisabled();
-  fireEvent.click(screen.getByText('Batal'));
-  expect(screen.getByTestId('marker')).toHaveAttribute('data-draggable', 'false');
+test('area map can expand and close', () => {
+  const show = HTMLDialogElement.prototype.showModal;
+  HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
+  render(<CctvGroupMap records={[]} />);
+  const button = screen.getByRole('button', { name: 'Perbesar peta CCTV' });
+  fireEvent.click(button);
+  expect(within(screen.getByRole('dialog')).getByText('Total CCTV:')).toHaveTextContent('Total CCTV: 0');
+  fireEvent.click(screen.getByText('Tutup'));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(button).toHaveFocus();
+  HTMLDialogElement.prototype.showModal = show;
 });

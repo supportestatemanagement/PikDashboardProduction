@@ -220,7 +220,7 @@ export default function App() {
         </div>
 
         <div className={isSidebarOpen ? "cctv-sidebar-open" : undefined} style={{ display: displayedTab === "cctv" ? "block" : "none" }}>
-          <CctvDashboard session={session} />
+          <CctvDashboard />
         </div>
 
         {displayedTab === "availableparking" && <AvailableParkingDashboard />}

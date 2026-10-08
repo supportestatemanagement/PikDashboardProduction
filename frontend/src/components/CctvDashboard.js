@@ -14,7 +14,7 @@ function offlineProgress(camera) {
   return String(camera.Progress ?? '').trim() || '—';
 }
 
-export default function CctvDashboard({ session }) {
+export default function CctvDashboard() {
   const [cameraRecords, setCameraRecords] = useState([]);
   const [trendData, setTrendData] = useState([]);
   const [totalCctv, setTotalCctv] = useState(0);
@@ -414,7 +414,7 @@ export default function CctvDashboard({ session }) {
 
         <div className="cctv-panel-container">
         <div className="cctv-panels">
-          <CctvGroupMap records={cameraRecords} session={session} />
+          <CctvGroupMap records={cameraRecords} />
           
           {/* Card 3: Animasi dengan delay 0.2s */}
           <div className="animate-card cctv-brand" style={{ animationDelay: "0.2s" }}>
