@@ -22,8 +22,8 @@ test('displays latest Firebase coordinates immediately without interpolating acr
   rerender(<VehicleMarker vehicle={{ ...vehicle(-6.001, 106.002), speed: 20 }} now={1790300005000} connected />);
   expect(mockSetLatLng).toHaveBeenCalledTimes(calls);
 });
-test('makes stale GPS visible rather than hiding its status', () => {
+test('hides stale GPS text from the vehicle label and popup', () => {
   render(<VehicleMarker vehicle={vehicle()} now={1790300061000} connected />);
-  expect(screen.getByText('Status: GPS tidak diperbarui')).toBeInTheDocument();
-  expect(screen.getByText('GPS tidak diperbarui')).toBeInTheDocument();
+  expect(screen.queryByText('Status: GPS tidak diperbarui')).not.toBeInTheDocument();
+  expect(screen.queryByText('GPS tidak diperbarui')).not.toBeInTheDocument();
 });

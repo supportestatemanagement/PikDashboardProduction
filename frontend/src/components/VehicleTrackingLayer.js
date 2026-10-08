@@ -31,11 +31,11 @@ export function VehicleMarker({ vehicle, now, connected }) {
   return <Marker ref={marker} position={initialPosition.current} icon={icon} title={name} zIndexOffset={1000}>
     <Tooltip permanent direction="top" offset={[0, -28]} className="vehicle-map-label">
       <span className="vehicle-map-label-content" style={{ '--vehicle-color': vehicleColor }}>
-        {name} {vehicle.plate_number || ''}{status !== 'Live' && <small>{status}</small>}
+        {name} {vehicle.plate_number || ''}{status !== 'Live' && status !== 'GPS tidak diperbarui' && <small>{status}</small>}
       </span>
     </Tooltip>
     <Popup><strong>{name}</strong><div>Pelat: {vehicle.plate_number || '—'}</div>
-      <div>Petugas: {vehicle.officer_name || '—'}</div><div>Status: {status}</div>
+      <div>Petugas: {vehicle.officer_name || '—'}</div>{status !== 'GPS tidak diperbarui' && <div>Status: {status}</div>}
       <div>Speed: {Number.isFinite(vehicle.speed) && vehicle.speed >= 0 ? `${vehicle.speed.toFixed(1)} km/jam` : '—'}</div>
       <div title="Perkiraan radius ketelitian posisi GPS; semakin kecil nilainya, semakin teliti posisinya.">Akurasi GPS: {Number.isFinite(vehicle.accuracy) ? `${vehicle.accuracy.toFixed(1)} m` : '—'}</div>
       <div>Pembaruan: {Number.isFinite(vehicle.timestamp) ? new Date(vehicle.timestamp).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ' WIB' : '—'}</div>
