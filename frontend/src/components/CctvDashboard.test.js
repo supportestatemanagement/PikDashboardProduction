@@ -18,12 +18,12 @@ test("displays offline cameras in four area columns in one body row", async () =
   expect(within(bgm).getByText("Detail")).toBeInTheDocument();
   expect(within(bgm).getByText("Kabel jaringan putus")).toBeInTheDocument();
   expect(within(bgm).getByText("Sudah diperbaiki")).toBeInTheDocument();
-  expect(within(screen.getByRole("cell", { name: "PIK 2 (1)" })).getAllByText("—")).toHaveLength(2);
+  expect(within(screen.getByRole("cell", { name: "Toll Kataraja (1)" })).getAllByText("—")).toHaveLength(2);
   expect(within(bgm).queryByText("Gate")).not.toBeInTheDocument();
   expect(within(bgm).queryByText("Entrance")).not.toBeInTheDocument();
   expect(within(bgm).getAllByRole("listitem")).toHaveLength(1);
   expect(within(screen.getByRole("cell", { name: "Golf Island (1)" })).getByText("GI Camera")).toBeInTheDocument();
-  expect(within(screen.getByRole("cell", { name: "PIK 2 (1)" })).getByText("PIK2 Camera")).toBeInTheDocument();
+  expect(within(screen.getByRole("cell", { name: "Toll Kataraja (1)" })).getByText("PIK2 Camera")).toBeInTheDocument();
   expect(within(screen.getByRole("cell", { name: "Riverwalk Island (0)" })).getByText("Tidak ada CCTV offline.")).toBeInTheDocument();
   const offline = screen.getByRole("region", { name: "Daftar CCTV offline per area" });
   const table = within(offline).getByRole("table");

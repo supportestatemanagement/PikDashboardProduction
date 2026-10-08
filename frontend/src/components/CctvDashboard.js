@@ -7,7 +7,7 @@ const offlineAreaNames = {
   BGM: "Bukit Golf Mediterania",
   GI: "Golf Island",
   RWI: "Riverwalk Island",
-  PIK2: "PIK 2",
+  PIK2: "Toll Kataraja",
 };
 
 function offlineProgress(camera) {
