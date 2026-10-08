@@ -1,6 +1,6 @@
 export function cameraMetrics(records, pik2 = false) {
   const years = {}, brands = {}, areas = {};
-  const offline = pik2 ? { 'PIK 2': [], 'PIK 2 Millenia': [] } : { BGM: [], GI: [], RWI: [], PIK2: [] };
+  const offline = pik2 ? { 'PIK 2': [], 'PIK 2 Milenial': [] } : { BGM: [], GI: [], RWI: [], PIK2: [] };
   let total = 0, on = 0, off = 0;
   records.forEach(row => {
     const quantity = pik2 ? Math.max(0, Math.trunc(Number(row['Jumlah Kamera']) || 0)) : (row.Tahun || String(row['Nama Pada Layar (OSD)'] || '').trim() ? 1 : 0);
@@ -15,7 +15,7 @@ export function cameraMetrics(records, pik2 = false) {
     off += offlineCount;
     if (pik2 || ['ON', 'AKTIF', 'NORMAL'].includes(condition)) on += quantity - offlineCount;
     const rawArea = String(row.Area || '').trim();
-    const area = pik2 ? (/milen|millen/i.test(rawArea) ? 'PIK 2 Millenia' : rawArea || 'PIK 2') : rawArea;
+    const area = pik2 ? (/milen|millen/i.test(rawArea) ? 'PIK 2 Milenial' : rawArea || 'PIK 2') : rawArea;
     if (row.Tahun) years[row.Tahun] = (years[row.Tahun] || 0) + quantity;
     const brand = String(row.Brand || '').trim();
     if (brand && brand.toLowerCase() !== 'unknown') brands[brand] = (brands[brand] || 0) + quantity;

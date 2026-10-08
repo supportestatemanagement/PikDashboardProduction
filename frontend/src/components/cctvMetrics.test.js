@@ -8,7 +8,7 @@ test('PIK2 weights camera quantities and counts offline cameras even when condit
   expect(result.condition).toEqual({ on: 31, off: 4 });
   expect(result.trend).toEqual([{ year: '2024', count: 35 }]);
   expect(result.brands).toEqual([{ label: 'Dahua', count: 35 }]);
-  expect(result.offline['PIK 2 Millenia'][0]).toMatchObject({ offlineCount: 3, Progress: 'Service' });
+  expect(result.offline['PIK 2 Milenial'][0]).toMatchObject({ offlineCount: 3, Progress: 'Service' });
 });
 test('PIK1 counts one camera per valid row', () => {
   expect(cameraMetrics([{ Tahun: 2025, Kondisi: 'ON' }, { 'Nama Pada Layar (OSD)': 'A', Kondisi: 'OFF', Area: 'BGM' }, {}]).condition).toEqual({ on: 1, off: 1 });

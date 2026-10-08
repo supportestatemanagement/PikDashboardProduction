@@ -131,9 +131,9 @@ export default function CctvDashboard() {
         .cctv-panels { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 20px; }
         .cctv-panels > div { min-width: 0; }
         .cctv-locations { grid-area: 2 / 5 / 3 / 7; }
-        .cctv-offline { grid-area: 1 / 3 / 2 / 7; }
-        .cctv-brand { grid-area: 2 / 1 / 3 / 3; }
-        .cctv-area { grid-area: 2 / 3 / 3 / 5; }
+        .cctv-offline { grid-area: 2 / 1 / 3 / 7; }
+        .cctv-brand { grid-area: 1 / 3 / 2 / 5; }
+        .cctv-area { grid-area: 1 / 5 / 2 / 7; }
         .cctv-condition { grid-area: 1 / 1 / 2 / 3; }
         .cctv-offline-pik2 { grid-area: 3 / 1 / 4 / 7; }
         .cctv-pik2-table { min-width: 800px; }
@@ -168,9 +168,10 @@ export default function CctvDashboard() {
         @container (max-width: 700px) {
           .cctv-panels { display: flex; flex-direction: column; }
           .cctv-condition { order: 0; }
-          .cctv-offline { order: 1; }
-          .cctv-brand { order: 2; }
-          .cctv-area { order: 3; }
+          .cctv-brand { order: 1; }
+          .cctv-area { order: 2; }
+          .cctv-offline { order: 3; }
+          .cctv-offline-pik2 { order: 4; }
           .cctv-locations { order: 4; }
           .cctv-distribution { order: 5; }
         }
