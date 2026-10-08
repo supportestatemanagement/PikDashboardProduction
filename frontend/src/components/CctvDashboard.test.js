@@ -42,9 +42,9 @@ test('offline table expands into a dialog and restores focus when closed', async
   HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
   global.fetch = jest.fn().mockResolvedValue({ json: async () => ({ status: 'success', data: [] }) });
   render(<CctvDashboard />);
-  const button = await screen.findByRole('button', { name: 'Perbesar CCTV Offline' });
+  const button = await screen.findByRole('button', { name: 'Perbesar CCTV Offline PIK 1' });
   fireEvent.click(button);
-  expect(screen.getByRole('dialog', { name: 'CCTV Offline diperbesar' })).toBeInTheDocument();
+  expect(screen.getByRole('dialog', { name: 'CCTV Offline PIK 1 diperbesar' })).toBeInTheDocument();
   expect(document.body.style.overflow).toBe('hidden');
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Tutup' }));
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -56,6 +56,23 @@ test('offline table expands into a dialog and restores focus when closed', async
 test("shows a fetch error instead of reporting no offline cameras", async () => {
   global.fetch = jest.fn().mockResolvedValue({ json: async () => ({ status: "error" }) });
   render(<CctvDashboard />);
-  expect(await screen.findByRole("alert")).toHaveTextContent("Gagal memuat data CCTV offline.");
+  expect((await screen.findAllByRole("alert"))[0]).toHaveTextContent("Gagal memuat data CCTV offline.");
   expect(screen.queryByText("Tidak ada CCTV offline.")).not.toBeInTheDocument();
+});
+
+test('combines totals, shows PIK2 offline quantities, and switches brand independently', async () => {
+  global.fetch = jest.fn(url => Promise.resolve({ json: async () => ({ status: 'success', data: url.includes('pik2') ? [
+    { 'Jumlah Kamera': 20, Area: 'PIK 2 MILENIAL', 'Sub Area': 'ALABAMA', Brand: 'Dahua', Tahun: 2024, Kondisi: 'ON', 'Detail Offline': '3 Kamera Gangguan Port', 'Progress Perbaikan': 'Proses garansi' },
+  ] : [{ Tahun: 2025, Area: 'GI', Brand: 'Hikvision', Kondisi: 'ON' }] }) }));
+  const { container } = render(<CctvDashboard />);
+  expect(await screen.findByText('PIK 1: 1 · PIK 2: 20')).toBeInTheDocument();
+  const offline = screen.getByRole('region', { name: 'Daftar CCTV offline PIK 2' });
+  expect(within(offline).getByText('Proses garansi')).toBeInTheDocument();
+  expect(within(offline).getByText('(3 offline)')).toBeInTheDocument();
+  const brand = within(container.querySelector('.cctv-brand'));
+  fireEvent.click(brand.getByRole('button', { name: 'PIK 2' }));
+  expect(brand.getByText('Dahua')).toBeInTheDocument();
+  expect(brand.queryByText('Hikvision')).not.toBeInTheDocument();
+  expect(container.querySelector('.cctv-locations')).toHaveAttribute('hidden');
+  expect(container.querySelector('.cctv-distribution')).toHaveAttribute('hidden');
 });

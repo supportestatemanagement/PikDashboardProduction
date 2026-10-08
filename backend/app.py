@@ -493,6 +493,15 @@ def get_cctv_growth_data():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.get('/api/cctv-pik2-data')
+def get_cctv_pik2_data():
+    try:
+        records = cc_spreadsheet.worksheet('CCTVPIK2').get_all_records()
+        return jsonify(status='success', data=records)
+    except Exception:
+        app.logger.exception('Unable to load CCTVPIK2')
+        return jsonify(status='error', message='Gagal memuat CCTV PIK 2.'), 503
+
 @app.route('/api/save-data', methods=['POST'])
 def save_data():
     data = request.json

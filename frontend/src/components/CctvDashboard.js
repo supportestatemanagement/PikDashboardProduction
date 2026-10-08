@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from 'react-dom';
+import { cameraMetrics } from './cctvMetrics';
 
 const offlineAreaNames = {
   BGM: "Bukit Golf Mediterania",
@@ -14,128 +15,31 @@ function offlineProgress(camera) {
 }
 
 export default function CctvDashboard() {
-  const [trendData, setTrendData] = useState([]);
-  const [totalCctv, setTotalCctv] = useState(0);
+  const [datasets, setDatasets] = useState({ pik1: null, pik2: null });
+  const [errors, setErrors] = useState({});
+  const [selection, setSelection] = useState({ trend: 'pik1', brand: 'pik1', area: 'pik1', condition: 'pik1' });
   const [hoveredPoint, setHoveredPoint] = useState(null);
-  const [offlineData, setOfflineData] = useState(null);
-  const [loadError, setLoadError] = useState(false);
-
-  // STATE UNTUK GRAFIK BARIS KE-2
-  const [brandData, setBrandData] = useState([]);
-  const [areaData, setAreaData] = useState([]);
-  const [conditionData, setConditionData] = useState({ on: 0, off: 0 });
-
-  // STATE UNTUK GRAFIK BARIS KE-3
-  const [locationData, setLocationData] = useState([]);
-  const [distData, setDistData] = useState({});
-
   useEffect(() => {
-    // Sesuaikan URL dengan port backend Flask Anda
-    fetch(`${process.env.REACT_APP_API_URL}/api/cctv-growth-data`)
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.status === "success") {
-          const data = res.data;
-
-          // 1. Kalkulasi Total CCTV
-          const totalValidCctv = data.filter((item) => 
-            item["Tahun"] || (item["Nama Pada Layar (OSD)"] && String(item["Nama Pada Layar (OSD)"]).trim() !== "")
-          ).length;
-
-          setTotalCctv(totalValidCctv);
-
-          // Penampung hitungan
-          const yearCounts = {};
-          const brandCounts = {};
-          const areaCounts = {};
-          const locCounts = {};
-          const distMap = {}; // Format: { Area: { Lokasi: count } }
-          const offlineByArea = { BGM: [], GI: [], RWI: [], PIK2: [] };
-          let onCount = 0;
-          let offCount = 0;
-
-          data.forEach((item) => {
-            if (!item["Tahun"] && !(item["Nama Pada Layar (OSD)"] && String(item["Nama Pada Layar (OSD)"]).trim() !== "")) return;
-
-            // --- TAHUN ---
-            const year = item["Tahun"];
-            if (year) {
-              yearCounts[year] = (yearCounts[year] || 0) + 1;
-            }
-
-            // --- BRAND ---
-            const brand = item["Brand"] ? String(item["Brand"]).trim() : "";
-            if (brand && brand.toLowerCase() !== "unknown") {
-              brandCounts[brand] = (brandCounts[brand] || 0) + 1;
-            }
-
-            // --- AREA ---
-            const area = item["Area"] ? String(item["Area"]).trim() : "";
-            if (area && area.toLowerCase() !== "unknown") {
-              areaCounts[area] = (areaCounts[area] || 0) + 1;
-            }
-
-            // --- LOKASI ---
-            const loc = item["Lokasi"] ? String(item["Lokasi"]).trim() : "";
-            if (loc && loc.toLowerCase() !== "unknown") {
-              locCounts[loc] = (locCounts[loc] || 0) + 1;
-            }
-
-            // --- DISTRIBUSI AREA & LOKASI ---
-            if (area && area.toLowerCase() !== "unknown" && loc && loc.toLowerCase() !== "unknown") {
-              if (!distMap[area]) distMap[area] = {};
-              distMap[area][loc] = (distMap[area][loc] || 0) + 1;
-            }
-
-            // --- KONDISI ---
-            const condition = item["Kondisi"] ? String(item["Kondisi"]).trim().toUpperCase() : "";
-            if (condition === "ON" || condition === "AKTIF" || condition === "NORMAL") {
-              onCount++;
-            } else if (["OFF", "OFFLINE", "MATI", "RUSAK"].includes(condition)) {
-              offCount++;
-              const areaKey = area.toUpperCase().replace(/\s+/g, "");
-              if (offlineByArea[areaKey]) offlineByArea[areaKey].push(item);
-            }
-          });
-
-          // Set State Trend
-          const sortedYears = Object.keys(yearCounts).sort();
-          const trend = sortedYears.map((year) => ({ year, count: yearCounts[year] }));
-          setTrendData(trend);
-
-          // Urutkan & Set State Brand
-          const sortedBrands = Object.keys(brandCounts)
-            .map(key => ({ label: key, count: brandCounts[key] }))
-            .sort((a, b) => b.count - a.count);
-          setBrandData(sortedBrands);
-
-          // Urutkan & Set State Area
-          const sortedAreas = Object.keys(areaCounts)
-            .map(key => ({ label: key, count: areaCounts[key] }))
-            .sort((a, b) => b.count - a.count);
-          setAreaData(sortedAreas);
-
-          // Urutkan & Set State Lokasi
-          const sortedLocs = Object.keys(locCounts)
-            .map(key => ({ label: key, count: locCounts[key] }))
-            .sort((a, b) => b.count - a.count);
-          setLocationData(sortedLocs);
-
-          // Set State Distribusi Area-Lokasi
-          setDistData(distMap);
-
-          // Set State Kondisi
-          setConditionData({ on: onCount, off: offCount });
-          setOfflineData(offlineByArea);
-        } else {
-          setLoadError(true);
-        }
-      })
-      .catch((err) => {
-        console.error("Error fetching CCTV data:", err);
-        setLoadError(true);
-      });
+    const controller = new AbortController();
+    [['pik1', '/api/cctv-growth-data'], ['pik2', '/api/cctv-pik2-data']].forEach(([key, endpoint]) => {
+      fetch(`${process.env.REACT_APP_API_URL || ''}${endpoint}`, { signal: controller.signal })
+        .then(response => response.json()).then(result => {
+          if (result.status !== 'success') throw new Error('Gagal memuat CCTV');
+          setDatasets(previous => ({ ...previous, [key]: result.data }));
+        }).catch(error => { if (error.name !== 'AbortError') setErrors(previous => ({ ...previous, [key]: true })); });
+    });
+    return () => controller.abort();
   }, []);
+  const metrics = useMemo(() => ({ pik1: cameraMetrics(datasets.pik1 || []), pik2: cameraMetrics(datasets.pik2 || [], true) }), [datasets]);
+  const trendData = metrics[selection.trend].trend;
+  const brandData = metrics[selection.brand].brands;
+  const areaData = metrics[selection.area].areas;
+  const conditionData = metrics[selection.condition].condition;
+  const totalCctv = datasets.pik1 && datasets.pik2 ? metrics.pik1.total + metrics.pik2.total : null;
+  const offlineData = datasets.pik1 ? metrics.pik1.offline : null;
+  const loadError = errors.pik1;
+  const locationData = [], distData = {};
+  const choice = key => <div className="cctv-choice" role="group" aria-label={`Pilihan PIK ${key}`}>{['pik1', 'pik2'].map(value => <button key={value} type="button" aria-pressed={selection[key] === value} onClick={() => { setSelection(previous => ({ ...previous, [key]: value })); setHoveredPoint(null); }}>{value === 'pik1' ? 'PIK 1' : 'PIK 2'}</button>)}</div>;
 
   // --- Kalkulasi Koordinat Dinamis untuk SVG Trend ---
   const chartWidth = 800;
@@ -231,6 +135,12 @@ export default function CctvDashboard() {
         .cctv-brand { grid-area: 2 / 1 / 3 / 3; }
         .cctv-area { grid-area: 2 / 3 / 3 / 5; }
         .cctv-condition { grid-area: 1 / 1 / 2 / 3; }
+        .cctv-offline-pik2 { grid-area: 3 / 1 / 4 / 7; }
+        .cctv-pik2-table { min-width: 800px; }
+        .cctv-choice { display:flex; gap:4px; margin-top:6px; }
+        .cctv-choice button { border:1px solid #CBD5E1; border-radius:5px; padding:4px 8px; font-size:10px; background:#F8FAFC; color:#475569; cursor:pointer; }
+        .cctv-choice button[aria-pressed="true"] { background:#1E3A8A; color:white; border-color:#1E3A8A; }
+        .cctv-panels > [hidden] { display:none !important; }
         .cctv-distribution { grid-area: 3 / 1 / 4 / 7; }
         .cctv-offline-areas { height: 100%; box-sizing: border-box; overflow: auto; border: 1px solid #D5DFEA; border-radius: 10px; background: #FFFFFF; scrollbar-color: #64748B #EDF2F7; }
         .cctv-offline-table { width: 100%; min-width: 1400px; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
@@ -293,7 +203,7 @@ export default function CctvDashboard() {
             flexDirection: "column"
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-              <div style={{ fontWeight: "800", fontSize: "14px", color: "#1E3A8A" }}>Yearly CCTV Installations</div>
+              <div style={{ fontWeight: "800", fontSize: "14px", color: "#1E3A8A" }}>Yearly CCTV Installations{choice("trend")}</div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: "700", color: "#64748B" }}>
                 <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#3B82F6" }} /> Units Installed
               </div>
@@ -398,9 +308,10 @@ export default function CctvDashboard() {
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1 }}>
               <div style={{ fontSize: "68px", fontWeight: "800", fontFamily: "'Rajdhani', sans-serif", lineHeight: "1" }}> 
-                {totalCctv > 0 ? totalCctv : "..."}
+                {errors.pik1 || errors.pik2 ? "—" : totalCctv ?? "..."}
               </div>
               <div style={{ fontSize: "12px", opacity: 0.8, letterSpacing: "2px", marginTop: "5px" }}>UNITS INSTALLED</div> 
+              <div style={{ fontSize: 11, marginTop: 8 }}>{datasets.pik1 && datasets.pik2 ? `PIK 1: ${metrics.pik1.total} · PIK 2: ${metrics.pik2.total}` : errors.pik1 || errors.pik2 ? 'Gagal memuat total CCTV.' : 'Memuat kedua sheet…'}</div>
               <div style={{ marginTop: "15px", display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", fontWeight: "600" }}> 
                   <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10B981", animation: "pulse 2s infinite" }}></span>
                   Live Update
@@ -414,7 +325,7 @@ export default function CctvDashboard() {
           
           {/* Card 3: Animasi dengan delay 0.2s */}
           <div className="animate-card cctv-brand" style={{ animationDelay: "0.2s" }}>
-            <ChartBox title="Total CCTV by Brand">
+            <ChartBox title="Total CCTV by Brand" headerRight={choice("brand")}>
               <div style={{ display: "flex", flexDirection: "column", gap: "18px", height: "100%", justifyContent: "center" }}>
                 {brandData.length === 0 && <div style={{ fontSize: "12px", color: "#94A3B8", textAlign: "center" }}>Memuat data...</div>}
                 {brandData.slice(0, 4).map((item, idx) => (
@@ -432,7 +343,7 @@ export default function CctvDashboard() {
 
           {/* Card 4: Animasi dengan delay 0.3s */}
           <div className="animate-card cctv-area" style={{ animationDelay: "0.3s" }}>
-            <ChartBox title="Total CCTV per Area">
+            <ChartBox title="Total CCTV per Area" headerRight={choice("area")}>
               <div style={{ width: "100%", height: "100%" }}>
                 <BarChartWithGrid data={areaChartData} />
               </div>
@@ -441,15 +352,15 @@ export default function CctvDashboard() {
 
           {/* Card 5: Animasi dengan delay 0.4s */}
           <div className="animate-card cctv-condition" style={{ animationDelay: "0.4s" }}>
-            <ChartBox title="Total CCTV by Condition">
+            <ChartBox title="Total CCTV by Condition" headerRight={choice("condition")}>
               <div style={{ width: "100%", height: "100%" }}>
-                <BarChartWithGrid data={conditionChartData} />
+                {errors[selection.condition] ? <p>Gagal memuat data CCTV.</p> : !datasets[selection.condition] ? <p>Memuat data...</p> : <BarChartWithGrid data={conditionChartData} />}
               </div>
             </ChartBox>
           </div>
 
           {/* Card 6: Animasi dengan delay 0.5s */}
-          <div className="animate-card cctv-locations" style={{ animationDelay: "0.2s" }}>
+          <div hidden className="animate-card cctv-locations" style={{ animationDelay: "0.2s" }}>
             <ChartBox title="Total CCTV by Locations">
               <div style={{ display: "flex", flexDirection: "column", gap: "14px", height: "100%", justifyContent: "center" }}>
                 {locationData.length === 0 && <div style={{ fontSize: "12px", color: "#94A3B8", textAlign: "center" }}>Memuat data...</div>}
@@ -467,7 +378,7 @@ export default function CctvDashboard() {
           </div>
 
           <div className="animate-card cctv-offline" style={{ animationDelay: "0.3s" }}>
-            <OfflineCard>
+            <OfflineCard title="CCTV Offline PIK 1">
               <div className="cctv-offline-areas" tabIndex={0} role="region" aria-label="Daftar CCTV offline per area">
                 {loadError ? <p role="alert">Gagal memuat data CCTV offline.</p> : !offlineData ? <p role="status">Memuat data...</p> :
                   <table className="cctv-offline-table" aria-label="CCTV offline menurut area">
@@ -492,8 +403,19 @@ export default function CctvDashboard() {
             </OfflineCard>
           </div>
 
+          <div className="animate-card cctv-offline-pik2">
+            <OfflineCard title="CCTV Offline PIK 2">
+              <div className="cctv-offline-areas" tabIndex={0} role="region" aria-label="Daftar CCTV offline PIK 2">
+                {errors.pik2 ? <p role="alert">Gagal memuat CCTV PIK 2.</p> : !datasets.pik2 ? <p role="status">Memuat data...</p> : <table className="cctv-offline-table cctv-pik2-table" aria-label="CCTV offline PIK 2 menurut area">
+                  <thead><tr>{Object.entries(metrics.pik2.offline).map(([area, rows]) => <th key={area}>{area} <span className="cctv-offline-count">({rows.reduce((sum, row) => sum + row.offlineCount, 0)})</span></th>)}</tr></thead>
+                  <tbody><tr>{Object.entries(metrics.pik2.offline).map(([area, rows]) => <td key={area}><div className="cctv-offline-list">{!rows.length ? <p>Tidak ada CCTV offline.</p> : <><div className="cctv-offline-detail-head"><span>CCTV</span><span>Detail</span><span>Progress</span></div><ul>{rows.map((row, index) => <li key={index}><span>{row['Sub Area']} <small>({row.offlineCount} offline)</small></span><span>{row.Detail}</span><span>{offlineProgress(row)}</span></li>)}</ul></>}</div></td>)}</tr></tbody>
+                </table>}
+              </div>
+            </OfflineCard>
+          </div>
+
           {/* Distribusi di baris keempat agar panel offline mendapat dua kolom. */}
-          <div className="animate-card cctv-distribution" style={{ animationDelay: "0.6s" }}>
+          <div hidden className="animate-card cctv-distribution" style={{ animationDelay: "0.6s" }}>
             <ChartBox title="CCTV Distribution by Area and Locations" headerRight={distributionLegend}>
               <div style={{ width: "100%", height: "100%", overflowX: "auto" }}>
                 <div style={{ minWidth: Math.max(300, 35 + groupedDistData.reduce((width, group) => width + group.vals.length * 43 + 24, 0)), paddingBottom: "30px" }}>
@@ -633,7 +555,7 @@ function GroupedBarChartWithGrid({ data, maxDistCount }) {
 }
 
 // UPDATE: Standarisasi Judul pada fungsi ChartBox
-function OfflineCard({ children }) {
+function OfflineCard({ children, title = 'CCTV Offline' }) {
   const [expanded, setExpanded] = useState(false);
   const dialogRef = useRef(null);
   const expandRef = useRef(null);
@@ -646,8 +568,8 @@ function OfflineCard({ children }) {
     document.body.style.overflow = 'hidden';
     return () => { dialog.close(); document.body.style.overflow = previous; button?.focus(); };
   }, [expanded]);
-  return <><ChartBox title="CCTV Offline" headerRight={<button ref={expandRef} type="button" className="cctv-expand-button" aria-label="Perbesar CCTV Offline" onClick={() => setExpanded(true)}><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4M3 3l5 5m9-5-5 5M3 17l5-5m9 5-5-5" /></svg></button>}>{children}</ChartBox>
-    {expanded && createPortal(<dialog ref={dialogRef} className="cctv-offline-dialog" aria-label="CCTV Offline diperbesar" onCancel={() => setExpanded(false)} onClick={event => { if (event.target === event.currentTarget) setExpanded(false); }}><div className="cctv-offline-dialog-content"><div className="cctv-offline-dialog-heading"><h2>CCTV Offline</h2><button type="button" className="cctv-expand-button" onClick={() => setExpanded(false)}>Tutup</button></div><div className="cctv-offline-dialog-body">{children}</div></div></dialog>, document.body)}</>;
+  return <><ChartBox title={title} headerRight={<button ref={expandRef} type="button" className="cctv-expand-button" aria-label={`Perbesar ${title}`} onClick={() => setExpanded(true)}><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M7 3H3v4m10-4h4v4M3 13v4h4m10-4v4h-4M3 3l5 5m9-5-5 5M3 17l5-5m9 5-5-5" /></svg></button>}>{children}</ChartBox>
+    {expanded && createPortal(<dialog ref={dialogRef} className="cctv-offline-dialog" aria-label={`${title} diperbesar`} onCancel={() => setExpanded(false)} onClick={event => { if (event.target === event.currentTarget) setExpanded(false); }}><div className="cctv-offline-dialog-content"><div className="cctv-offline-dialog-heading"><h2>{title}</h2><button type="button" className="cctv-expand-button" onClick={() => setExpanded(false)}>Tutup</button></div><div className="cctv-offline-dialog-body">{children}</div></div></dialog>, document.body)}</>;
 }
 
 function ChartBox({ title, children, bgColor, textColor, headerRight }) {
