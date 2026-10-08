@@ -25,6 +25,10 @@ test('updates positions, handles deletes/denial and unsubscribes both listeners'
   listeners.vehicle_locations.receive({ val: () => ({ A: { latitude: -6, longitude: 106 } }) });
   expect(vehicles).toHaveBeenLastCalledWith([expect.objectContaining({ position: [-6, 106] })]);
   expect(status).toHaveBeenLastCalledWith('Terhubung');
+  listeners.vehicle_locations.receive({ val: () => ({ A: { latitude: -6.1, longitude: 106.1, timestamp: 1790300005 } }) });
+  expect(vehicles).toHaveBeenLastCalledWith([expect.objectContaining({ timestamp: 1790300005000, position: [-6.1, 106.1] })]);
+  listeners.vehicle_locations.receive({ val: () => ({ A: { latitude: -6.2, longitude: 106.2, timestamp: 1790300000 } }) });
+  expect(vehicles).toHaveBeenLastCalledWith([expect.objectContaining({ timestamp: 1790300005000, position: [-6.1, 106.1] })]);
   listeners.vehicle_locations.receive({ val: () => null });
   expect(vehicles).toHaveBeenLastCalledWith([]);
   listeners.vehicle_locations.error(new Error('Permission denied'));

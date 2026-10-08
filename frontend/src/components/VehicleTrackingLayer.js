@@ -8,7 +8,6 @@ import { getVehicleType, getVehicleColor, vehicleIconSvg } from './vehicleIcons'
 
 export function VehicleMarker({ vehicle, now, connected }) {
   const marker = useRef(null);
-  const lastPositionAt = useRef(null);
   const stale = !Number.isFinite(vehicle.timestamp) || now - vehicle.timestamp > 60000;
   const status = !vehicle.tracking ? 'Tracking berhenti' : stale ? 'GPS tidak diperbarui' : !connected ? 'Koneksi terputus' : 'Live';
   const heading = Number.isFinite(vehicle.heading) ? vehicle.heading : 0;
@@ -22,41 +21,24 @@ export function VehicleMarker({ vehicle, now, connected }) {
   useEffect(() => {
     const instance = marker.current;
     if (!instance) return undefined;
-    const start = instance.getLatLng();
-    const began = performance.now();
-    const interval = lastPositionAt.current === null ? 1000 : began - lastPositionAt.current;
-    lastPositionAt.current = began;
-    // Match the observed position-update cadence without predicting GPS fixes
-    // or making a reconnect take an unbounded amount of time to catch up.
-    const duration = Math.max(1000, Math.min(interval, 5000));
-    if (start.lat === vehicle.latitude && start.lng === vehicle.longitude) return undefined;
-    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reduceMotion) {
-      instance.setLatLng([vehicle.latitude, vehicle.longitude]);
-      return undefined;
-    }
-    let frame;
-    const move = (time) => {
-      const progress = Math.max(0, Math.min((time - began) / duration, 1));
-      instance.setLatLng([start.lat + (vehicle.latitude - start.lat) * progress, start.lng + (vehicle.longitude - start.lng) * progress]);
-      if (progress < 1) frame = requestAnimationFrame(move);
-    };
-    frame = requestAnimationFrame(move);
-    return () => cancelAnimationFrame(frame);
+    // Display received GPS fixes directly; straight-line interpolation can
+    // cut across corners and lag behind the latest Firebase position.
+    instance.setLatLng([vehicle.latitude, vehicle.longitude]);
+    return undefined;
   }, [vehicle.latitude, vehicle.longitude]);
   const initialPosition = useRef(vehicle.position);
   const name = vehicle.vehicle_name || vehicle.vehicle_id || vehicle.id;
   return <Marker ref={marker} position={initialPosition.current} icon={icon} title={name} zIndexOffset={1000}>
     <Tooltip permanent direction="top" offset={[0, -28]} className="vehicle-map-label">
       <span className="vehicle-map-label-content" style={{ '--vehicle-color': vehicleColor }}>
-        {name} {vehicle.plate_number || ''}{status !== 'Live' && status !== 'GPS tidak diperbarui' && <small>{status}</small>}
+        {name} {vehicle.plate_number || ''}{status !== 'Live' && <small>{status}</small>}
       </span>
     </Tooltip>
     <Popup><strong>{name}</strong><div>Pelat: {vehicle.plate_number || '—'}</div>
-      <div>Petugas: {vehicle.officer_name || '—'}</div>{status !== 'GPS tidak diperbarui' && <div>Status: {status}</div>}
+      <div>Petugas: {vehicle.officer_name || '—'}</div><div>Status: {status}</div>
       <div>Speed: {Number.isFinite(vehicle.speed) && vehicle.speed >= 0 ? `${vehicle.speed.toFixed(1)} km/jam` : '—'}</div>
       <div title="Perkiraan radius ketelitian posisi GPS; semakin kecil nilainya, semakin teliti posisinya.">Akurasi GPS: {Number.isFinite(vehicle.accuracy) ? `${vehicle.accuracy.toFixed(1)} m` : '—'}</div>
-      <div>Pembaruan: {Number.isFinite(vehicle.timestamp) ? new Date(vehicle.timestamp).toLocaleString('id-ID') : '—'}</div>
+      <div>Pembaruan: {Number.isFinite(vehicle.timestamp) ? new Date(vehicle.timestamp).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + ' WIB' : '—'}</div>
     </Popup>
   </Marker>;
 }
