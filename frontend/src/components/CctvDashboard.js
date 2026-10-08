@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from 'react-dom';
-import CctvGroupMap from './CctvGroupMap';
 
 const offlineAreaNames = {
   BGM: "Bukit Golf Mediterania",
@@ -15,7 +14,6 @@ function offlineProgress(camera) {
 }
 
 export default function CctvDashboard() {
-  const [cameraRecords, setCameraRecords] = useState([]);
   const [trendData, setTrendData] = useState([]);
   const [totalCctv, setTotalCctv] = useState(0);
   const [hoveredPoint, setHoveredPoint] = useState(null);
@@ -38,7 +36,6 @@ export default function CctvDashboard() {
       .then((res) => {
         if (res.status === "success") {
           const data = res.data;
-          setCameraRecords(data);
 
           // 1. Kalkulasi Total CCTV
           const totalValidCctv = data.filter((item) => 
@@ -414,7 +411,6 @@ export default function CctvDashboard() {
 
         <div className="cctv-panel-container">
         <div className="cctv-panels">
-          <CctvGroupMap records={cameraRecords} />
           
           {/* Card 3: Animasi dengan delay 0.2s */}
           <div className="animate-card cctv-brand" style={{ animationDelay: "0.2s" }}>

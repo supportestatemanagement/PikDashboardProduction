@@ -21,6 +21,7 @@ from pump_sea_level import apply_sea_levels
 from pump_rainfall import register_rainfall_routes
 from customer_service import register_customer_service_routes
 from crisis_room import register_crisis_room
+from sheet_cache import CachedWorkbook
 
 # Menggunakan RapidOCR (Ringan, Cepat, dan Akurat untuk Angka CCTV)
 from rapidocr_onnxruntime import RapidOCR
@@ -54,9 +55,9 @@ else:
     creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 
 client = gspread.authorize(creds)
-spreadsheet = client.open("PIK Dashboard")
+spreadsheet = CachedWorkbook(client.open("PIK Dashboard"))
 
-cc_spreadsheet = client.open("Master Data Dashboard")
+cc_spreadsheet = CachedWorkbook(client.open("Master Data Dashboard"))
 register_rainfall_routes(app, lambda: cc_spreadsheet.worksheet("CurahHujan").get_all_values())
 register_customer_service_routes(app, lambda: cc_spreadsheet.worksheet("CustomerRelation").get_all_records(numericise_ignore=['all']))
 cc_sheet = cc_spreadsheet.worksheet("CallCenter")
