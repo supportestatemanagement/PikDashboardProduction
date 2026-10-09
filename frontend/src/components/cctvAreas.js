@@ -127,11 +127,21 @@ const rukanCrown = [
   [106.7402514,-6.110367],[106.7402547,-6.1103395],
   [106.7401849,-6.1102975],[106.7401863,-6.1102961],
 ];
+const rukanCrownAdditional = [
+  [106.7382936,-6.1112123],
+  [106.7375486,-6.1125598],
+  [106.7378144,-6.1127136],
+  [106.7388864,-6.1108672],
+  [106.7385796,-6.1106849],
+  [106.7384502,-6.1109148],
+  [106.7382937,-6.1112142],
+  [106.7382936,-6.1112123],
+];
 export const CCTV_AREAS = [
   { name: 'Sektor Tengah', color: '#22c55e', coordinates: sektorTengah },
   { name: 'Fresh Market & Emerald', color: '#f59e0b', coordinates: freshMarketEmerald },
   { name: 'Sektor Barat', color: '#3b82f6', coordinates: sektorBarat },
   { name: 'ROW 85', color: '#a855f7', coordinates: row85 },
   { name: 'Smart Camera ROW 85', color: '#06b6d4', coordinates: smartCameraRow85 },
-  { name: 'Rukan Crown', color: '#f43f5e', coordinates: rukanCrown },
+  { name: 'Rukan Crown', color: '#f43f5e', coordinates: rukanCrown, polygons: [rukanCrown, rukanCrownAdditional], labelPosition: [106.7394682, -6.1106954] },
 ];

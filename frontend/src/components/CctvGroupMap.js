@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AttributionControl, MapContainer, Polygon, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import { AttributionControl, CircleMarker, MapContainer, Polygon, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import { CCTV_AREAS } from './cctvAreas';
 import 'leaflet/dist/leaflet.css';
 import './CctvGroupMap.css';
@@ -26,7 +26,7 @@ function AreaLabel({ area, count }) {
 
 function FitAreas() {
   const map = useMap();
-  useEffect(() => { map.fitBounds(CCTV_AREAS.flatMap(area => area.coordinates.map(([lng, lat]) => [lat, lng])), { padding: [30, 30] }); }, [map]);
+  useEffect(() => { map.fitBounds(CCTV_AREAS.flatMap(area => (area.polygons || [area.coordinates]).flatMap(ring => ring.map(([lng, lat]) => [lat, lng]))), { padding: [30, 30] }); }, [map]);
   return null;
 }
 
@@ -54,10 +54,11 @@ export default function CctvGroupMap({ records }) {
       <AttributionControl position="bottomright" prefix={false} />
       <TileLayer className="cctv-area-tiles" url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" attribution={'Map data from &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> | <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL</a>'} />
       <FitAreas />
-      {CCTV_AREAS.map(area => <Polygon key={area.name} positions={area.coordinates.map(([lng, lat]) => [lat, lng])} pathOptions={{ color: area.color, fillColor: area.color, fillOpacity: .3, weight: 2 }}>
-        <AreaLabel area={area} count={counts.get(area.name.toLowerCase()) || 0} />
+      {CCTV_AREAS.map(area => <Polygon key={area.name} positions={area.polygons ? area.polygons.map(ring => [ring.map(([lng, lat]) => [lat, lng])]) : area.coordinates.map(([lng, lat]) => [lat, lng])} pathOptions={{ color: area.color, fillColor: area.color, fillOpacity: .3, weight: 2 }}>
+        {!area.labelPosition && <AreaLabel area={area} count={counts.get(area.name.toLowerCase()) || 0} />}
         <Popup><div className="cctv-area-popup"><strong>{area.name}</strong><p>Total CCTV: <b>{counts.get(area.name.toLowerCase()) || 0}</b></p></div></Popup>
       </Polygon>)}
+      {CCTV_AREAS.filter(area => area.labelPosition).map(area => <CircleMarker key={`label-${area.name}`} center={[area.labelPosition[1], area.labelPosition[0]]} radius={0} interactive={false} pathOptions={{ opacity: 0, fillOpacity: 0 }}><AreaLabel area={area} count={counts.get(area.name.toLowerCase()) || 0} /></CircleMarker>)}
     </MapContainer></div>
     <small>Klik area untuk melihat total CCTV · Sumber: kolom Area Kelompok</small>
   </>;

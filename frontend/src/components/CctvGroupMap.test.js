@@ -3,7 +3,7 @@ import CctvGroupMap from './CctvGroupMap';
 import { CCTV_AREAS } from './cctvAreas';
 jest.mock('react-leaflet', () => {
   const Container = ({ children }) => <div>{children}</div>;
-  return { MapContainer: Container, Popup: Container, Tooltip: Container,
+  return { MapContainer: Container, Popup: Container, Tooltip: Container, CircleMarker: Container,
     Polygon: ({ children, positions }) => <div data-testid="polygon" data-first={JSON.stringify(positions[0])}>{children}</div>,
     TileLayer: () => null, AttributionControl: () => null,
     useMap: () => ({ fitBounds: jest.fn() }) };
