@@ -38,6 +38,6 @@ test('Fresh Market & Emerald has its own closed boundary and CCTV count', () => 
   expect(screen.getAllByText('Total CCTV:')[1]).toHaveTextContent('Total CCTV: 1');
   const area = CCTV_AREAS[1];
   expect(area.name).toBe('Fresh Market & Emerald');
-  expect(area.coordinates[0]).toEqual([106.7391659, -6.1084331]);
+  expect(area.coordinates[0]).toEqual([106.7416589, -6.1059891]);
   expect(area.coordinates.at(-1)).toEqual(area.coordinates[0]);
 });
