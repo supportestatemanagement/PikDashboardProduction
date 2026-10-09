@@ -36,7 +36,7 @@ export default function CctvGroupMap({ records }) {
       <TileLayer className="cctv-area-tiles" url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" attribution={'Map data from &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> | <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL</a>'} />
       <FitAreas />
       {CCTV_AREAS.map(area => <Polygon key={area.name} positions={area.coordinates.map(([lng, lat]) => [lat, lng])} pathOptions={{ color: area.color, fillColor: area.color, fillOpacity: .3, weight: 2 }}>
-        <Tooltip permanent direction="center" className="cctv-area-label"><span className="cctv-area-label-name">{area.name}</span><span className="cctv-area-label-count">{(counts.get(area.name.toLowerCase()) || 0).toLocaleString('id-ID')}</span></Tooltip>
+        <Tooltip permanent direction="right" className="cctv-area-label"><span className="cctv-area-callout" style={{ '--area-color': area.color }}><span className="cctv-area-dot" /><span className="cctv-area-leader" /><span className="cctv-area-label-box"><span className="cctv-area-label-name">{area.name}</span><span className="cctv-area-label-count">{(counts.get(area.name.toLowerCase()) || 0).toLocaleString('id-ID')}</span></span></span></Tooltip>
         <Popup><div className="cctv-area-popup"><strong>{area.name}</strong><p>Total CCTV: <b>{counts.get(area.name.toLowerCase()) || 0}</b></p></div></Popup>
       </Polygon>)}
     </MapContainer></div>
