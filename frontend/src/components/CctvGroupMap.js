@@ -6,18 +6,19 @@ import 'leaflet/dist/leaflet.css';
 import './CctvGroupMap.css';
 
 const labelOffsets = {
-  'Fresh Market & Emerald': [110, -85],
-  'Sektor Barat': [-210, -70],
-  'Smart Camera ROW 85': [110, 105],
-  'Sektor Tengah': [125, 0],
-  'ROW 85': [105, 0],
+  'Fresh Market & Emerald': { direction: 'top', offset: [0, -30], anchor: [0, 36] },
+  'Sektor Barat': { direction: 'left', offset: [-24, -22], anchor: [30, 22] },
+  'Smart Camera ROW 85': { direction: 'bottom', offset: [22, 30], anchor: [-22, -36] },
+  'Sektor Tengah': { direction: 'right', offset: [24, 0], anchor: [-30, 0] },
+  'ROW 85': { direction: 'right', offset: [24, 0], anchor: [-30, 0] },
+  'Rukan Crown': { direction: 'bottom', offset: [0, 24], anchor: [0, -30] },
 };
 
 function AreaLabel({ area, count }) {
-  const [x, y] = labelOffsets[area.name] || [110, 0];
-  return <Tooltip permanent direction="center" offset={[x, y]} className="cctv-area-label">
-    <span className="cctv-area-callout" style={{ '--area-color': area.color }}>
-      <svg className="cctv-area-connector" width="1" height="1" aria-hidden="true"><line x1={-x} y1={-y} x2="0" y2="0" stroke={area.color} strokeWidth="2" /><circle cx={-x} cy={-y} r="5" fill={area.color} stroke="white" strokeWidth="2" /></svg>
+  const { direction, offset, anchor: [x, y] } = labelOffsets[area.name] || labelOffsets['ROW 85'];
+  return <Tooltip permanent direction={direction} offset={offset} className="cctv-area-label">
+    <span className="cctv-area-callout" data-direction={direction} style={{ '--area-color': area.color }}>
+      <svg className="cctv-area-connector" width="1" height="1" aria-hidden="true"><line x1={x} y1={y} x2="0" y2="0" stroke={area.color} strokeWidth="2" /><circle cx={x} cy={y} r="5" fill={area.color} stroke="white" strokeWidth="2" /></svg>
       <span className="cctv-area-label-box"><span className="cctv-area-label-name">{area.name}</span><span className="cctv-area-label-count">{count.toLocaleString('id-ID')}</span></span>
     </span>
   </Tooltip>;
