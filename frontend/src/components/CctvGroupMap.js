@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AttributionControl, CircleMarker, MapContainer, Polygon, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import { AttributionControl, CircleMarker, MapContainer, Polygon, Polyline, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import { CCTV_AREAS } from './cctvAreas';
 import 'leaflet/dist/leaflet.css';
 import './CctvGroupMap.css';
@@ -18,7 +18,7 @@ function AreaLabel({ area, count }) {
   const { direction, offset, anchor: [x, y] } = labelOffsets[area.name] || labelOffsets['ROW 85'];
   return <Tooltip permanent direction={direction} offset={offset} className="cctv-area-label">
     <span className="cctv-area-callout" data-direction={direction} style={{ '--area-color': area.color }}>
-      <svg className="cctv-area-connector" width="1" height="1" aria-hidden="true"><line x1={x} y1={y} x2="0" y2="0" stroke={area.color} strokeWidth="2" /><circle cx={x} cy={y} r="5" fill={area.color} stroke="white" strokeWidth="2" /></svg>
+      <svg className="cctv-area-connector" width="1" height="1" aria-hidden="true"><line x1={x} y1={y} x2="0" y2="0" stroke={area.color} strokeWidth="2" />{!area.labelPoints && <circle cx={x} cy={y} r="5" fill={area.color} stroke="white" strokeWidth="2" />}</svg>
       <span className="cctv-area-label-box"><span className="cctv-area-label-name">{area.name}</span><span className="cctv-area-label-count">{count.toLocaleString('id-ID')}</span></span>
     </span>
   </Tooltip>;
@@ -58,6 +58,7 @@ export default function CctvGroupMap({ records }) {
         {!area.labelPosition && <AreaLabel area={area} count={counts.get(area.name.toLowerCase()) || 0} />}
         <Popup><div className="cctv-area-popup"><strong>{area.name}</strong><p>Total CCTV: <b>{counts.get(area.name.toLowerCase()) || 0}</b></p></div></Popup>
       </Polygon>)}
+      {CCTV_AREAS.filter(area => area.labelPoints).flatMap(area => area.labelPoints.map(([lng, lat], index) => <React.Fragment key={`${area.name}-branch-${index}`}><Polyline positions={[[lat, lng], [area.labelPosition[1], area.labelPosition[0]]]} interactive={false} pathOptions={{ color: area.color, weight: 2, opacity: 1 }} /><CircleMarker center={[lat, lng]} radius={5} interactive={false} pathOptions={{ color: 'white', weight: 2, fillColor: area.color, fillOpacity: 1 }} /></React.Fragment>))}
       {CCTV_AREAS.filter(area => area.labelPosition).map(area => <CircleMarker key={`label-${area.name}`} center={[area.labelPosition[1], area.labelPosition[0]]} radius={0} interactive={false} pathOptions={{ opacity: 0, fillOpacity: 0 }}><AreaLabel area={area} count={counts.get(area.name.toLowerCase()) || 0} /></CircleMarker>)}
     </MapContainer></div>
     <small>Klik area untuk melihat total CCTV · Sumber: kolom Area Kelompok</small>

@@ -143,5 +143,5 @@ export const CCTV_AREAS = [
   { name: 'Sektor Barat', color: '#3b82f6', coordinates: sektorBarat },
   { name: 'ROW 85', color: '#a855f7', coordinates: row85 },
   { name: 'Smart Camera ROW 85', color: '#06b6d4', coordinates: smartCameraRow85 },
-  { name: 'Rukan Crown', color: '#f43f5e', coordinates: rukanCrown, polygons: [rukanCrown, rukanCrownAdditional], labelPosition: [106.7394682, -6.1106954] },
+  { name: 'Rukan Crown', color: '#f43f5e', coordinates: rukanCrown, polygons: [rukanCrown, rukanCrownAdditional], labelPosition: [106.7394355, -6.11105495], labelPoints: [[106.7385016, -6.1110857], [106.7403694, -6.1106242]] },
 ];
