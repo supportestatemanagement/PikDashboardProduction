@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from 'react-dom';
 import { cameraMetrics } from './cctvMetrics';
+import CctvGroupMap from './CctvGroupMap';
 
 const offlineAreaNames = {
   BGM: "Bukit Golf Mediterania",
@@ -327,6 +328,7 @@ export default function CctvDashboard() {
 
         <div className="cctv-panel-container">
         <div className="cctv-panels">
+          <CctvGroupMap records={datasets.pik1 || []} />
           
           {/* Card 3: Animasi dengan delay 0.2s */}
           <div className="animate-card cctv-brand" style={{ animationDelay: "0.2s" }}>
