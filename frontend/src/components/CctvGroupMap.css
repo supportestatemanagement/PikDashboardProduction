@@ -11,7 +11,13 @@
 .cctv-group-map-dialog::backdrop { background:#13243db3; }
 .cctv-group-map-dialog .cctv-group-map-canvas { flex:1; min-height:200px; }
 .cctv-group-map-card small,.cctv-group-map-dialog small { font-size:11px; }
-.cctv-panels > .cctv-group-map-card { grid-area: 4 / 1 / 5 / 3; }
+.cctv-panels > .cctv-group-map-card { grid-area: 4 / 1 / 5 / 5; order:5; }
+.cctv-group-map-fullscreen { position:fixed; inset:0; z-index:20000; background:#08131f; color:#f1f5f9; }
+.cctv-group-map-fullscreen .cctv-group-map-canvas { height:100dvh; margin:0; border-radius:0; }
+.cctv-group-map-fullscreen > header { position:absolute; z-index:1000; top:12px; right:12px; display:flex; align-items:center; gap:16px; padding:8px 12px; border:1px solid #475569; border-radius:8px; background:#08131ff0; }
+.cctv-group-map-fullscreen h2 { margin:0; font-size:14px; color:#f1f5f9; }
+.cctv-group-map-fullscreen button { border:1px solid #64748b; border-radius:5px; background:#1e293b; color:white; padding:6px 12px; cursor:pointer; }
+.cctv-group-map-fullscreen > small { display:none; }
 .cctv-area-tiles { filter:invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) saturate(.85); }
 .leaflet-tooltip.cctv-area-label { background:transparent; border:0; padding:0; color:#f1f5f9; box-shadow:none; pointer-events:none; }
 .cctv-area-label::before { display:none; }

@@ -26,9 +26,9 @@ test('area map can expand and close', () => {
   render(<CctvGroupMap records={[]} />);
   const button = screen.getByRole('button', { name: 'Perbesar peta CCTV' });
   fireEvent.click(button);
-  expect(within(screen.getByRole('dialog')).getAllByText('Total CCTV:')[0]).toHaveTextContent('Total CCTV: 0');
+  expect(within(screen.getByRole('region', { name: 'Peta CCTV layar penuh' })).getAllByText('Total CCTV:')[0]).toHaveTextContent('Total CCTV: 0');
   fireEvent.click(screen.getByText('Tutup'));
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'Peta CCTV layar penuh' })).not.toBeInTheDocument();
   expect(button).toHaveFocus();
   HTMLDialogElement.prototype.showModal = show;
 });

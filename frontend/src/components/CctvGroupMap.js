@@ -32,7 +32,7 @@ function FitAreas() {
 
 export default function CctvGroupMap({ records }) {
   const [expanded, setExpanded] = useState(false);
-  const dialog = useRef(null);
+  const fullscreenRef = useRef(null);
   const expandButton = useRef(null);
   const counts = useMemo(() => {
     const result = new Map();
@@ -44,10 +44,12 @@ export default function CctvGroupMap({ records }) {
   }, [records]);
   useEffect(() => {
     if (!expanded) return;
-    dialog.current.showModal();
+    fullscreenRef.current?.querySelector('button')?.focus();
+    const escape = event => { if (event.key === 'Escape') setExpanded(false); };
+    window.addEventListener('keydown', escape);
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = previous; expandButton.current?.focus(); };
+    return () => { window.removeEventListener('keydown', escape); document.body.style.overflow = previous; expandButton.current?.focus(); };
   }, [expanded]);
   const content = <>
     <div className="cctv-group-map-canvas"><MapContainer center={[-6.107, 106.746]} zoom={15} attributionControl={false} style={{ height: '100%', width: '100%' }}>
@@ -63,5 +65,5 @@ export default function CctvGroupMap({ records }) {
     </MapContainer></div>
     <small>Klik area untuk melihat total CCTV · Sumber: kolom Area Kelompok</small>
   </>;
-  return <section className="cctv-group-map-card"><header><h2>Peta Area CCTV</h2><button ref={expandButton} aria-label="Perbesar peta CCTV" onClick={() => setExpanded(true)}>⛶</button></header>{!expanded && content}{expanded && createPortal(<dialog ref={dialog} className="cctv-group-map-dialog" aria-label="Peta CCTV diperbesar" onCancel={() => setExpanded(false)} onClick={event => { if (event.target === event.currentTarget) setExpanded(false); }}><header><h2>Peta Area CCTV</h2><button onClick={() => setExpanded(false)}>Tutup</button></header>{content}</dialog>, document.body)}</section>;
+  return <section className="cctv-group-map-card"><header><h2>Peta Area CCTV</h2><button ref={expandButton} aria-label="Perbesar peta CCTV" onClick={() => setExpanded(true)}>⛶</button></header>{!expanded && content}{expanded && createPortal(<section ref={fullscreenRef} className="cctv-group-map-fullscreen" role="region" aria-label="Peta CCTV layar penuh"><header><h2>Peta Area CCTV</h2><button onClick={() => setExpanded(false)}>Tutup</button></header>{content}</section>, document.body)}</section>;
 }
