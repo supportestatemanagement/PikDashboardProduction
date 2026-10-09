@@ -102,9 +102,20 @@ const row85 = [
   [106.7368563,-6.1125481],[106.7376483,-6.1111193],[106.7381411,-6.1102474],
   [106.7383465,-6.1099078],[106.7384785,-6.1097048],[106.7384809,-6.1097059],
 ];
+const smartCameraRow85 = [
+  [106.7368682,-6.112534],
+  [106.7372857,-6.1128088],
+  [106.7373778,-6.1126576],
+  [106.7369405,-6.1123943],
+  [106.7369244,-6.1124263],
+  [106.7369097,-6.1124525],
+  [106.7368666,-6.112534],
+  [106.7368682,-6.112534],
+];
 export const CCTV_AREAS = [
   { name: 'Sektor Tengah', color: '#22c55e', coordinates: sektorTengah },
   { name: 'Fresh Market & Emerald', color: '#f59e0b', coordinates: freshMarketEmerald },
   { name: 'Sektor Barat', color: '#3b82f6', coordinates: sektorBarat },
   { name: 'ROW 85', color: '#a855f7', coordinates: row85 },
+  { name: 'Smart Camera ROW 85', color: '#06b6d4', coordinates: smartCameraRow85 },
 ];
