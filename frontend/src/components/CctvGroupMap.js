@@ -5,6 +5,24 @@ import { CCTV_AREAS } from './cctvAreas';
 import 'leaflet/dist/leaflet.css';
 import './CctvGroupMap.css';
 
+const labelOffsets = {
+  'Fresh Market & Emerald': [110, -85],
+  'Sektor Barat': [-210, -70],
+  'Smart Camera ROW 85': [110, 105],
+  'Sektor Tengah': [125, 0],
+  'ROW 85': [105, 0],
+};
+
+function AreaLabel({ area, count }) {
+  const [x, y] = labelOffsets[area.name] || [110, 0];
+  return <Tooltip permanent direction="center" offset={[x, y]} className="cctv-area-label">
+    <span className="cctv-area-callout" style={{ '--area-color': area.color }}>
+      <svg className="cctv-area-connector" width="1" height="1" aria-hidden="true"><line x1={-x} y1={-y} x2="0" y2="0" stroke={area.color} strokeWidth="2" /><circle cx={-x} cy={-y} r="5" fill={area.color} stroke="white" strokeWidth="2" /></svg>
+      <span className="cctv-area-label-box"><span className="cctv-area-label-name">{area.name}</span><span className="cctv-area-label-count">{count.toLocaleString('id-ID')}</span></span>
+    </span>
+  </Tooltip>;
+}
+
 function FitAreas() {
   const map = useMap();
   useEffect(() => { map.fitBounds(CCTV_AREAS.flatMap(area => area.coordinates.map(([lng, lat]) => [lat, lng])), { padding: [30, 30] }); }, [map]);
@@ -36,7 +54,7 @@ export default function CctvGroupMap({ records }) {
       <TileLayer className="cctv-area-tiles" url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" attribution={'Map data from &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> | <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL</a>'} />
       <FitAreas />
       {CCTV_AREAS.map(area => <Polygon key={area.name} positions={area.coordinates.map(([lng, lat]) => [lat, lng])} pathOptions={{ color: area.color, fillColor: area.color, fillOpacity: .3, weight: 2 }}>
-        <Tooltip permanent direction="right" className="cctv-area-label"><span className="cctv-area-callout" style={{ '--area-color': area.color }}><span className="cctv-area-dot" /><span className="cctv-area-leader" /><span className="cctv-area-label-box"><span className="cctv-area-label-name">{area.name}</span><span className="cctv-area-label-count">{(counts.get(area.name.toLowerCase()) || 0).toLocaleString('id-ID')}</span></span></span></Tooltip>
+        <AreaLabel area={area} count={counts.get(area.name.toLowerCase()) || 0} />
         <Popup><div className="cctv-area-popup"><strong>{area.name}</strong><p>Total CCTV: <b>{counts.get(area.name.toLowerCase()) || 0}</b></p></div></Popup>
       </Polygon>)}
     </MapContainer></div>
