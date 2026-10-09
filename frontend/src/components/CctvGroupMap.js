@@ -6,12 +6,12 @@ import 'leaflet/dist/leaflet.css';
 import './CctvGroupMap.css';
 
 const labelOffsets = {
-  'Fresh Market & Emerald': { direction: 'top', offset: [0, -30], anchor: [0, 36] },
+  'Fresh Market & Emerald': { direction: 'top', offset: [65, -42], anchor: [-65, 48] },
   'Sektor Barat': { direction: 'left', offset: [-24, -22], anchor: [30, 22] },
   'Smart Camera ROW 85': { direction: 'bottom', offset: [22, 30], anchor: [-22, -36] },
   'Sektor Tengah': { direction: 'right', offset: [24, 0], anchor: [-30, 0] },
   'ROW 85': { direction: 'right', offset: [24, 0], anchor: [-30, 0] },
-  'Rukan Crown': { direction: 'bottom', offset: [0, 24], anchor: [0, -30] },
+  'Rukan Crown': { direction: 'bottom', offset: [30, 24], anchor: [-30, -30] },
 };
 
 function AreaLabel({ area, count }) {
